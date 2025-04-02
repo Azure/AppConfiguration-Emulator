@@ -1,4 +1,7 @@
-﻿using Microsoft.AspNetCore.Mvc.Versioning;
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+using Microsoft.AspNetCore.Mvc.Versioning;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 

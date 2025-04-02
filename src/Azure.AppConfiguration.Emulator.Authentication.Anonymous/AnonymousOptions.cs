@@ -1,4 +1,7 @@
-﻿namespace Microsoft.AppConfig.Service.Authentication.Anonymous
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace Microsoft.AppConfig.Service.Authentication.Anonymous
 {
     public class AnonymousOptions
     {

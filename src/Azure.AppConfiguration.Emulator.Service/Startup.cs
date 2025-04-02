@@ -1,4 +1,7 @@
-﻿using Azure.AppConfiguration.Emulator.Authentication.EntraId;
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+using Azure.AppConfiguration.Emulator.Authentication.EntraId;
 using Azure.AppConfiguration.Emulator.ConfigurationSnapshots;
 using Azure.AppConfiguration.Emulator.Hosting;
 using Azure.AppConfiguration.Emulator.Integration;

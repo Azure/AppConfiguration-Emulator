@@ -1,4 +1,7 @@
-﻿using Azure.AppConfiguration.Emulator.ConfigurationSnapshots;
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+using Azure.AppConfiguration.Emulator.ConfigurationSnapshots;
 using Microsoft.AppConfig.Service;
 
 namespace Azure.AppConfiguration.Emulator.Service.Validators

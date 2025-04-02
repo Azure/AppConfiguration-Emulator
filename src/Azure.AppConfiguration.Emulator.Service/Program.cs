@@ -1,4 +1,7 @@
-﻿using Azure.AppConfiguration.Emulator.Hosting;
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+using Azure.AppConfiguration.Emulator.Hosting;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;

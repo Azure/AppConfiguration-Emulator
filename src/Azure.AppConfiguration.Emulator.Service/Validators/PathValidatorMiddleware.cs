@@ -1,4 +1,7 @@
-﻿using Azure.AppConfiguration.Emulator.Service.Http;
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+using Azure.AppConfiguration.Emulator.Service.Http;
 using Microsoft.AspNetCore.Http;
 using System;
 using System.Threading.Tasks;

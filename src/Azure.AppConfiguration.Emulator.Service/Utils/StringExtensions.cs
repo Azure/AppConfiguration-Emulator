@@ -1,4 +1,7 @@
-﻿using Microsoft.Extensions.Primitives;
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+using Microsoft.Extensions.Primitives;
 using System;
 using System.Text;
 

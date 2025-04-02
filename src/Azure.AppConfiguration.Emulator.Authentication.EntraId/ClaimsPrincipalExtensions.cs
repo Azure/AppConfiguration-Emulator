@@ -1,4 +1,7 @@
-﻿using Microsoft.AppConfig.Service.Authorization;
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+using Microsoft.AppConfig.Service.Authorization;
 using System;
 using System.Collections.Generic;
 using System.Security.Claims;

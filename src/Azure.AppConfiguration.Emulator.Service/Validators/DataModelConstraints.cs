@@ -1,4 +1,7 @@
-﻿namespace Azure.AppConfiguration.Emulator.Service.Validators
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace Azure.AppConfiguration.Emulator.Service.Validators
 {
     public static class DataModelConstraints
     {

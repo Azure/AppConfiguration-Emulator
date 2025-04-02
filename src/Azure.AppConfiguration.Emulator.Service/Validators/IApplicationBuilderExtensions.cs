@@ -1,4 +1,7 @@
-﻿using Microsoft.AspNetCore.Builder;
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+using Microsoft.AspNetCore.Builder;
 using System;
 
 namespace Azure.AppConfiguration.Emulator.Service.Validators

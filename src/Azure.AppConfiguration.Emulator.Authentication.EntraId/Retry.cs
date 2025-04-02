@@ -1,4 +1,7 @@
-﻿using Microsoft.Identity.Client;
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+using Microsoft.Identity.Client;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using System;
 using System.IO;
