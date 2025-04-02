@@ -1,0 +1,42 @@
+<Project>
+
+  <PropertyGroup>
+    <Authors>appcteam@microsoft.com</Authors>
+    <RepositoryUrl>https://msazure.visualstudio.com/Azure%20AppConfig/_git/AppConfigService</RepositoryUrl>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(CDP_FILE_VERSION_NUMERIC)'==''">
+    <Version>1.9.9999</Version>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(CDP_FILE_VERSION_NUMERIC)'!=''">
+    <!-- Note that CDP_PACKAGE_VERSION_NUMERIC uses format Major.Minor.MMddyyrrrr, which causes compile error CS7034 because .NET Core doesn't allow version numbers higher than 65534. -->
+    <!-- CDP_FILE_VERSION_NUMERIC is updated daily by the build system, the addition of a revision number makes the build number unique by the minute -->
+    <!-- The revision number is the number of minutes since midnight [0, 1440) -->
+    <!-- Example build number, 1.0.573.1227 -->
+    <NowTicks>$([System.DateTime]::Now.Ticks)</NowTicks>
+    <TodayTicks>$([System.DateTime]::Today.Ticks)</TodayTicks>
+    <TicksSinceMidnight>$([MSBuild]::Subtract($(NowTicks), $(TodayTicks)))</TicksSinceMidnight>
+    <MinutesSinceMidnight>$([MSBuild]::Divide($(TicksSinceMidnight), 600000000))</MinutesSinceMidnight>
+    <Floored>$([System.Math]::Floor($(MinutesSinceMidnight)))</Floored>
+    <Revision>$(Floored)</Revision>
+    <VersionPrefix>$([System.Text.RegularExpressions.Regex]::Match('$(CDP_FILE_VERSION_NUMERIC)', '(\d+\.\d+\.\d+)\.\d+').Groups[1].Value)</VersionPrefix>
+    <Version>$(VersionPrefix).$(Revision)</Version>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Packages added explicitly to resolve transitive vulnerability-->
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="Microsoft.Rest.ClientRuntime" Version="2.3.24" />
+    <PackageReference Include="Azure.Identity" Version="1.12.0" />
+    <PackageReference Include="System.Text.Json" Version="8.0.5" />
+    <PackageReference Include="System.Formats.Asn1" Version="8.0.1" />
+    <PackageReference Include="Azure.Core" Version="1.41.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+      <_Parameter1>Microsoft.AppConfig.Service.Tests</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+</Project>

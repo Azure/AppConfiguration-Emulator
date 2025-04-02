@@ -1,0 +1,14 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="..\..\build\NugetProperties.props" />
+  
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Azure.AppConfiguration.Emulator.Authorization\Azure.AppConfiguration.Emulator.Authorization.csproj" />
+    <ProjectReference Include="..\Azure.AppConfiguration.Emulator.Authentication\Azure.AppConfiguration.Emulator.Authentication.csproj" />
+    <ProjectReference Include="..\Azure.AppConfiguration.Emulator.Tenant\Azure.AppConfiguration.Emulator.Tenant.csproj" />
+  </ItemGroup>
+
+</Project>
