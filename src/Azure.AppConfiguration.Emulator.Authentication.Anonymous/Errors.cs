@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-
 namespace Microsoft.AppConfig.Service.Authentication.Anonymous
 {
     static class Errors
