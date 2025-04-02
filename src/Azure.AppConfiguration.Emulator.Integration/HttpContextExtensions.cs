@@ -1,4 +1,7 @@
-﻿using Microsoft.AspNetCore.Http;
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+using Microsoft.AspNetCore.Http;
 using System;
 
 namespace Azure.AppConfiguration.Emulator.Integration

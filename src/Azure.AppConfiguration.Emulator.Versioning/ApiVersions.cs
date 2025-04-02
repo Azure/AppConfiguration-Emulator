@@ -1,4 +1,7 @@
-﻿namespace Azure.AppConfiguration.Emulator.Versioning
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace Azure.AppConfiguration.Emulator.Versioning
 {
     public static class ApiVersions
     {

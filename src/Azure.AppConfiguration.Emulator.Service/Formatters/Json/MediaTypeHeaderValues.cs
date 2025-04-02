@@ -1,4 +1,7 @@
-﻿namespace Azure.AppConfiguration.Emulator.Service.Formatters.Json
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace Azure.AppConfiguration.Emulator.Service.Formatters.Json
 {
     static class MediaTypeHeaderValues
     {

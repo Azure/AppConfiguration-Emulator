@@ -1,4 +1,7 @@
-﻿namespace Azure.AppConfiguration.Emulator.Authentication.EntraId
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace Azure.AppConfiguration.Emulator.Authentication.EntraId
 {
     /// <summary>
     /// Scopes defined within the Azure App Configuration (ID: Microsoft.Azconfig) first party app

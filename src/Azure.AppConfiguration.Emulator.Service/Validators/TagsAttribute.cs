@@ -1,4 +1,7 @@
-﻿using Microsoft.AspNetCore.Mvc;
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 
 namespace Azure.AppConfiguration.Emulator.Service.Validators

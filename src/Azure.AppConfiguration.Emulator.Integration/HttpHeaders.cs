@@ -1,4 +1,7 @@
-﻿namespace Azure.AppConfiguration.Emulator.Integration
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace Azure.AppConfiguration.Emulator.Integration
 {
     internal static class HttpHeaders
     {

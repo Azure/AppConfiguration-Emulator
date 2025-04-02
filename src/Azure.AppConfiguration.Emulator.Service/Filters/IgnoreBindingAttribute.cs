@@ -1,4 +1,7 @@
-﻿using Microsoft.AspNetCore.Mvc.ModelBinding;
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using System;
 
 namespace Azure.AppConfiguration.Emulator.Service
