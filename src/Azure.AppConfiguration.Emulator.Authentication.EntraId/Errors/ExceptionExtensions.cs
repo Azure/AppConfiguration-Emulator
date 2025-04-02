@@ -83,8 +83,8 @@ namespace Azure.AppConfiguration.Emulator.Authentication.EntraId
             T result = e as T ?? e.InnerException as T;
 
             //
-            // Lookup up in agrregated exception
-            if (result == null && e is AggregateException aggregared)
+            // Lookup up in aggregated exception
+            if (result == null && e is AggregateException aggregated)
             {
                 Exception inner = aggregared.InnerExceptions.FirstOrDefault(ie => ie is T || ie.InnerException is T);
 
