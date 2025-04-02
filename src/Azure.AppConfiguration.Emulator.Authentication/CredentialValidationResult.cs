@@ -1,4 +1,7 @@
-﻿using System.Security.Claims;
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+using System.Security.Claims;
 
 namespace Azure.AppConfiguration.Emulator.Authentication
 {

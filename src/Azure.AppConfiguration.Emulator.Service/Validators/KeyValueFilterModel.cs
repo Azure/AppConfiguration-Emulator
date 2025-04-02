@@ -1,4 +1,7 @@
-﻿using Azure.AppConfiguration.Emulator.Versioning;
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+using Azure.AppConfiguration.Emulator.Versioning;
 using System.Collections.Generic;
 
 namespace Azure.AppConfiguration.Emulator.Service.Validators

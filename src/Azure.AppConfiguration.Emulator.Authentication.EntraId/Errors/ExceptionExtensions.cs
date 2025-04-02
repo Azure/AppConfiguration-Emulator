@@ -1,4 +1,7 @@
-﻿using Microsoft.Identity.Client;
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+using Microsoft.Identity.Client;
 using System;
 using System.Linq;
 using System.Net;
@@ -86,7 +89,7 @@ namespace Azure.AppConfiguration.Emulator.Authentication.EntraId
             // Lookup up in aggregated exception
             if (result == null && e is AggregateException aggregated)
             {
-                Exception inner = aggregared.InnerExceptions.FirstOrDefault(ie => ie is T || ie.InnerException is T);
+                Exception inner = aggregated.InnerExceptions.FirstOrDefault(ie => ie is T || ie.InnerException is T);
 
                 if (inner != null)
                 {

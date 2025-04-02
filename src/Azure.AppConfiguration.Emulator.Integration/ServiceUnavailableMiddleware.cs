@@ -1,4 +1,7 @@
-﻿using Azure.AppConfiguration.Emulator.Diagnostics;
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+using Azure.AppConfiguration.Emulator.Diagnostics;
 using Microsoft.AspNetCore.Http;
 using System;
 using System.Diagnostics;

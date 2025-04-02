@@ -1,4 +1,7 @@
-﻿using Azure.AppConfiguration.Emulator.Authentication;
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+using Azure.AppConfiguration.Emulator.Authentication;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Microsoft.AppConfig.Service.Authentication

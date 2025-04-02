@@ -1,4 +1,7 @@
-﻿using Microsoft.AspNetCore.Mvc.ActionConstraints;
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+using Microsoft.AspNetCore.Mvc.ActionConstraints;
 using System;
 
 namespace Azure.AppConfiguration.Emulator.Service
