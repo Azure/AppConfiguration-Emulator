@@ -1,0 +1,104 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31717.71
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Azure.AppConfiguration.Emulator.Service", "src\Azure.AppConfiguration.Emulator.Service\Azure.AppConfiguration.Emulator.Service.csproj", "{C6DD6501-9C18-4192-9EDF-3803B06D8F63}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Azure.AppConfiguration.Emulator.ConfigurationSettings", "src\Azure.AppConfiguration.Emulator.ConfigurationSettings\Azure.AppConfiguration.Emulator.ConfigurationSettings.csproj", "{40673768-2366-42F6-AB3C-29CC72C5B4D3}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Azure.AppConfiguration.Emulator.Tenant", "src\Azure.AppConfiguration.Emulator.Tenant\Azure.AppConfiguration.Emulator.Tenant.csproj", "{F01938D6-FA05-409A-B3DF-499B29024E8F}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Azure.AppConfiguration.Emulator.Authentication", "src\Azure.AppConfiguration.Emulator.Authentication\Azure.AppConfiguration.Emulator.Authentication.csproj", "{E2A94B50-D55A-4BB5-A849-2A55DB7FD906}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{12E0AB05-317C-4C4C-B510-C596B13B7D58}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Azure.AppConfiguration.Emulator.Integration", "src\Azure.AppConfiguration.Emulator.Integration\Azure.AppConfiguration.Emulator.Integration.csproj", "{05750558-0639-441E-8536-F94611C0553B}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Azure.AppConfiguration.Emulator.Diagnostics", "src\Azure.AppConfiguration.Emulator.Diagnostics\Azure.AppConfiguration.Emulator.Diagnostics.csproj", "{ABB88534-3122-4E86-912C-4F0B1AE8BD68}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Azure.AppConfiguration.Emulator.Authentication.Hmac", "src\Azure.AppConfiguration.Emulator.Authentication.Hmac\Azure.AppConfiguration.Emulator.Authentication.Hmac.csproj", "{32A4B784-C820-4FF4-BEDD-E84628C68D2F}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Azure.AppConfiguration.Emulator.Authorization", "src\Azure.AppConfiguration.Emulator.Authorization\Azure.AppConfiguration.Emulator.Authorization.csproj", "{8EADFC8B-F08F-4985-A04E-C55E4BED3424}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Azure.AppConfiguration.Emulator.Authentication.EntraId", "src\Azure.AppConfiguration.Emulator.Authentication.EntraId\Azure.AppConfiguration.Emulator.Authentication.EntraId.csproj", "{C113C730-98BC-48D6-9A23-2BF0A2930C56}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{16231AC4-893A-411E-BEE1-FA994222C138}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+	EndProjectSection
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Azure.AppConfiguration.Emulator.ConfigurationSnapshots", "src\Azure.AppConfiguration.Emulator.ConfigurationSnapshots\Azure.AppConfiguration.Emulator.ConfigurationSnapshots.csproj", "{751F144B-D881-451C-8316-5E256FBE9F05}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Azure.AppConfiguration.Emulator.Hosting", "src\Azure.AppConfiguration.Emulator.Hosting\Azure.AppConfiguration.Emulator.Hosting.csproj", "{A21A450F-525D-8A02-3833-E0508D501D80}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Azure.AppConfiguration.Emulator.Versioning", "src\Azure.AppConfiguration.Emulator.Versioning\Azure.AppConfiguration.Emulator.Versioning.csproj", "{C01B530B-C30E-4AF6-B5DF-1F90FE6C92A7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Azure.AppConfiguration.Emulator.Authentication.Anonymous", "src\Azure.AppConfiguration.Emulator.Authentication.Anonymous\Azure.AppConfiguration.Emulator.Authentication.Anonymous.csproj", "{C8432D71-94D3-4FA6-81D7-673794CA6646}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{C6DD6501-9C18-4192-9EDF-3803B06D8F63}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C6DD6501-9C18-4192-9EDF-3803B06D8F63}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C6DD6501-9C18-4192-9EDF-3803B06D8F63}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C6DD6501-9C18-4192-9EDF-3803B06D8F63}.Release|Any CPU.Build.0 = Release|Any CPU
+		{40673768-2366-42F6-AB3C-29CC72C5B4D3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{40673768-2366-42F6-AB3C-29CC72C5B4D3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{40673768-2366-42F6-AB3C-29CC72C5B4D3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{40673768-2366-42F6-AB3C-29CC72C5B4D3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F01938D6-FA05-409A-B3DF-499B29024E8F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F01938D6-FA05-409A-B3DF-499B29024E8F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F01938D6-FA05-409A-B3DF-499B29024E8F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F01938D6-FA05-409A-B3DF-499B29024E8F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E2A94B50-D55A-4BB5-A849-2A55DB7FD906}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E2A94B50-D55A-4BB5-A849-2A55DB7FD906}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E2A94B50-D55A-4BB5-A849-2A55DB7FD906}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E2A94B50-D55A-4BB5-A849-2A55DB7FD906}.Release|Any CPU.Build.0 = Release|Any CPU
+		{05750558-0639-441E-8536-F94611C0553B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{05750558-0639-441E-8536-F94611C0553B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{05750558-0639-441E-8536-F94611C0553B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{05750558-0639-441E-8536-F94611C0553B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{ABB88534-3122-4E86-912C-4F0B1AE8BD68}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ABB88534-3122-4E86-912C-4F0B1AE8BD68}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ABB88534-3122-4E86-912C-4F0B1AE8BD68}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ABB88534-3122-4E86-912C-4F0B1AE8BD68}.Release|Any CPU.Build.0 = Release|Any CPU
+		{32A4B784-C820-4FF4-BEDD-E84628C68D2F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{32A4B784-C820-4FF4-BEDD-E84628C68D2F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{32A4B784-C820-4FF4-BEDD-E84628C68D2F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{32A4B784-C820-4FF4-BEDD-E84628C68D2F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8EADFC8B-F08F-4985-A04E-C55E4BED3424}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8EADFC8B-F08F-4985-A04E-C55E4BED3424}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8EADFC8B-F08F-4985-A04E-C55E4BED3424}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8EADFC8B-F08F-4985-A04E-C55E4BED3424}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C113C730-98BC-48D6-9A23-2BF0A2930C56}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C113C730-98BC-48D6-9A23-2BF0A2930C56}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C113C730-98BC-48D6-9A23-2BF0A2930C56}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C113C730-98BC-48D6-9A23-2BF0A2930C56}.Release|Any CPU.Build.0 = Release|Any CPU
+		{751F144B-D881-451C-8316-5E256FBE9F05}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{751F144B-D881-451C-8316-5E256FBE9F05}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{751F144B-D881-451C-8316-5E256FBE9F05}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{751F144B-D881-451C-8316-5E256FBE9F05}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A21A450F-525D-8A02-3833-E0508D501D80}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A21A450F-525D-8A02-3833-E0508D501D80}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A21A450F-525D-8A02-3833-E0508D501D80}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A21A450F-525D-8A02-3833-E0508D501D80}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C01B530B-C30E-4AF6-B5DF-1F90FE6C92A7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C01B530B-C30E-4AF6-B5DF-1F90FE6C92A7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C01B530B-C30E-4AF6-B5DF-1F90FE6C92A7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C01B530B-C30E-4AF6-B5DF-1F90FE6C92A7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C8432D71-94D3-4FA6-81D7-673794CA6646}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C8432D71-94D3-4FA6-81D7-673794CA6646}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C8432D71-94D3-4FA6-81D7-673794CA6646}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C8432D71-94D3-4FA6-81D7-673794CA6646}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {0291B878-52BD-463B-B3B7-1D6CD5C0686B}
+	EndGlobalSection
+EndGlobal
