@@ -1,4 +1,7 @@
-﻿namespace Microsoft.AppConfig.Service.Security
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace Microsoft.AppConfig.Service.Security
 {
     static class HeaderNames
     {

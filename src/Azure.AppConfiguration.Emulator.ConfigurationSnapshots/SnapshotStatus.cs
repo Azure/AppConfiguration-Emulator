@@ -1,4 +1,7 @@
-﻿namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
 {
     public enum SnapshotStatus
     {

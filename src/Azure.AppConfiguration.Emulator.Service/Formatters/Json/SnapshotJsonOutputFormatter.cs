@@ -1,4 +1,7 @@
-﻿using Azure.AppConfiguration.Emulator.ConfigurationSnapshots;
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+using Azure.AppConfiguration.Emulator.ConfigurationSnapshots;
 using Azure.AppConfiguration.Emulator.Service.Formatters;
 using Azure.AppConfiguration.Emulator.Service.Formatters.Serializer;
 using Azure.AppConfiguration.Emulator.Service.Http;

@@ -1,4 +1,7 @@
-﻿using Azure.AppConfiguration.Emulator.Service.LongRunningOperation;
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+using Azure.AppConfiguration.Emulator.Service.LongRunningOperation;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using System;

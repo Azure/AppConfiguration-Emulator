@@ -1,4 +1,7 @@
-﻿using System.Text.Json;
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+using System.Text.Json;
 
 namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
 {

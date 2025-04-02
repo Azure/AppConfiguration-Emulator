@@ -1,4 +1,7 @@
-﻿namespace Azure.AppConfiguration.Emulator.Diagnostics
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace Azure.AppConfiguration.Emulator.Diagnostics
 {
     static class HeaderNames
     {

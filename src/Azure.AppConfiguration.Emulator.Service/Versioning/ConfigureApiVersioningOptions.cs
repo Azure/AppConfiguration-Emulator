@@ -1,4 +1,7 @@
-﻿using Azure.AppConfiguration.Emulator.Service.Formatters.Json;
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+using Azure.AppConfiguration.Emulator.Service.Formatters.Json;
 using Azure.AppConfiguration.Emulator.Versioning;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;

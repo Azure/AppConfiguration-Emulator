@@ -1,4 +1,7 @@
-﻿using Microsoft.AppConfig.Service.Authorization;
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+using Microsoft.AppConfig.Service.Authorization;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 

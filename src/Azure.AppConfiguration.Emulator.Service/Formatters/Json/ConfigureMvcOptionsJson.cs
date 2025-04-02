@@ -1,4 +1,7 @@
-﻿using Azure.AppConfiguration.Emulator.Service.Formatters.Serializer;
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+using Azure.AppConfiguration.Emulator.Service.Formatters.Serializer;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;

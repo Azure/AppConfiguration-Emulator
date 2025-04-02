@@ -1,4 +1,7 @@
-﻿namespace Azure.AppConfiguration.Emulator.Authentication.EntraId
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace Azure.AppConfiguration.Emulator.Authentication.EntraId
 {
     internal class Errors
     {
