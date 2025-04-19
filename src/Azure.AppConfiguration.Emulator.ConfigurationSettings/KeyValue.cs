@@ -54,11 +54,6 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
         public bool Locked { get; set; }
 
         /// <summary>
-        /// Time when key value is superseeded.
-        /// </summary>
-        public DateTimeOffset? Superseeded { get; set; }
-
-        /// <summary>
         /// Time when key value is deleted.
         /// </summary>
         public DateTimeOffset? Deleted { get; set; }
@@ -66,6 +61,6 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
         /// <summary>
         /// Time to live for the key value, after key value is considered as a revision.
         /// </summary>
-        public DateTimeOffset Expires { get; set; }
+        public TimeSpan RevisionTTL { get; set; }
     }
 }

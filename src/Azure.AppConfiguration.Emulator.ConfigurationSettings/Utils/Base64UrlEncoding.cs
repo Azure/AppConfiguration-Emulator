@@ -14,12 +14,17 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
     {
         private static ArrayPool<char> ArrayPool = ArrayPool<char>.Shared;
 
+        public static string Encode(byte[] input)
+        {
+            return Encode(input, 0, input.Length);
+        }
+
         /// <summary>
         /// Encodes an input using base64url encoding. Use for fixed size input (ex. hash)
         /// </summary>
         /// <param name="input">The binary input to encode.</param>
         /// <returns>The base64url-encoded form of the input.</returns>
-        public static string Encode(byte[] input)
+        public static string Encode(byte[] input, int offset, int length)
         {
             if (input == null)
             {
@@ -35,7 +40,7 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
 
             try
             {
-                int outputLen = Convert.ToBase64CharArray(input, 0, input.Length, output, 0);
+                int outputLen = Convert.ToBase64CharArray(input, offset, length, output, 0);
 
                 //
                 // Map special characters: 

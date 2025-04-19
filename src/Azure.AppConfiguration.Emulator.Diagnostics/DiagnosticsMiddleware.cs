@@ -101,17 +101,6 @@ namespace Azure.AppConfiguration.Emulator.Diagnostics
                     response.Body = originStream;
                 }
 
-                //
-                // Logging
-                _httpLogger.LogHttp(
-                    context,
-                    stopwatch.Elapsed,
-                    activity.RequestId,
-                    activity.ClientRequestId,
-                    activity.CorrelationRequestId,
-                    bytesReceived,
-                    bytesSent);
-
                 return Task.CompletedTask;
             });
 

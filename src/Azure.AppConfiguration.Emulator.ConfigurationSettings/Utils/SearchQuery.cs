@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -13,6 +14,7 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
         public const string NullString = "\0";
         public const char EscapeChar = '\\';
 
+        private const int MaxListSearchItems = 5;
         private const char SearchListSeparator = ',';
         private const char Wildcard = '*';
 
@@ -21,6 +23,51 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
         private static readonly byte[] _reservedCharLookup = CreateReservedCharLookup();
 
         public static readonly Func<char, bool, bool> IsInvalidCharacter = (c, escaped) => !escaped && IsReservedChar(c);
+
+        public static StringFilter CreateStringFilter(string value)
+        {
+            StringFilter filter = new();
+
+            //
+            // No filter
+            if (string.IsNullOrEmpty(value) || value[0] == Wildcard)
+            {
+                return filter;
+            }
+
+            //
+            // Null
+            if (value == NullString)
+            {
+                filter.IsNull = true;
+
+                return filter;
+            }
+
+            //
+            // List of values
+            filter.AnyOf = ParseList(value);
+
+            if (filter.AnyOf != null)
+            {
+                return filter;
+            }
+
+            //
+            // Starts With
+            filter.HasPrefix = StartsWithSearch(value);
+
+            if (!string.IsNullOrEmpty(filter.HasPrefix))
+            {
+                return filter;
+            }
+
+            //
+            // Specific value
+            filter.EqualsTo = Unescape(value).ToString();
+
+            return filter;
+        }
 
         /// <summary>
         /// Escape reserved characters defined in ReservedChars
@@ -334,6 +381,60 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
             }
 
             return lookup;
+        }
+
+        private static IEnumerable<string> ParseList(ReadOnlySpan<char> query)
+        {
+            Debug.Assert(!query.IsEmpty);
+
+            //
+            // Split on ','
+            List<string> values = null;
+            int offset = 0;
+
+            SearchQuery.SplitEscaped(
+                query,
+                SearchListSeparator,
+                (span) =>
+                {
+                    values ??= new List<string>();
+
+                    if (values.Count >= MaxListSearchItems)
+                    {
+                        throw new SearchQueryException(nameof(query), $"Too many values. Maximum supported is {MaxListSearchItems}");
+                    }
+
+                    if (span.SequenceEqual(NullString))
+                    {
+                        values.Add(null);
+                    }
+                    else
+                    {
+                        values.Add(Unescape(span, offset).ToString());
+                    }
+
+                    offset += span.Length + 1;
+
+                    return true;
+                });
+
+            return values;
+        }
+
+        private static string StartsWithSearch(ReadOnlySpan<char> query)
+        {
+            Debug.Assert(!query.IsEmpty);
+
+            bool suffixWildcard = query[query.Length - 1] == Wildcard && !IsCharEscaped(query, query.Length - 1);
+
+            if (suffixWildcard)
+            {
+                query = query.Slice(0, query.Length - 1);
+
+                return Unescape(query, 0).ToString();
+            }
+
+            return null;
         }
     }
 }

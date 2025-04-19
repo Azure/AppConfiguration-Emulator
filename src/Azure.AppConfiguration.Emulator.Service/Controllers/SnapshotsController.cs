@@ -52,7 +52,6 @@ namespace Azure.AppConfiguration.Emulator.Service
         [AuthorizationScope(ResourceType = ResourceType.Snapshot)]
         public Task<IEnumerable<Snapshot>> Get(
             [FromQuery]
-            [Name("name")]
             string name,
             [ModelBinder(binderType: typeof(SnapshotStatusSearchBinder))]
             SnapshotStatusSearch status,
@@ -77,7 +76,6 @@ namespace Azure.AppConfiguration.Emulator.Service
         public async Task<Snapshot> GetSnapshot(
             [Required]
             [FromRoute]
-            [Name("name")]
             string name,
             CancellationToken cancellationToken)
         {
@@ -98,7 +96,6 @@ namespace Azure.AppConfiguration.Emulator.Service
         [AuthorizationScope(ResourceType = ResourceType.Snapshot)]
         public async Task<IEnumerable<KeyValue>> GetContent(
             [FromQuery(Name = "snapshot")]
-            [Name("name")]
             string snapshotName,
             string after,
             CancellationToken cancellationToken)

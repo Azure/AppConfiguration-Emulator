@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 using Azure.AppConfiguration.Emulator.Authentication.EntraId;
+using Azure.AppConfiguration.Emulator.ConfigurationSettings;
 using Azure.AppConfiguration.Emulator.ConfigurationSnapshots;
 using Azure.AppConfiguration.Emulator.Hosting;
 using Azure.AppConfiguration.Emulator.Integration;
@@ -39,6 +40,10 @@ namespace Azure.AppConfiguration.Emulator.Service
             //
             // Options
             ConfigureOptions(services);
+
+            //
+            // Logging
+            services.AddHttpLogging(o => { });
 
             //
             // Authentication
@@ -109,6 +114,10 @@ namespace Azure.AppConfiguration.Emulator.Service
             //
             // Tenant
             services.Configure<TenantOptions>(Configuration.GetSection("Tenant"));
+
+            //
+            // KeyValueStorage
+            services.Configure<KeyValueStorageOptions>(Configuration.GetSection("KeyValueStorage"));
 
             //
             // Snapshot Provider

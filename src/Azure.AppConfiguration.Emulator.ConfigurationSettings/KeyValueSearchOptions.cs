@@ -8,9 +8,9 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
 {
     public class KeyValueSearchOptions
     {
-        public string Key { get; set; }
+        public StringFilter KeyFilter { get; set; }
 
-        public string Label { get; set; }
+        public StringFilter LabelFilter { get; set; }
 
         public IEnumerable<KeyValuePair<string, string>> Tags { get; set; }
 
@@ -18,7 +18,7 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
 
         public string SnapshotName { get; set; }
 
-        public Range Range { get; set; }
+        public Range? Range { get; set; }
 
         public DateTimeOffset? TimeGate { get; set; }
     }

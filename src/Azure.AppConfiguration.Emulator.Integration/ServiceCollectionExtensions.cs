@@ -13,6 +13,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.HttpLogging;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
@@ -98,7 +99,9 @@ namespace Azure.AppConfiguration.Emulator.Integration
 
         public static IApplicationBuilder UseDiagnostics(this IApplicationBuilder services)
         {
-            return services.UseMiddleware<DiagnosticsMiddleware>();
+            return services
+                .UseMiddleware<DiagnosticsMiddleware>()
+                .UseHttpLogging();
         }
 
         public static IHttpClientBuilder AddHttpClientFactory(this IServiceCollection services)

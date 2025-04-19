@@ -106,7 +106,7 @@ namespace Azure.AppConfiguration.Emulator.Service
 
             string Etag = Request.GetEtag();
 
-            if (KvHelper.CheckPrecondition(kv, etagMatch, Etag))
+            if (!KvHelper.CheckPrecondition(kv, etagMatch, Etag))
             {
                 throw new MatchFailedException();
             }

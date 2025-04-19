@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 using Azure.AppConfiguration.Emulator.ConfigurationSettings;
+using Azure.AppConfiguration.Emulator.Service.Validators;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Formatters;
 using Microsoft.Extensions.Logging;
@@ -31,7 +32,7 @@ namespace Azure.AppConfiguration.Emulator.Service.Formatters.Json
         protected override bool CanReadType(Type type)
         {
             return base.CanReadType(type) &&
-                   (typeof(KeyValue).IsAssignableFrom(type) ||
+                   (typeof(KeyValueFilterModel).IsAssignableFrom(type) ||
                     typeof(IEnumerable<KeyValue>).IsAssignableFrom(type));
         }
     }

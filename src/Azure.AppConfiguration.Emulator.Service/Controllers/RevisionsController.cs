@@ -56,8 +56,8 @@ namespace Azure.AppConfiguration.Emulator.Service
             return _provider.Get(
                 new KeyValueSearchOptions
                 {
-                    Key = key,
-                    Label = label,
+                    KeyFilter = SearchQuery.CreateStringFilter(key),
+                    LabelFilter = SearchQuery.CreateStringFilter(label),
                     Tags = tags,
                     ContinuationToken = after,
                     Range = range,
