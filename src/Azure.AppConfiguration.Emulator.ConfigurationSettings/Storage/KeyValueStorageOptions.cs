@@ -1,11 +1,13 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+using System;
+
 namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
 {
     public class KeyValueStorageOptions
     {
-        public string FilePath { get; set; } = "c:/aace/kv.ndjson";
+        public string FilePath { get; set; } = "aace/kv.ndjson";
 
         public int AppendBufferSize { get; set; } = 8 * 1024; // bytes
 

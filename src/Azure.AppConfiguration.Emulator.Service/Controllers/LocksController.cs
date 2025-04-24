@@ -46,16 +46,17 @@ namespace Azure.AppConfiguration.Emulator.Service
 
             CancellationToken cancellationToken)
         {
-            KeyValue existing = await _provider.Get(
+            KeyValue existing = await _provider.GetKeyValue(
                   key,
                   label,
                   cancellationToken);
 
             EnsurePrecondition(existing);
 
-            if (existing != null)
+            if (existing != null &&
+                !existing.Locked)
             {
-                await _provider.Lock(existing, cancellationToken);
+                existing = await _provider.Lock(existing, cancellationToken);
             }
 
             return existing;
@@ -73,16 +74,17 @@ namespace Azure.AppConfiguration.Emulator.Service
 
             CancellationToken cancellationToken)
         {
-            KeyValue existing = await _provider.Get(
+            KeyValue existing = await _provider.GetKeyValue(
                 key,
                 label,
                 cancellationToken);
 
             EnsurePrecondition(existing);
 
-            if (existing != null)
+            if (existing != null &&
+                existing.Locked)
             {
-                await _provider.Unlock(existing, cancellationToken);
+                existing = await _provider.Unlock(existing, cancellationToken);
             }
 
             return existing;

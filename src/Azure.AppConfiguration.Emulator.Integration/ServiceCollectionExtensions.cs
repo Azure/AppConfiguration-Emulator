@@ -84,6 +84,8 @@ namespace Azure.AppConfiguration.Emulator.Integration
             services.TryAddSingleton<IKeyProvider>(sp => sp.GetRequiredService<KeyValueProvider>());
             services.TryAddSingleton<ILabelProvider>(sp => sp.GetRequiredService<KeyValueProvider>());
 
+            services.AddHostedService(sp => sp.GetRequiredService<KeyValueProvider>());
+
             return services;
         }
 
@@ -92,9 +94,9 @@ namespace Azure.AppConfiguration.Emulator.Integration
             //
             // Middlewares instead of MVC filters because we can get here before MVC pipeline starts
             return services
-                .UseMiddleware<InternalServerErrorMiddleware>()
                 .UseMiddleware<ServiceUnavailableMiddleware>()
-                .UseMiddleware<RequestAbortedMiddleware>();
+                .UseMiddleware<RequestAbortedMiddleware>()
+                .UseMiddleware<ConflictMiddleware>();
         }
 
         public static IApplicationBuilder UseDiagnostics(this IApplicationBuilder services)

@@ -55,9 +55,9 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
 
             //
             // Starts With
-            filter.HasPrefix = StartsWithSearch(value);
+            filter.Prefix = StartsWithSearch(value);
 
-            if (!string.IsNullOrEmpty(filter.HasPrefix))
+            if (!string.IsNullOrEmpty(filter.Prefix))
             {
                 return filter;
             }

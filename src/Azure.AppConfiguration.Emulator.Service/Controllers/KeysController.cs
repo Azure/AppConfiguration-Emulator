@@ -37,13 +37,13 @@ namespace Azure.AppConfiguration.Emulator.Service
         [HttpHead]
         [TimeGateFilter]
         [PaginationFilter]
-        public Task<IEnumerable<Key>> Get(
+        public async Task<IEnumerable<Key>> Get(
             [FromQuery] string name,
             string after,
             [IgnoreBinding(nameof(TimeGateFilter))] DateTimeOffset? timeGate,
             CancellationToken cancellationToken)
         {
-            return _provider.Get(
+            return await _provider.QueryKeys(
                 new KeySearchOptions
                 {
                     Key = name,

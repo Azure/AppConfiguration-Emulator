@@ -9,7 +9,7 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
 
         public string EqualsTo { get; set; }
 
-        public string HasPrefix { get; set; }
+        public string Prefix { get; set; }
 
         public IEnumerable<string> AnyOf { get; set; }
 
@@ -20,12 +20,14 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
                 return value == null;
             }
 
-            if (EqualsTo != null && !EqualsTo.Equals(value))
+            if (EqualsTo != null &&
+                (value == null || !EqualsTo.Equals(value)))
             {
                 return false;
             }
 
-            if (HasPrefix != null && !value.StartsWith(HasPrefix))
+            if (Prefix != null &&
+                (value == null || !value.StartsWith(Prefix)))
             {
                 return false;
             }
@@ -37,5 +39,7 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
 
             return true;
         }
+
+        public bool IsEmpty => !IsNull && Match(null);
     }
 }

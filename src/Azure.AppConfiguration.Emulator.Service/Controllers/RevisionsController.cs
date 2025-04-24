@@ -41,7 +41,7 @@ namespace Azure.AppConfiguration.Emulator.Service
         [RangeFilter]
         [PaginationFilter]
         [AllowVersionedParameter(name: "tags", minApiVersion: ApiVersions.V23_11)]
-        public Task<IEnumerable<KeyValue>> Get(
+        public async Task<IEnumerable<KeyValue>> Get(
             [FromQuery] string key,
             [FromQuery] string label,
 
@@ -53,7 +53,7 @@ namespace Azure.AppConfiguration.Emulator.Service
             [IgnoreBinding(nameof(RangeFilter))] Range range,
             CancellationToken cancellationToken)
         {
-            return _provider.Get(
+            return await _provider.QueryRevisions(
                 new KeyValueSearchOptions
                 {
                     KeyFilter = SearchQuery.CreateStringFilter(key),
