@@ -50,7 +50,7 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
             [EnumeratorCancellation]
             CancellationToken cancellationToken)
         {
-            if (!File.Exists(_options.FilePath))
+            if (!File.Exists(_filePath))
             {
                 yield break;
             }

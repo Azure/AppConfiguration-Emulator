@@ -83,6 +83,7 @@ namespace Azure.AppConfiguration.Emulator.Integration
             services.TryAddSingleton<IKeyValueProvider>(sp => sp.GetRequiredService<KeyValueProvider>());
             services.TryAddSingleton<IKeyProvider>(sp => sp.GetRequiredService<KeyValueProvider>());
             services.TryAddSingleton<ILabelProvider>(sp => sp.GetRequiredService<KeyValueProvider>());
+            services.TryAddSingleton<IRevisionProvider>(sp => sp.GetRequiredService<KeyValueProvider>());
 
             services.AddHostedService(sp => sp.GetRequiredService<KeyValueProvider>());
 

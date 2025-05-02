@@ -46,7 +46,7 @@ namespace Azure.AppConfiguration.Emulator.Service
             return await _provider.QueryLabels(
                 new LabelSearchOptions
                 {
-                    Label = name,
+                    LabelFilter = SearchQuery.CreateStringFilter(name),
                     ContinuationToken = after,
                     TimeGate = timeGate
                 },

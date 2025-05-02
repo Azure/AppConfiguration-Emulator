@@ -46,7 +46,7 @@ namespace Azure.AppConfiguration.Emulator.Service
             return await _provider.QueryKeys(
                 new KeySearchOptions
                 {
-                    Key = name,
+                    KeyFilter = SearchQuery.CreateStringFilter(name),
                     ContinuationToken = after,
                     TimeGate = timeGate
                 },

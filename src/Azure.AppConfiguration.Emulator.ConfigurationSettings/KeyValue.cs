@@ -41,7 +41,7 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
         /// <summary>
         /// Created time of key value.
         /// </summary>
-        public DateTimeOffset Created { get; set; }
+        public DateTimeOffset Timestamp { get; set; }
 
         /// <summary>
         /// Tags associated with key value.

@@ -19,6 +19,10 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
             writer.WriteStartObject();
 
             //
+            // ts
+            writer.WriteNumber(JsonFields.Timestamp, kv.Timestamp.ToUnixTimeSeconds());
+
+            //
             // etag
             if (kv.Etag != null)
             {
@@ -54,10 +58,6 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
             }
 
             //
-            // created
-            writer.WriteNumber(JsonFields.Created, kv.Created.ToUnixTimeSeconds());
-
-            //
             // tags
             if (kv.Tags != null)
             {
@@ -72,17 +72,17 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
             }
 
             //
+            // rev_ttl
+            if (kv.RevisionTTL > TimeSpan.Zero)
+            {
+                writer.WriteNumber(JsonFields.RevisionTTL, (long)kv.RevisionTTL.TotalSeconds);
+            }
+
+            //
             // deleted
             if (kv.Deleted != null)
             {
                 writer.WriteNumber(JsonFields.Deleted, kv.Deleted.Value.ToUnixTimeSeconds());
-            }
-
-            //
-            // revision_ttl
-            if (kv.RevisionTTL > TimeSpan.Zero)
-            {
-                writer.WriteNumber(JsonFields.RevisionTTL, (long)kv.RevisionTTL.TotalSeconds);
             }
 
             writer.WriteEndObject();

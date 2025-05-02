@@ -65,6 +65,16 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
             ref Utf8JsonReader reader)
         {
             //
+            // ts
+            if (propertyName.IsEqual(JsonFields.Timestamp) &&
+                reader.Read())
+            {
+                kv.Timestamp = DateTimeOffset.FromUnixTimeSeconds(reader.GetInt64());
+
+                return;
+            }
+
+            //
             // etag
             if (propertyName.IsEqual(JsonFields.Etag) &&
                 reader.Read())
@@ -115,16 +125,6 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
             }
 
             //
-            // created
-            if (propertyName.IsEqual(JsonFields.Created) &&
-                reader.Read())
-            {
-                kv.Created = DateTimeOffset.FromUnixTimeSeconds(reader.GetInt64());
-
-                return;
-            }
-
-            //
             // tags
             if (propertyName.IsEqual(JsonFields.Tags) &&
                 reader.Read())
@@ -145,21 +145,21 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
             }
 
             //
-            // deleted
-            if (propertyName.IsEqual(JsonFields.Deleted) &&
+            // rev_ttl
+            if (propertyName.IsEqual(JsonFields.RevisionTTL) &&
                 reader.Read())
             {
-                kv.Deleted = DateTimeOffset.FromUnixTimeSeconds(reader.GetInt64());
+                kv.RevisionTTL = TimeSpan.FromSeconds(reader.GetInt64());
 
                 return;
             }
 
             //
-            // revision_ttl
-            if (propertyName.IsEqual(JsonFields.RevisionTTL) &&
+            // deleted
+            if (propertyName.IsEqual(JsonFields.Deleted) &&
                 reader.Read())
             {
-                kv.RevisionTTL = TimeSpan.FromSeconds(reader.GetInt64());
+                kv.Deleted = DateTimeOffset.FromUnixTimeSeconds(reader.GetInt64());
 
                 return;
             }

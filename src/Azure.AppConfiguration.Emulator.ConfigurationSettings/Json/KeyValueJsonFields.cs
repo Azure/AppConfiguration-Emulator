@@ -16,10 +16,10 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
         public static readonly JsonEncodedText Label = JsonEncodedText.Encode("label");
         public static readonly JsonEncodedText ContentType = JsonEncodedText.Encode("content_type");
         public static readonly JsonEncodedText Value = JsonEncodedText.Encode("value");
-        public static readonly JsonEncodedText Created = JsonEncodedText.Encode("created");
+        public static readonly JsonEncodedText Timestamp = JsonEncodedText.Encode("ts");
         public static readonly JsonEncodedText Tags = JsonEncodedText.Encode("tags");
         public static readonly JsonEncodedText Locked = JsonEncodedText.Encode("locked");
         public static readonly JsonEncodedText Deleted = JsonEncodedText.Encode("deleted");
-        public static readonly JsonEncodedText RevisionTTL = JsonEncodedText.Encode("revision_ttl");
+        public static readonly JsonEncodedText RevisionTTL = JsonEncodedText.Encode("rev_ttl");
     }
 }

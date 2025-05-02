@@ -18,8 +18,6 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
 
         public string SnapshotName { get; set; }
 
-        public Range? Range { get; set; }
-
         public DateTimeOffset? TimeGate { get; set; }
     }
 }

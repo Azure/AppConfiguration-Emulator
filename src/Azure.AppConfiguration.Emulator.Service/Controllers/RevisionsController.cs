@@ -38,7 +38,6 @@ namespace Azure.AppConfiguration.Emulator.Service
         [HttpGet]
         [HttpHead]
         [TimeGateFilter]
-        [RangeFilter]
         [PaginationFilter]
         [AllowVersionedParameter(name: "tags", minApiVersion: ApiVersions.V23_11)]
         public async Task<IEnumerable<KeyValue>> Get(
@@ -48,9 +47,10 @@ namespace Azure.AppConfiguration.Emulator.Service
             [Tags]
             IEnumerable<KeyValuePair<string, string>> tags,
 
+            [FromQuery]
             string after,
+
             [IgnoreBinding(nameof(TimeGateFilter))] DateTimeOffset? timeGate,
-            [IgnoreBinding(nameof(RangeFilter))] Range range,
             CancellationToken cancellationToken)
         {
             return await _provider.QueryRevisions(
@@ -60,7 +60,6 @@ namespace Azure.AppConfiguration.Emulator.Service
                     LabelFilter = SearchQuery.CreateStringFilter(label),
                     Tags = tags,
                     ContinuationToken = after,
-                    Range = range,
                     TimeGate = timeGate
                 },
                 cancellationToken);

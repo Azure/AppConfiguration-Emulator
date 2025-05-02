@@ -7,11 +7,9 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
 {
     public class LabelSearchOptions
     {
-        public string Label { get; set; }
+        public StringFilter LabelFilter { get; set; }
 
         public string ContinuationToken { get; set; }
-
-        public Range Range { get; set; }
 
         public DateTimeOffset? TimeGate { get; set; }
     }

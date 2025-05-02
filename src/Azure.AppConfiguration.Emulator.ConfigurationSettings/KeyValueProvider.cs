@@ -76,26 +76,14 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
 
             using var dispose = _lock.ReadLock(cancellationToken);
 
-            IEnumerable<KeyValue> items = QueryKeyValues(options)
-                .Take(_tenant.OutputPageSize)
-                .ToList();
+            IEnumerable<KeyValue> items = QueryKeyValues(options);
 
-            Page<KeyValue> page;
-
-            if (options.Range != null)
-            {
-                page = items.TakeRange(options.Range.Value);
-            }
-            else
-            {
-                page = new Page<KeyValue>(items);
-            }
+            Page<KeyValue> page = new(items);
 
             //
             // Pagination
             if (page.Count() > 0 &&
-                (items.Count() >= _tenant.OutputPageSize ||  // Full page reached, may have more 
-                 page.Last().Etag != items.Last().Etag))     // Range doesn't reach end of page
+                items.Count() >= _tenant.OutputPageSize)
             {
                 KeyValue last = page.Last();
 
@@ -114,12 +102,12 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
             string label,
             CancellationToken cancellationToken)
         {
-            await EnsureInit();
-
             if (string.IsNullOrEmpty(key))
             {
                 throw new ArgumentNullException(nameof(key));
             }
+
+            await EnsureInit();
 
             using var dispose = _lock.ReadLock(cancellationToken);
 
@@ -215,7 +203,34 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
         {
             await EnsureInit();
 
-            throw new NotImplementedException();
+            using var dispose = _lock.ReadLock(cancellationToken);
+
+            IEnumerable<KeyValue> items = QueryKeyValues(
+                new KeyValueSearchOptions
+                {
+                    KeyFilter = options.KeyFilter,
+                    TimeGate = options.TimeGate,
+                    ContinuationToken = options.ContinuationToken
+                });
+
+            Page<Key> page = new(items.Select(
+                x => new Key
+                {
+                    Name = x.Key
+                })
+                .DistinctBy(x => x.Name));
+
+            //
+            // Pagination
+            if (page.Count() > 0 &&
+                items.Count() >= _tenant.OutputPageSize)
+            {
+                KeyValue last = items.Last();
+
+                page.ContinuationToken = $"{last.Key}\n{last.Label}";
+            }
+
+            return page;
         }
 
         public async ValueTask<Page<Label>> QueryLabels(
@@ -224,7 +239,34 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
         {
             await EnsureInit();
 
-            throw new NotImplementedException();
+            using var dispose = _lock.ReadLock(cancellationToken);
+
+            IEnumerable<KeyValue> items = QueryKeyValues(
+                new KeyValueSearchOptions
+                {
+                    LabelFilter = options.LabelFilter,
+                    TimeGate = options.TimeGate,
+                    ContinuationToken = options.ContinuationToken
+                });
+
+            Page<Label> page = new(items.Select(
+                x => new Label
+                {
+                    Name = x.Label
+                })
+                .DistinctBy(x => x.Name));
+
+            //
+            // Pagination
+            if (page.Count() > 0 &&
+                items.Count() >= _tenant.OutputPageSize)
+            {
+                KeyValue last = items.Last();
+
+                page.ContinuationToken = $"{last.Key}\n{last.Label}";
+            }
+
+            return page;
         }
 
         public async Task<Page<KeyValue>> QueryRevisions(
@@ -233,7 +275,26 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
         {
             await EnsureInit();
 
-            throw new NotImplementedException();
+            using var dispose = _lock.ReadLock(cancellationToken);
+
+            IEnumerable<(KeyValue item, int pos)> items = QueryRevisions(options);
+
+            Page<KeyValue> page = new(items.Select(x => x.item));
+
+            //
+            // Pagination
+            if (items.Count() >= _tenant.OutputPageSize)   // Full page reached, may have more 
+            {
+                var last = items.Last();
+
+                page.ContinuationToken = $"{last.item.Key}\n{last.item.Label}\n{last.pos}";
+            }
+
+            //
+            // Set page Etag
+            page.Etag = KvHelper.ComputeEtag(page);
+
+            return page;
         }
 
         public Task StartAsync(CancellationToken stoppingToken)
@@ -326,59 +387,198 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
 
             //
             // Try the indexed query first.
-            // Then sequential evaluation
-            return IndexSearch(options)
-                .Where(x =>
-                    options.KeyFilter.Match(x.Key) &&
-                    options.LabelFilter.Match(x.Label))
-                .Select(x =>
-                    x.Items.FirstOrDefault(x =>
-                        MatchTimeGate(x, options.TimeGate) &&
-                        MatchTags(x, options.Tags)))
+            IEnumerable<KvIndex> items = IndexLookup(options);
+
+            //
+            // Filter continuation.
+            if (TryParseContinuationToken(
+                options.ContinuationToken,
+                out string continuationKey,
+                out string continuationLabel,
+                out var _))
+            {
+                items = items.Where(x =>
+                    EqualComparer.Compare(
+                        x,
+                        new KvIndex
+                        {
+                            Key = continuationKey,
+                            Label = continuationLabel
+                        }) > 0);
+            }
+
+            //
+            // Do sequential evaluation
+            return items.Select(x =>
+                x.Items.FirstOrDefault(x =>
+                    MatchTimeGate(x, options.TimeGate) &&
+                    MatchTags(x, options.Tags)))
                 .Where(x =>
                     x != null &&
-                    x.Deleted == null);
+                    x.Deleted == null)
+                .Take(_tenant.OutputPageSize)
+                .ToList();
         }
 
-        private IEnumerable<KvIndex> IndexSearch(KeyValueSearchOptions options)
+        private IEnumerable<(KeyValue, int)> QueryRevisions(KeyValueSearchOptions options)
+        {
+            Debug.Assert(options != null);
+
+            List<(KeyValue item, int pos)> result = new();
+
+            //
+            // Try the indexed query.
+            IEnumerable<KvIndex> items = IndexLookup(options);
+
+            //
+            // Filter continuation.
+            if (TryParseContinuationToken(
+                options.ContinuationToken,
+                out string continuationKey,
+                out string continuationLabel,
+                out int continuationIndex))
+            {
+                items = items.Where(x =>
+                    EqualComparer.Compare(
+                        x,
+                        new KvIndex
+                        {
+                            Key = continuationKey,
+                            Label = continuationLabel
+                        }) >= 0);
+            }
+
+            //
+            // Do sequential evaluation
+            foreach (KvIndex kvIndex in items)
+            {
+                int i = 0;
+
+                if (kvIndex.Key == continuationKey &&
+                    kvIndex.Label == continuationLabel)
+                {
+                    i = continuationIndex + 1;
+                }
+
+                for (i = continuationIndex; i < kvIndex.Items.Count; ++i)
+                {
+                    KeyValue kv = kvIndex.Items[i];
+
+                    if (kv.Deleted == null &&
+                        MatchTimeGate(kv, options.TimeGate) &&
+                        MatchTags(kv, options.Tags))
+                    {
+                        //
+                        // Check if expired
+                        KeyValue last = result.LastOrDefault().item;
+
+                        if (last != null &&
+                            last.Key == kv.Key &&
+                            last.Label == kv.Label &&
+                            kv.Timestamp.Add(kv.RevisionTTL) < DateTimeOffset.UtcNow)
+                        {
+                            break;
+                        }
+
+                        result.Add((kv, i));
+                    }
+                }
+
+                //
+                // End of page
+                if (result.Count >= _tenant.OutputPageSize)
+                {
+                    break;
+                }
+            }
+
+            return result;
+        }
+
+        private IEnumerable<KvIndex> IndexLookup(KeyValueSearchOptions options)
         {
             Debug.Assert(options != null);
 
             IComparer<KvIndex> comparer = GetComparer(options.KeyFilter, options.LabelFilter);
 
-            IEnumerable<KvIndex> items = Enumerable.Empty<KvIndex>();
+            IEnumerable<KvIndex> items = _cache;
 
-            IEnumerable<string> keys = options.KeyFilter.AnyOf ?? [options.KeyFilter.EqualsTo ?? options.KeyFilter.Prefix];
+            //
+            // Calculate continuation offset (if any)
+            int continuationOffset = 0;
 
-            foreach (string key in keys.OrderBy(x => x))
+            if (TryParseContinuationToken(
+                options.ContinuationToken,
+                out string continuationKey,
+                out string continuationLabel,
+                out _))
             {
                 int i = _cache.BinarySearch(
-                    new KvIndex()
+                    new KvIndex
                     {
-                        Key = key,
-                        Label = options.LabelFilter.EqualsTo ?? options.LabelFilter.Prefix
+                        Key = continuationKey,
+                        Label = continuationLabel
                     },
-                    comparer);
+                    EqualComparer);
 
                 if (i < 0)
                 {
                     i = ~i;
-                }
 
-                items = items.Concat(
-                    _cache
-                        .Skip(i)
-                        .TakeWhile(x => options.KeyFilter.Match(x.Key)));
+                    continuationOffset = i;
+                }
             }
 
-            return items;
+            //
+            // Apply filter
+            if (!options.KeyFilter.IsEmpty)
+            {
+                IEnumerable<string> keys = options.KeyFilter.AnyOf ?? [options.KeyFilter.EqualsTo ?? options.KeyFilter.Prefix];
+
+                if (keys.Any())
+                {
+                    items = Enumerable.Empty<KvIndex>();
+
+                    foreach (string k in keys.OrderBy(x => x))
+                    {
+                        int i = _cache.BinarySearch(
+                            continuationOffset,
+                            _cache.Count - continuationOffset,
+                            new KvIndex
+                            {
+                                Key = k,
+                                Label = options.LabelFilter.EqualsTo ?? options.LabelFilter.Prefix
+                            },
+                            comparer);
+
+                        if (i < 0)
+                        {
+                            i = ~i;
+                        }
+
+                        items = items.Concat(
+                            _cache
+                                .Skip(i)
+                                .TakeWhile(x => options.KeyFilter.Match(x.Key)));
+                    }
+                }
+            }
+            else
+            {
+                items = items.Skip(continuationOffset);
+            }
+
+            return items
+                    .Where(x =>
+                        options.KeyFilter.Match(x.Key) &&
+                        options.LabelFilter.Match(x.Label));
         }
 
         private static bool MatchTimeGate(KeyValue kv, DateTimeOffset? timeGate)
         {
             return
                 timeGate == null ||
-                timeGate.Value > kv.Created;
+                timeGate.Value > kv.Timestamp;
         }
 
         private static bool MatchTags(
@@ -453,7 +653,7 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
             //
             // Update the intrinsic entry markers
             kv.Etag = KvHelper.GenerateEtag();
-            kv.Created = DateTimeOffset.UtcNow;
+            kv.Timestamp = DateTimeOffset.UtcNow;
             kv.RevisionTTL = _tenant.ConfigurationSettingRetentionPeriod;
 
             //
@@ -497,6 +697,41 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
             kv.Label = kvref.Label;
 
             kvref.Items.Insert(0, kv);
+        }
+
+        private static bool TryParseContinuationToken(
+            string token,
+            out string key,
+            out string label,
+            out int pos)
+        {
+            key = label = null;
+            pos = 0;
+
+            if (string.IsNullOrEmpty(token))
+            {
+                return false;
+            }
+
+            string[] args = token.Split('\n', 3, StringSplitOptions.RemoveEmptyEntries);
+
+            if (args.Length < 2)
+            {
+                return false;
+            }
+
+            key = args[0];
+            label = args[1];
+
+            if (args.Length > 2)
+            {
+                if (!int.TryParse(args[2], out pos))
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
     }
 }
