@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
 {
-    public class ReaderWriterLockAsync
+    public class ReaderWriterLockAsync : IDisposable
     {
         private readonly SemaphoreSlim _lock = new(1, 1);
 
@@ -23,6 +23,11 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
             {
                 _disposeAction();
             }
+        }
+
+        public void Dispose()
+        {
+            _lock.Dispose();
         }
 
         public async Task<IDisposable> ReadLock(CancellationToken cancellationToken)

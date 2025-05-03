@@ -63,9 +63,14 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
 
         public void Dispose()
         {
-            _cts.Cancel();
+            if (!_cts.IsCancellationRequested)
+            {
+                _cts.Cancel();
+            }
 
             _cts.Dispose();
+
+            _lock.Dispose();
         }
 
         public async ValueTask<Page<KeyValue>> QueryKeyValues(
