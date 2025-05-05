@@ -27,6 +27,7 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
         private ReaderWriterLockAsync _lock = new();
         private List<KvIndex> _cache = null;
         private int _init;
+        private bool _disposed;
 
         private static readonly IComparer<KvIndex> EqualComparer = Comparer<KvIndex>.Create(
             (a, b) =>
@@ -63,14 +64,21 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
 
         public void Dispose()
         {
-            if (!_cts.IsCancellationRequested)
+            //
+            // Dispose can be invoked multiple times
+            // Because it can be used  as DI service, as well as HostedService
+            if (_disposed)
             {
-                _cts.Cancel();
+                return;
             }
+
+            _cts.Cancel();
 
             _cts.Dispose();
 
             _lock.Dispose();
+
+            _disposed = true;
         }
 
         public async ValueTask<Page<KeyValue>> QueryKeyValues(
@@ -325,6 +333,8 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
 
         public Task StopAsync(CancellationToken cancellationToken)
         {
+            //
+            // Cancel any background activities before existing.
             _cts.Cancel();
 
             return Task.CompletedTask;
@@ -366,7 +376,7 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
             catch
             {
                 //
-                // Failed, unlock
+                // Failed, unlock. Allowed to retry later.
                 Interlocked.Exchange(ref _init, 0);
 
                 throw;

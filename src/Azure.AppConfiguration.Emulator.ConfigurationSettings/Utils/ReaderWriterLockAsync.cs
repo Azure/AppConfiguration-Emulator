@@ -1,56 +1,72 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
 {
-    public class ReaderWriterLockAsync : IDisposable
+    public sealed class ReaderWriterLockAsync : IDisposable
     {
-        private readonly SemaphoreSlim _lock = new(1, 1);
-
+        private readonly SemaphoreSlim _semaphore = new(1, 1);
+        private readonly ReaderWriterLockSlim _lock = new();
         private long _readers = 0;
 
-        private struct DisposableLock : IDisposable
+        private readonly struct DisposableLock(Action action) : IDisposable
         {
-            private readonly Action _disposeAction;
-
-            public DisposableLock(Action action)
-            {
-                _disposeAction = action ?? throw new ArgumentNullException();
-            }
-
             public void Dispose()
             {
-                _disposeAction();
+                Debug.Assert(action != null);
+
+                action();
             }
         }
 
         public void Dispose()
         {
             _lock.Dispose();
+
+            _semaphore.Dispose();
         }
 
         public async Task<IDisposable> ReadLock(CancellationToken cancellationToken)
         {
-            if (Interlocked.Increment(ref _readers) == 0)
+            _lock.EnterReadLock();
+
+            try
             {
-                await _lock.WaitAsync(cancellationToken);
+                if (Interlocked.Increment(ref _readers) == 1)
+                {
+                    await _semaphore.WaitAsync(cancellationToken);
+                }
+            }
+            finally
+            {
+                _lock.ExitReadLock();
             }
 
             return new DisposableLock(() =>
             {
                 if (Interlocked.Decrement(ref _readers) == 0)
                 {
-                    _lock.Release();
+                    _semaphore.Release();
                 }
             });
         }
 
         public async Task<IDisposable> WriteLock(CancellationToken cancellationToken)
         {
-            await _lock.WaitAsync(cancellationToken);
+            _lock.EnterWriteLock();
 
-            return new DisposableLock(() => _lock.Release());
+            try
+            {
+                await _semaphore.WaitAsync(cancellationToken);
+            }
+            finally
+            {
+                _lock.ExitWriteLock();
+            }
+
+            return new DisposableLock(() => _semaphore.Release());
         }
     }
 }
