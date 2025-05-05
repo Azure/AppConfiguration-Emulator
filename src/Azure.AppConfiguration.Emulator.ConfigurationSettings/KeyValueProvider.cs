@@ -298,9 +298,9 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
             // Pagination
             if (items.Count() >= _tenant.OutputPageSize)   // Full page reached, may have more 
             {
-                var last = items.Last();
+                var (last, pos) = items.Last();
 
-                page.ContinuationToken = $"{last.item.Key}\n{last.item.Label}\n{last.pos}";
+                page.ContinuationToken = $"{last.Key}\n{last.Label}\n{pos}";
             }
 
             //

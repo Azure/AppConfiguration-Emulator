@@ -11,7 +11,7 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
         private readonly ReaderWriterLockSlim _lock = new();
         private long _readers = 0;
 
-        private readonly struct DisposableLock(Action action) : IDisposable
+        private readonly struct Disposable(Action action) : IDisposable
         {
             public void Dispose()
             {
@@ -44,7 +44,7 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
                 _lock.ExitReadLock();
             }
 
-            return new DisposableLock(() =>
+            return new Disposable(() =>
             {
                 if (Interlocked.Decrement(ref _readers) == 0)
                 {
@@ -66,7 +66,7 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
                 _lock.ExitWriteLock();
             }
 
-            return new DisposableLock(() => _semaphore.Release());
+            return new Disposable(() => _semaphore.Release());
         }
     }
 }
