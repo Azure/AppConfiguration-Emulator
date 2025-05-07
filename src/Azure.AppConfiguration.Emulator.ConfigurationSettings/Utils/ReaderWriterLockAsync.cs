@@ -7,8 +7,8 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
 {
     public sealed class ReaderWriterLockAsync : IDisposable
     {
-        private readonly SemaphoreSlim _semaphore = new(1, 1);
-        private readonly ReaderWriterLockSlim _lock = new();
+        private readonly SemaphoreSlim _writerLock = new(1, 1);
+        private readonly SemaphoreSlim _readerLock = new(1, 1);
         private long _readers = 0;
 
         private readonly struct Disposable(Action action) : IDisposable
@@ -23,50 +23,55 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
 
         public void Dispose()
         {
-            _lock.Dispose();
-
-            _semaphore.Dispose();
+            _readerLock.Dispose();
+            _writerLock.Dispose();
         }
 
-        public async Task<IDisposable> ReadLock(CancellationToken cancellationToken)
+        public async ValueTask<IDisposable> ReadLock(CancellationToken cancellationToken)
         {
-            _lock.EnterReadLock();
+            await _readerLock.WaitAsync(cancellationToken);
 
             try
             {
                 if (Interlocked.Increment(ref _readers) == 1)
                 {
-                    await _semaphore.WaitAsync(cancellationToken);
+                    await _writerLock.WaitAsync(cancellationToken);
                 }
             }
             finally
             {
-                _lock.ExitReadLock();
+                _readerLock.Release();
             }
 
             return new Disposable(() =>
             {
                 if (Interlocked.Decrement(ref _readers) == 0)
                 {
-                    _semaphore.Release();
+                    _writerLock.Release();
                 }
             });
         }
 
-        public async Task<IDisposable> WriteLock(CancellationToken cancellationToken)
+        public async ValueTask<IDisposable> WriteLock(CancellationToken cancellationToken)
         {
-            _lock.EnterWriteLock();
+            await _readerLock.WaitAsync(cancellationToken);
 
             try
             {
-                await _semaphore.WaitAsync(cancellationToken);
+                await _writerLock.WaitAsync(cancellationToken);
             }
-            finally
+            catch
             {
-                _lock.ExitWriteLock();
+                _readerLock.Release();
+
+                throw;
             }
 
-            return new Disposable(() => _semaphore.Release());
+            return new Disposable(() =>
+            {
+                _writerLock.Release();
+                _readerLock.Release();
+            });
         }
     }
 }

@@ -69,23 +69,53 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
                 _options.ReadBufferSizeHint,
                 _options.MaxReadBufferSize);
 
-            await foreach (KeyValue kv in reader.ReadItems(cancellationToken))
+            using CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+
+            cts.CancelAfter(_options.ReadTimeout);
+
+            await using IAsyncEnumerator<KeyValue> enumerator = reader
+                .ReadItems(cts.Token)
+                .GetAsyncEnumerator();
+
+            KeyValue current = null;
+
+            while (true)
             {
-                yield return kv;
+                try
+                {
+                    if (!await enumerator.MoveNextAsync(cts.Token))
+                    {
+                        yield break;
+                    }
+
+                    current = enumerator.Current;
+                }
+                catch (OperationCanceledException e) when (!cancellationToken.IsCancellationRequested)
+                {
+                    throw new TimeoutException("QueryKeyValues", e);
+                }
+
+                yield return current;
             }
         }
 
-        public async Task AppendKeyValue(KeyValue kv, CancellationToken cancellationToken)
+        public async Task AppendKeyValue(
+            KeyValue kv,
+            CancellationToken cancellationToken)
         {
             if (kv == null)
             {
                 throw new ArgumentNullException(nameof(kv));
             }
 
+            using CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+
+            cts.CancelAfter(_options.WriteTimeout);
+
             //
-            // Open the file tp append
+            // Open the file to append
             using var fs = new FileStream(
-                _options.FilePath,
+                _filePath,
                 FileMode.Append,
                 FileAccess.Write,
                 FileShare.Read,
@@ -102,10 +132,94 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
 
             json.WriteKeyValue(kv);
 
+            try
+            {
+                await json.FlushAsync(cts.Token);
+                await fs.FlushAsync(cts.Token);
+            }
+            catch (OperationCanceledException e) when (!cancellationToken.IsCancellationRequested)
+            {
+                throw new TimeoutException("AppendKeyValue", e);
+            }
+        }
+
+        public async Task Save(
+            IEnumerable<KeyValue> keyValues,
+            CancellationToken cancellationToken)
+        {
+            if (keyValues == null)
+            {
+                throw new ArgumentNullException(nameof(keyValues));
+            }
+
             //
-            // Flush
-            await json.FlushAsync(cancellationToken);
-            await fs.FlushAsync(cancellationToken);
+            // Use a temporary file
+            string tempFilePath = $"{_filePath}.tmp";
+
+            try
+            {
+                using var fs = new FileStream(
+                    tempFilePath,
+                    FileMode.Create,
+                    FileAccess.Write,
+                    FileShare.None,
+                    _options.WriteBufferSize);
+
+                using CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+
+                cts.CancelAfter(_options.WriteTimeout);
+
+                //
+                // Write the payload
+                foreach (KeyValue kv in keyValues)
+                {
+                    if (fs.Position > 0)
+                    {
+                        fs.WriteDelimiter();
+                    }
+
+                    using var json = new Utf8JsonWriter(fs);
+
+                    json.WriteKeyValue(kv);
+
+                    await json.FlushAsync(cts.Token);
+                }
+
+                await fs.FlushAsync(cts.Token);
+            }
+            catch (OperationCanceledException e) when (!cancellationToken.IsCancellationRequested)
+            {
+                throw new TimeoutException("Save", e);
+            }
+
+            //
+            // Replace the original file with the temporary file
+            if (File.Exists(_filePath))
+            {
+                string bacFilePath = $"{_filePath}.bac";
+
+                File.Replace(tempFilePath, _filePath, bacFilePath);
+
+                //
+                // Clean up the bak file
+                if (File.Exists(bacFilePath))
+                {
+                    File.Delete(bacFilePath);
+                }
+            }
+            else
+            {
+                //
+                // Rename the temporary file to the original file
+                File.Move(tempFilePath, _filePath);
+            }
+
+            //
+            // Clean up the temporary file
+            if (File.Exists(tempFilePath))
+            {
+                File.Delete(tempFilePath);
+            }
         }
 
         private static void InsureFileExist(string filePath)
@@ -153,6 +267,16 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
             if (options.MaxReadBufferSize <= 0)
             {
                 throw new ArgumentOutOfRangeException(nameof(options.MaxReadBufferSize));
+            }
+
+            if (options.ReadTimeout <= TimeSpan.Zero)
+            {
+                throw new ArgumentOutOfRangeException(nameof(options.ReadTimeout));
+            }
+
+            if (options.WriteTimeout <= TimeSpan.Zero)
+            {
+                throw new ArgumentOutOfRangeException(nameof(options.WriteTimeout));
             }
         }
     }

@@ -21,6 +21,9 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
         IHostedService,
         IDisposable
     {
+        private static readonly TimeSpan CacheScanFrequence = TimeSpan.FromMinutes(60);
+        private const int MinCoalescingItems = 100;
+
         private readonly IKeyValueStorage _storage;
         private readonly TenantOptions _tenant;
         private readonly CancellationTokenSource _cts = new CancellationTokenSource();
@@ -28,6 +31,8 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
         private List<KvIndex> _cache = null;
         private int _init;
         private bool _disposed;
+        private long _scanTicks = 0;
+        private bool _coalesceItems;
 
         private static readonly IComparer<KvIndex> EqualComparer = Comparer<KvIndex>.Create(
             (a, b) =>
@@ -45,11 +50,11 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
         private static readonly IComparer<KvIndex> KeyComparer = Comparer<KvIndex>.Create(
             (a, b) => string.Compare(a.Key, b.Key, StringComparison.Ordinal));
 
-        struct KvIndex
+        private struct KvIndex
         {
-            public string Key { get; set; }
+            public string Key { get; init; }
 
-            public string Label { get; set; }
+            public string Label { get; init; }
 
             public IList<KeyValue> Items { get; set; }
         }
@@ -66,7 +71,7 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
         {
             //
             // Dispose can be invoked multiple times
-            // Because it can be used  as DI service, as well as HostedService
+            // Because it can be used as DI service, as well as HostedService
             if (_disposed)
             {
                 return;
@@ -87,7 +92,7 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
         {
             await EnsureInit();
 
-            using var dispose = _lock.ReadLock(cancellationToken);
+            using var dispose = await _lock.ReadLock(cancellationToken);
 
             IEnumerable<KeyValue> items = QueryKeyValues(options);
 
@@ -122,7 +127,7 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
 
             await EnsureInit();
 
-            using var dispose = _lock.ReadLock(cancellationToken);
+            using var dispose = await _lock.ReadLock(cancellationToken);
 
             KeyValue result = null;
 
@@ -216,7 +221,7 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
         {
             await EnsureInit();
 
-            using var dispose = _lock.ReadLock(cancellationToken);
+            using var dispose = await _lock.ReadLock(cancellationToken);
 
             IEnumerable<KeyValue> items = QueryKeyValues(
                 new KeyValueSearchOptions
@@ -252,7 +257,7 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
         {
             await EnsureInit();
 
-            using var dispose = _lock.ReadLock(cancellationToken);
+            using var dispose = await _lock.ReadLock(cancellationToken);
 
             IEnumerable<KeyValue> items = QueryKeyValues(
                 new KeyValueSearchOptions
@@ -288,7 +293,7 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
         {
             await EnsureInit();
 
-            using var dispose = _lock.ReadLock(cancellationToken);
+            using var dispose = await _lock.ReadLock(cancellationToken);
 
             IEnumerable<(KeyValue item, int pos)> items = QueryRevisions(options);
 
@@ -362,6 +367,19 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
 
             if (_init > 1)
             {
+                //
+                // Scan the cache
+                long ticks = Interlocked.Read(ref _scanTicks);
+
+                if (ticks < DateTimeOffset.UtcNow.Ticks &&
+                    Interlocked.CompareExchange(
+                        ref _scanTicks,
+                        DateTimeOffset.UtcNow.Add(CacheScanFrequence).Ticks,
+                        ticks) == ticks)
+                {
+                    _ = ScanCacheExpired(_cts.Token);
+                }
+
                 return;
             }
 
@@ -636,17 +654,17 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
         {
             Debug.Assert(kv != null);
 
-            var kvref = new KvIndex
-            {
-                Key = kv.Key,
-                Label = kv.Label
-            };
-
             using IDisposable writeLock = await _lock.WriteLock(cancellationToken);
 
             //
             // Check for race condition
-            int i = _cache.BinarySearch(kvref, EqualComparer);
+            int i = _cache.BinarySearch(
+                new KvIndex
+                {
+                    Key = kv.Key,
+                    Label = kv.Label
+                },
+                EqualComparer);
 
             KeyValue existing = null;
 
@@ -747,6 +765,91 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
             }
 
             return true;
+        }
+
+        private async Task ScanCacheExpired(CancellationToken cancellationToken)
+        {
+            Debug.Assert(_cache != null);
+
+            try
+            {
+                if (!_coalesceItems &&
+                    await GetExpiredItemsCount(cancellationToken) > MinCoalescingItems)
+                {
+                    _coalesceItems = true;
+                }
+
+                if (!_coalesceItems)
+                {
+                    return;
+                }
+
+                await RemoveExpiredItems(cancellationToken);
+
+                _coalesceItems = false;
+            }
+            catch (TimeoutException)
+            {
+                //
+                // Ignore timeout
+                return;
+            }
+            catch
+            {
+                //
+                // Pull up the scan if failed
+                _scanTicks = DateTimeOffset.UtcNow.AddSeconds(60).Ticks;
+
+                throw;
+            }
+        }
+
+        private async ValueTask<int> GetExpiredItemsCount(CancellationToken cancellationToken)
+        {
+            using var dispose = await _lock.ReadLock(cancellationToken);
+
+            int expiredItems = 0;
+
+            foreach (KvIndex kv in _cache)
+            {
+                for (int i = kv.Items.Count - 1; i > 0; --i)
+                {
+                    KeyValue item = kv.Items[i];
+
+                    if (item.Timestamp.Add(item.RevisionTTL) < DateTimeOffset.UtcNow)
+                    {
+                        ++expiredItems;
+                    }
+                }
+            }
+
+            return expiredItems;
+        }
+
+        private async Task RemoveExpiredItems(CancellationToken cancellationToken)
+        {
+            using var dispose = await _lock.WriteLock(cancellationToken);
+
+            //
+            // Update the cache
+            foreach (KvIndex kv in _cache)
+            {
+                for (int i = kv.Items.Count - 1; i > 0; --i)
+                {
+                    KeyValue item = kv.Items[i];
+
+                    if (item.Timestamp.Add(item.RevisionTTL) < DateTimeOffset.UtcNow)
+                    {
+                        kv.Items.RemoveAt(i);
+                    }
+                }
+            }
+
+            //
+            // Persist the changes
+            await _storage.Save(
+                _cache.SelectMany(x => x.Items.Reverse()),
+                cancellationToken);
         }
     }
 }
