@@ -13,6 +13,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.HttpLogging;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
@@ -82,6 +83,9 @@ namespace Azure.AppConfiguration.Emulator.Integration
             services.TryAddSingleton<IKeyValueProvider>(sp => sp.GetRequiredService<KeyValueProvider>());
             services.TryAddSingleton<IKeyProvider>(sp => sp.GetRequiredService<KeyValueProvider>());
             services.TryAddSingleton<ILabelProvider>(sp => sp.GetRequiredService<KeyValueProvider>());
+            services.TryAddSingleton<IRevisionProvider>(sp => sp.GetRequiredService<KeyValueProvider>());
+
+            services.AddHostedService(sp => sp.GetRequiredService<KeyValueProvider>());
 
             return services;
         }
@@ -91,14 +95,16 @@ namespace Azure.AppConfiguration.Emulator.Integration
             //
             // Middlewares instead of MVC filters because we can get here before MVC pipeline starts
             return services
-                .UseMiddleware<InternalServerErrorMiddleware>()
                 .UseMiddleware<ServiceUnavailableMiddleware>()
-                .UseMiddleware<RequestAbortedMiddleware>();
+                .UseMiddleware<RequestAbortedMiddleware>()
+                .UseMiddleware<ConflictMiddleware>();
         }
 
         public static IApplicationBuilder UseDiagnostics(this IApplicationBuilder services)
         {
-            return services.UseMiddleware<DiagnosticsMiddleware>();
+            return services
+                .UseMiddleware<DiagnosticsMiddleware>()
+                .UseHttpLogging();
         }
 
         public static IHttpClientBuilder AddHttpClientFactory(this IServiceCollection services)

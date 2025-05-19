@@ -37,21 +37,20 @@ namespace Azure.AppConfiguration.Emulator.Service
         [HttpHead]
         [TimeGateFilter]
         [PaginationFilter]
-        public Task<IEnumerable<Label>> Get(
+        public async Task<IEnumerable<Label>> Get(
             [FromQuery] string name,
             string after,
             [IgnoreBinding(nameof(TimeGateFilter))] DateTimeOffset? timeGate,
             CancellationToken cancellationToken)
         {
-            return _provider.Get(
+            return await _provider.QueryLabels(
                 new LabelSearchOptions
                 {
-                    Label = name,
+                    LabelFilter = SearchQuery.CreateStringFilter(name),
                     ContinuationToken = after,
                     TimeGate = timeGate
                 },
-                cancellationToken)
-                .AsTask();
+                cancellationToken);
         }
 
         [HttpPut("{*name}")]

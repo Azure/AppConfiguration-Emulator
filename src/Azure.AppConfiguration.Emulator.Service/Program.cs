@@ -29,7 +29,7 @@ namespace Azure.AppConfiguration.Emulator.Service
                 .ConfigureLogging((hostingContext, logging) =>
                 {
                     logging.ClearProviders();
-                    logging.AddConfiguration(hostingContext.Configuration.GetSection("Logging"));
+                    logging.AddConsole();
                 })
                 .UseStartup<Startup>()
                 .UseKestrel(o =>

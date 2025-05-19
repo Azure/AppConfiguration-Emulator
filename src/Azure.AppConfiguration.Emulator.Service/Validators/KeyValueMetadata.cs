@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-using Microsoft.AppConfig.Service;
 using System.Collections.Generic;
 
 namespace Azure.AppConfiguration.Emulator.Service.Validators

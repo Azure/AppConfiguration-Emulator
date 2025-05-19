@@ -14,8 +14,7 @@ namespace Azure.AppConfiguration.Emulator.Diagnostics
 {
     public class DiagnosticsMiddleware
     {
-        private const string HttpCategory = "Microsoft.AppConfig.Service.HttpLogging";
-        private const string UnobservedTaskExceptionCategory = "Microsoft.AppConfig.Service.UnobservedTaskException";
+        private const string UnobservedTaskExceptionCategory = "Azure.AppConfiguration.Emulator.UnobservedTaskException";
 
         struct HttpActivityContext
         {
@@ -27,7 +26,6 @@ namespace Azure.AppConfiguration.Emulator.Diagnostics
         private readonly RequestDelegate _next;
         private readonly TenantOptions _tenant;
         private readonly HttpLoggingOptions _httpOptions;
-        private readonly ILogger _httpLogger;
         private readonly ILogger _unobservedTaskLogger;
 
         public DiagnosticsMiddleware(
@@ -41,8 +39,6 @@ namespace Azure.AppConfiguration.Emulator.Diagnostics
 
             ValidateHttpOptions(httpOptions?.Value);
             _httpOptions = httpOptions.Value;
-
-            _httpLogger = loggerFactory?.CreateLogger(HttpCategory) ?? throw new ArgumentNullException(nameof(loggerFactory));
 
             _unobservedTaskLogger = loggerFactory?.CreateLogger(UnobservedTaskExceptionCategory) ?? throw new ArgumentNullException(nameof(loggerFactory));
 
@@ -100,17 +96,6 @@ namespace Azure.AppConfiguration.Emulator.Diagnostics
                     bytesSent = (int)response.GetBytesSent();
                     response.Body = originStream;
                 }
-
-                //
-                // Logging
-                _httpLogger.LogHttp(
-                    context,
-                    stopwatch.Elapsed,
-                    activity.RequestId,
-                    activity.ClientRequestId,
-                    activity.CorrelationRequestId,
-                    bytesReceived,
-                    bytesSent);
 
                 return Task.CompletedTask;
             });

@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 using System;
+using System.Buffers;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
@@ -13,6 +14,8 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
         private static readonly Encoding Encoding = Encoding.Unicode;
         private static byte[] Delimiter = Encoding.GetBytes("\n");
         private static byte[] Type = Encoding.GetBytes("kvset\n");
+
+        private const int EtagSize = 16; // 128 bits
 
         //
         // IMPORTANT:
@@ -85,6 +88,22 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
             }
 
             return true;
+        }
+
+        public static string GenerateEtag()
+        {
+            byte[] buffer = ArrayPool<byte>.Shared.Rent(EtagSize);
+
+            try
+            {
+                RandomNumberGenerator.Fill(buffer.AsSpan(0, EtagSize));
+
+                return Base64UrlEncoding.Encode(buffer, 0, EtagSize);
+            }
+            finally
+            {
+                ArrayPool<byte>.Shared.Return(buffer);
+            }
         }
     }
 }

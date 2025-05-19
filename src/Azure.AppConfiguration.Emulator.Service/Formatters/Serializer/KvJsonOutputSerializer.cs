@@ -60,9 +60,9 @@ namespace Azure.AppConfiguration.Emulator.Service.Formatters.Serializer
 
             //
             // LastModified
-            if (obj.Created != default)
+            if (obj.Timestamp != default)
             {
-                response.Headers.LastModified = obj.Created.ToString(DateTimeFormatInfo.InvariantInfo.RFC1123Pattern, CultureInfo.InvariantCulture);
+                response.Headers.LastModified = obj.Timestamp.ToString(DateTimeFormatInfo.InvariantInfo.RFC1123Pattern, CultureInfo.InvariantCulture);
             }
         }
     }

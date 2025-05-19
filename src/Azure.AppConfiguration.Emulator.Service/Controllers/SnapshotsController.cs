@@ -24,6 +24,8 @@ using Page = Azure.AppConfiguration.Emulator.ConfigurationSettings.Page<Azure.Ap
 
 namespace Azure.AppConfiguration.Emulator.Service
 {
+#if SNAPSHOTS
+
     [ApiVersion(ApiVersions.V22_11_preview)]
     [ApiVersion(ApiVersions.V23_05_preview)]
     [ApiVersion(ApiVersions.V23_10)]
@@ -52,7 +54,6 @@ namespace Azure.AppConfiguration.Emulator.Service
         [AuthorizationScope(ResourceType = ResourceType.Snapshot)]
         public Task<IEnumerable<Snapshot>> Get(
             [FromQuery]
-            [Name("name")]
             string name,
             [ModelBinder(binderType: typeof(SnapshotStatusSearchBinder))]
             SnapshotStatusSearch status,
@@ -77,7 +78,6 @@ namespace Azure.AppConfiguration.Emulator.Service
         public async Task<Snapshot> GetSnapshot(
             [Required]
             [FromRoute]
-            [Name("name")]
             string name,
             CancellationToken cancellationToken)
         {
@@ -98,7 +98,6 @@ namespace Azure.AppConfiguration.Emulator.Service
         [AuthorizationScope(ResourceType = ResourceType.Snapshot)]
         public async Task<IEnumerable<KeyValue>> GetContent(
             [FromQuery(Name = "snapshot")]
-            [Name("name")]
             string snapshotName,
             string after,
             CancellationToken cancellationToken)
@@ -196,16 +195,9 @@ namespace Azure.AppConfiguration.Emulator.Service
                     });
             }
 
-            try
-            {
-                await _provider.Create(
-                    snapshot,
-                    cancellationToken);
-            }
-            catch (ConflictException)
-            {
-                return new ObjectResult(Problems.AlreadyExists);
-            }
+            await _provider.Create(
+                snapshot,
+                cancellationToken);
 
             var uri = new UriBuilder
             {
@@ -282,10 +274,6 @@ namespace Azure.AppConfiguration.Emulator.Service
                 {
                     return NotFound();
                 }
-                catch (ConflictException e)
-                {
-                    throw new TimeoutException("Conflict", e);
-                }
             }
             else if (updateParameters.Status == SnapshotStatus.Ready)
             {
@@ -308,10 +296,6 @@ namespace Azure.AppConfiguration.Emulator.Service
                 catch (SnapshotNotFoundException)
                 {
                     return NotFound();
-                }
-                catch (ConflictException e)
-                {
-                    throw new TimeoutException("Conflict", e);
                 }
             }
             else
@@ -348,4 +332,5 @@ namespace Azure.AppConfiguration.Emulator.Service
             return new ObjectResult(snapshot.ToOperationStatus());
         }
     }
+#endif
 }

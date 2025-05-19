@@ -85,32 +85,7 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
                 LastModified = DateTimeOffset.UtcNow
             };
 
-            try
-            {
-                await _storage.AddSnapshot(entry, cancellationToken);
-            }
-            catch (ConflictException e)
-            {
-                Snapshot existing = await _storage.GetSnapshot(entry.Id, cancellationToken);
-
-                if (existing == null || !IsExpired(existing))
-                {
-                    throw new ConflictException(e);
-                }
-
-                entry.Etag = existing.Etag;
-
-                try
-                {
-                    await Update(
-                        entry,
-                        cancellationToken);
-                }
-                catch (SnapshotNotFoundException snfe)
-                {
-                    throw new ConflictException(snfe);
-                }
-            }
+            await _storage.AddSnapshot(entry, cancellationToken);
 
             snapshot.Id = entry.Id;
             snapshot.Etag = entry.Etag;
@@ -267,20 +242,13 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
             return Update(snapshot, cancellationToken);
         }
 
-        private async Task Update(Snapshot snapshot, CancellationToken cancellationToken)
+        private Task Update(Snapshot snapshot, CancellationToken cancellationToken)
         {
             Debug.Assert(snapshot != null);
             Debug.Assert(snapshot.Id != null);
             Debug.Assert(!string.IsNullOrEmpty(snapshot.Etag));
 
-            try
-            {
-                await _storage.UpdateSnapshot(snapshot, cancellationToken);
-            }
-            catch (ConflictException e)
-            {
-                throw new ConflictException(e);
-            }
+            return _storage.UpdateSnapshot(snapshot, cancellationToken);
         }
 
         private static void ValidateLabelForComposeByKey(string label)

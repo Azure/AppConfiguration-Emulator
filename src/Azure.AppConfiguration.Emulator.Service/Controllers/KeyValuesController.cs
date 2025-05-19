@@ -47,24 +47,21 @@ namespace Azure.AppConfiguration.Emulator.Service
         [AuthorizationScope(ResourceType = ResourceType.Kv)]
         [AllowVersionedParameter(name: "tags", minApiVersion: ApiVersions.V23_11)]
         public async Task<IEnumerable<KeyValue>> Get(
-            [FromQuery]
-            [Name("key")]
-            string key,
-            [FromQuery]
-            [Name("label")]
-            string label,
+            [FromQuery(Name = "key")]
+            string keyFilter,
+            [FromQuery(Name ="label")]
+            string labelFilter,
             [Tags]
-            [Name("tags")]
             IEnumerable<KeyValuePair<string, string>> tags,
             string after,
             [IgnoreBinding(nameof(TimeGateFilter))] DateTimeOffset? timeGate,
             CancellationToken cancellationToken)
         {
-            return await _provider.Get(
+            return await _provider.QueryKeyValues(
                 new KeyValueSearchOptions
                 {
-                    Key = key,
-                    Label = label,
+                    KeyFilter = SearchQuery.CreateStringFilter(keyFilter),
+                    LabelFilter = SearchQuery.CreateStringFilter(labelFilter),
                     Tags = tags,
                     ContinuationToken = after,
                     TimeGate = timeGate
@@ -81,15 +78,12 @@ namespace Azure.AppConfiguration.Emulator.Service
         [AllowVersionedParameter(name: "tags", minApiVersion: ApiVersions.V24_09_preview)]
         public async Task<KeyValue> GetKeyValue(
             [Required]
-            [Name("key")]
             string key,
 
             [FromQuery]
-            [Name("label")]
             string label,
 
             [Tags]
-            [Name("tags")]
             IEnumerable<KeyValuePair<string, string>> tags,
 
             [IgnoreBinding(nameof(TimeGateFilter))] DateTimeOffset? timeGate,
@@ -99,11 +93,18 @@ namespace Azure.AppConfiguration.Emulator.Service
             //
             // Escape the filters to ensure exact match criteria
             //
-            return (await _provider.Get(
+            return (await _provider.QueryKeyValues(
                 new KeyValueSearchOptions
                 {
-                    Key = SearchQuery.Escape(key),
-                    Label = SearchQuery.Escape(label) ?? SearchQuery.NullString, // If omitted, consider Null label
+                    KeyFilter = new StringFilter
+                    {
+                        EqualsTo = SearchQuery.Escape(key)
+                    },
+
+                    LabelFilter = new StringFilter
+                    {
+                        EqualsTo = SearchQuery.Escape(label)
+                    },
                     Tags = tags,
                     TimeGate = timeGate
                 },
@@ -127,23 +128,36 @@ namespace Azure.AppConfiguration.Emulator.Service
 
             [FromBody]
             [Required]
-            KeyValue kv,
+            KeyValueModel model,
 
             CancellationToken cancellationToken)
         {
-            KeyValue existing = await _provider.Get(
+            KeyValue existing = await _provider.GetKeyValue(
                 key,
                 label,
                 cancellationToken);
 
             EnsurePrecondition(existing);
 
+            var kv = new KeyValue
+            {
+                Label = label,
+                Key = key,
+                ContentType = model.ContentType,
+                Value = model.Value,
+                Tags = model.Tags?.AsReadOnly()
+            };
+
+            //
+            // No-op if equivalent
+            if (KvEquivalent(kv, existing))
+            {
+                return existing;
+            }
+
             kv.Etag = existing?.Etag;
-            kv.Label = label;
 
-            await _provider.Set(kv, cancellationToken);
-
-            return kv;
+            return await _provider.Set(kv, cancellationToken);
         }
 
         [Authorize(AzPolicies.KeyValueDelete)]
@@ -160,14 +174,15 @@ namespace Azure.AppConfiguration.Emulator.Service
 
             CancellationToken cancellationToken)
         {
-            KeyValue existing = await _provider.Get(
+            KeyValue existing = await _provider.GetKeyValue(
                 key,
                 label,
                 cancellationToken);
 
             EnsurePrecondition(existing);
 
-            if (existing != null)
+            if (existing != null &&
+                existing.Deleted == null)
             {
                 existing.Etag = existing.Etag;
 
@@ -188,14 +203,45 @@ namespace Azure.AppConfiguration.Emulator.Service
 
         private void EnsurePrecondition(KeyValue kv)
         {
+            //
+            // Check conditional etag
             EtagMatch etagMatch = Request.GetEtagMatch();
 
             string Etag = Request.GetEtag();
 
-            if (KvHelper.CheckPrecondition(kv, etagMatch, Etag))
+            if (!KvHelper.CheckPrecondition(kv, etagMatch, Etag))
             {
                 throw new MatchFailedException();
             }
+
+            //
+            // Check if locked
+            if (kv != null && kv.Locked)
+            {
+                throw new KeyLockedException($"key={kv.Key},label={kv.Label}");
+            }
+        }
+
+        private bool KvEquivalent(KeyValue x, KeyValue y)
+        {
+            if (object.ReferenceEquals(x, y))
+            {
+                return true;
+            }
+
+            if (x == null || y == null)
+            {
+                return false;
+            }
+
+            var EmptyTags = Enumerable.Empty<KeyValuePair<string, string>>();
+
+            return x.Key == y.Key &&
+                   x.ContentType == y.ContentType &&
+                   x.Value == y.Value &&
+                   Enumerable.SequenceEqual(
+                       x.Tags ?? EmptyTags,
+                       y.Tags ?? EmptyTags);
         }
     }
 }
