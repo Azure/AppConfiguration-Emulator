@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -9,16 +8,16 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
 {
     public interface IKeyValueProvider
     {
-        ValueTask<Page<KeyValue>> Get(
+        ValueTask<Page<KeyValue>> QueryKeyValues(
             KeyValueSearchOptions options,
             CancellationToken cancellationToken);
 
-        ValueTask<KeyValue> Get(
+        ValueTask<KeyValue> GetKeyValue(
             string key,
             string label,
             CancellationToken cancellationToken);
 
-        ValueTask Set(
+        ValueTask<KeyValue> Set(
             KeyValue kv,
             CancellationToken cancellationToken);
 
@@ -26,11 +25,11 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
             KeyValue kv,
             CancellationToken cancellationToken);
 
-        ValueTask Lock(
+        ValueTask<KeyValue> Lock(
             KeyValue kv,
             CancellationToken cancellationToken);
 
-        ValueTask Unlock(
+        ValueTask<KeyValue> Unlock(
             KeyValue kv,
             CancellationToken cancellationToken);
     }

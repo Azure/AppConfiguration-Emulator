@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -9,7 +8,7 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
 {
     public interface ILabelProvider
     {
-        ValueTask<IEnumerable<Label>> Get(
+        ValueTask<Page<Label>> QueryLabels(
             LabelSearchOptions options,
             CancellationToken cancellationToken);
     }

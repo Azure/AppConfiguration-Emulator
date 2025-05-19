@@ -16,7 +16,6 @@ namespace Azure.AppConfiguration.Emulator.Integration
     class ServiceUnavailableMiddleware
     {
         private const string OperationCanceled = "OperationCanceled";
-
         private static readonly TimeSpan RetryTimeout = TimeSpan.FromMilliseconds(500);
 
         private readonly RequestDelegate _next;

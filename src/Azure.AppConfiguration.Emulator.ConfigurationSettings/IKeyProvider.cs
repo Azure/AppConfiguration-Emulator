@@ -9,7 +9,7 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
 {
     public interface IKeyProvider
     {
-        ValueTask<IEnumerable<Key>> Get(
+        ValueTask<Page<Key>> QueryKeys(
             KeySearchOptions options,
             CancellationToken cancellationToken);
     }

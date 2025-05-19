@@ -29,5 +29,9 @@ namespace Azure.AppConfiguration.Emulator.Tenant
         public TimeSpan ConfigurationSnapshotDefaultRetentionPeriod { get; init; } = TimeSpan.FromDays(2);
 
         public TimeSpan ConfigurationSnapshotMaxRetentionPeriod { get; init; } = TimeSpan.FromDays(7);
+
+        public TimeSpan ConfigurationSettingRetentionPeriod { get; init; } = TimeSpan.FromDays(7);
+
+        public int OutputPageSize { get; init; } = 100;
     }
 }

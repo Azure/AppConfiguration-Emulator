@@ -6,8 +6,13 @@ using System;
 
 namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
 {
-    public class KeyValue
+    public class KeyValue : ICloneable
     {
+        /// <summary>
+        /// Key value id.
+        /// </summary>
+        public string Id { get; set; }
+
         /// <summary>
         /// Etag of key value. 
         /// </summary>
@@ -34,29 +39,19 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
         public string Value { get; set; }
 
         /// <summary>
-        /// Key id of the encryption key used on the value.
-        /// </summary>
-        public string EncryptionKeyId { get; set; }
-
-        /// <summary>
         /// Created time of key value.
         /// </summary>
-        public DateTimeOffset Created { get; set; }
+        public DateTimeOffset Timestamp { get; set; }
 
         /// <summary>
         /// Tags associated with key value.
         /// </summary>
-        public IDictionary<string, string> Tags { get; set; }
+        public IReadOnlyDictionary<string, string> Tags { get; set; }
 
         /// <summary>
         /// Represents wether a key value is locked or not by customer.
         /// </summary>
         public bool Locked { get; set; }
-
-        /// <summary>
-        /// Time when key value is superseeded.
-        /// </summary>
-        public DateTimeOffset? Superseeded { get; set; }
 
         /// <summary>
         /// Time when key value is deleted.
@@ -66,6 +61,11 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
         /// <summary>
         /// Time to live for the key value, after key value is considered as a revision.
         /// </summary>
-        public DateTimeOffset Expires { get; set; }
+        public TimeSpan RevisionTTL { get; set; }
+
+        public object Clone()
+        {
+            return base.MemberwiseClone();
+        }
     }
 }

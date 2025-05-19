@@ -100,7 +100,7 @@ namespace Azure.AppConfiguration.Emulator.Service.Formatters.Json
             if ((fields & (long)KeyValueFields.LastModified) == (long)KeyValueFields.LastModified)
             {
                 await writer.WritePropertyNameAsync("last_modified");
-                await writer.WriteValueAsync(kv.Created);
+                await writer.WriteValueAsync(kv.Timestamp);
             }
 
             await writer.WriteEndObjectAsync();
