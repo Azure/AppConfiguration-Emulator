@@ -17,6 +17,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
+using System;
 
 namespace Azure.AppConfiguration.Emulator.Service
 {
@@ -40,6 +42,10 @@ namespace Azure.AppConfiguration.Emulator.Service
             //
             // Options
             ConfigureOptions(services);
+
+            //
+            // Validate authentication configuration
+            ValidateAuthenticationConfiguration(services);
 
             //
             // Logging
@@ -94,6 +100,9 @@ namespace Azure.AppConfiguration.Emulator.Service
         {
             app.UseDiagnostics();
 
+            app.UseDefaultFiles();
+            app.UseStaticFiles();
+
             app.UseSystemErrors()
                .UseRouting()
                .UseAuthentication()
@@ -142,6 +151,22 @@ namespace Azure.AppConfiguration.Emulator.Service
             //
             // Http
             services.Configure<HttpOptions>(Configuration.GetSection("Http"));
+        }
+
+        private void ValidateAuthenticationConfiguration(IServiceCollection services)
+        {
+            ServiceProvider serviceProvider = services.BuildServiceProvider();
+            TenantOptions tenantOptions = serviceProvider.GetRequiredService<IOptions<TenantOptions>>().Value;
+
+            bool hasEnabledAuthentication =
+                tenantOptions.EntraIdAuthenticationEnabled ||
+                tenantOptions.HmacSha256Enabled ||
+                tenantOptions.AnonymousAuthEnabled;
+
+            if (!hasEnabledAuthentication)
+            {
+                throw new InvalidOperationException("At least one authentication method must be enabled.");
+            }
         }
     }
 }
