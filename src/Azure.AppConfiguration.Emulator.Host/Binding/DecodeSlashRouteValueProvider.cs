@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Routing;
 using System.Text;
 
-namespace Azure.AppConfiguration.Emulator.Service
+namespace Azure.AppConfiguration.Emulator.Host
 {
     /// <summary>
     /// This provider decodes %2f from request path.

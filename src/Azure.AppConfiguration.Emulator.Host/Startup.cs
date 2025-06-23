@@ -4,8 +4,8 @@
 using Azure.AppConfiguration.Emulator.Authentication.EntraId;
 using Azure.AppConfiguration.Emulator.ConfigurationSettings;
 using Azure.AppConfiguration.Emulator.ConfigurationSnapshots;
-using Azure.AppConfiguration.Emulator.Hosting;
 using Azure.AppConfiguration.Emulator.Integration;
+using Azure.AppConfiguration.Emulator.Service;
 using Azure.AppConfiguration.Emulator.Service.Formatters.Json;
 using Azure.AppConfiguration.Emulator.Service.Validators;
 using Azure.AppConfiguration.Emulator.Tenant;
@@ -17,8 +17,9 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
+using System.IO;
 
-namespace Azure.AppConfiguration.Emulator.Service
+namespace Azure.AppConfiguration.Emulator.Host
 {
     public class Startup
     {
@@ -87,12 +88,19 @@ namespace Azure.AppConfiguration.Emulator.Service
             //
             // Snapshots
             services.AddConfigurationSnapshots();
+
+            //
+            // UI
+            services.AddUI();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IHostEnvironment env)
         {
             app.UseDiagnostics();
+
+            app.UseStaticFiles();
+            app.UseSpaStaticFiles();
 
             app.UseSystemErrors()
                .UseRouting()
@@ -103,6 +111,8 @@ namespace Azure.AppConfiguration.Emulator.Service
                {
                    endpoints.MapControllers();
                });
+
+            app.UseUI();
         }
 
         private void ConfigureOptions(IServiceCollection services)

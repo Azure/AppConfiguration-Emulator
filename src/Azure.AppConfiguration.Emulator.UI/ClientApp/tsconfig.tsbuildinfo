@@ -1,0 +1,1 @@
+{"root":["./src/index.tsx","./src/components/app.tsx","./src/components/keyvalueeditor.tsx","./src/components/keyvaluelist.tsx","./src/models/keyvalue.ts","./src/services/keyvalueservice.ts"],"version":"5.8.3"}

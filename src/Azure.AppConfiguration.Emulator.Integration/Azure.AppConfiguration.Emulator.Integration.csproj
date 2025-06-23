@@ -6,7 +6,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Azure.AppConfiguration.Emulator.Authentication.Anonymous\Azure.AppConfiguration.Emulator.Authentication.Anonymous.csproj" />
-    <ProjectReference Include="..\Azure.AppConfiguration.Emulator.Hosting\Azure.AppConfiguration.Emulator.Hosting.csproj" />
     <ProjectReference Include="..\Azure.AppConfiguration.Emulator.Authentication.EntraId\Azure.AppConfiguration.Emulator.Authentication.EntraId.csproj" />
     <ProjectReference Include="..\Azure.AppConfiguration.Emulator.Authentication.Hmac\Azure.AppConfiguration.Emulator.Authentication.Hmac.csproj" />
     <ProjectReference Include="..\Azure.AppConfiguration.Emulator.Authorization\Azure.AppConfiguration.Emulator.Authorization.csproj" />

@@ -7,9 +7,9 @@ using Microsoft.AspNetCore.Server.Kestrel.Https;
 using System;
 using System.Net;
 
-namespace Azure.AppConfiguration.Emulator.Hosting
+namespace Azure.AppConfiguration.Emulator.Host
 {
-    public static class KestrelExtensions
+    static class KestrelExtensions
     {
         public static KestrelServerOptions Configure(this KestrelServerOptions options, HostingConfiguration hostingConfiguration)
         {
