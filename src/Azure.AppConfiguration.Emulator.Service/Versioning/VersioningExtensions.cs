@@ -7,7 +7,7 @@ using Microsoft.Extensions.Options;
 
 namespace Azure.AppConfiguration.Emulator.Service
 {
-    static class VersioningExtensions
+    public static class VersioningExtensions
     {
         public static IServiceCollection AddVersioning(this IServiceCollection services)
         {

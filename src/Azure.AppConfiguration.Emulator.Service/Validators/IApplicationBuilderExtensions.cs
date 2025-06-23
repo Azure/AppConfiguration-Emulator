@@ -6,7 +6,7 @@ using System;
 
 namespace Azure.AppConfiguration.Emulator.Service.Validators
 {
-    static partial class IApplicationBuilderExtensions
+    public static partial class IApplicationBuilderExtensions
     {
         public static IApplicationBuilder UsePathValidation(this IApplicationBuilder builder)
         {

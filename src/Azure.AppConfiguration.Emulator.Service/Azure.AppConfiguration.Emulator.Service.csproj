@@ -1,9 +1,10 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <Import Project="..\..\build\NugetProperties.props" />
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <LangVersion>latest</LangVersion>
+    <UserSecretsId>620da276-0689-41c9-a66a-1bd988af4063</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>

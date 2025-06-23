@@ -2,13 +2,13 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Launch Azure.AppConfiguration.Emulator.Service",
+            "name": "Launch Azure.AppConfiguration.Emulator",
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build",
-            "program": "${workspaceFolder}/src/Azure.AppConfiguration.Emulator.Service/bin/Debug/net8.0/Azure.AppConfiguration.Emulator.Service.dll",
+            "program": "${workspaceFolder}/src/Azure.AppConfiguration.Emulator.Host/bin/Debug/net8.0/Azure.AppConfiguration.Emulator.Host.dll",
             "args": [],
-            "cwd": "${workspaceFolder}/src/Azure.AppConfiguration.Emulator.Service",
+            "cwd": "${workspaceFolder}/src/Azure.AppConfiguration.Emulator.Host",
             "stopAtEntry": false,
             "serverReadyAction": {
                 "action": "openExternally",
@@ -18,7 +18,7 @@
                 "ASPNETCORE_ENVIRONMENT": "Development",
                 "ASPNETCORE_URLS": "http://localhost:8483"
             },
-            "console": "internalConsole"
+            "console": "externalTerminal"
         }
     ]
 }

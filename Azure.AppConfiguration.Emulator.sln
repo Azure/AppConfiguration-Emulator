@@ -30,11 +30,13 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Azure.AppConfiguration.Emulator.ConfigurationSnapshots", "src\Azure.AppConfiguration.Emulator.ConfigurationSnapshots\Azure.AppConfiguration.Emulator.ConfigurationSnapshots.csproj", "{751F144B-D881-451C-8316-5E256FBE9F05}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Azure.AppConfiguration.Emulator.Hosting", "src\Azure.AppConfiguration.Emulator.Hosting\Azure.AppConfiguration.Emulator.Hosting.csproj", "{A21A450F-525D-8A02-3833-E0508D501D80}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Azure.AppConfiguration.Emulator.Versioning", "src\Azure.AppConfiguration.Emulator.Versioning\Azure.AppConfiguration.Emulator.Versioning.csproj", "{C01B530B-C30E-4AF6-B5DF-1F90FE6C92A7}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Azure.AppConfiguration.Emulator.Authentication.Anonymous", "src\Azure.AppConfiguration.Emulator.Authentication.Anonymous\Azure.AppConfiguration.Emulator.Authentication.Anonymous.csproj", "{C8432D71-94D3-4FA6-81D7-673794CA6646}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Azure.AppConfiguration.Emulator.Host", "src\Azure.AppConfiguration.Emulator.Host\Azure.AppConfiguration.Emulator.Host.csproj", "{0E100FCA-F877-45AF-B9C3-BF60B1EFBB68}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Azure.AppConfiguration.Emulator.UI", "src\Azure.AppConfiguration.Emulator.UI\Azure.AppConfiguration.Emulator.UI.csproj", "{CBC26BFA-D018-4F2F-941E-400562825277}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -82,10 +84,6 @@ Global
 		{751F144B-D881-451C-8316-5E256FBE9F05}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{751F144B-D881-451C-8316-5E256FBE9F05}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{751F144B-D881-451C-8316-5E256FBE9F05}.Release|Any CPU.Build.0 = Release|Any CPU
-		{A21A450F-525D-8A02-3833-E0508D501D80}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{A21A450F-525D-8A02-3833-E0508D501D80}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{A21A450F-525D-8A02-3833-E0508D501D80}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{A21A450F-525D-8A02-3833-E0508D501D80}.Release|Any CPU.Build.0 = Release|Any CPU
 		{C01B530B-C30E-4AF6-B5DF-1F90FE6C92A7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{C01B530B-C30E-4AF6-B5DF-1F90FE6C92A7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C01B530B-C30E-4AF6-B5DF-1F90FE6C92A7}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -94,6 +92,14 @@ Global
 		{C8432D71-94D3-4FA6-81D7-673794CA6646}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C8432D71-94D3-4FA6-81D7-673794CA6646}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C8432D71-94D3-4FA6-81D7-673794CA6646}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0E100FCA-F877-45AF-B9C3-BF60B1EFBB68}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0E100FCA-F877-45AF-B9C3-BF60B1EFBB68}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0E100FCA-F877-45AF-B9C3-BF60B1EFBB68}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0E100FCA-F877-45AF-B9C3-BF60B1EFBB68}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CBC26BFA-D018-4F2F-941E-400562825277}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CBC26BFA-D018-4F2F-941E-400562825277}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CBC26BFA-D018-4F2F-941E-400562825277}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CBC26BFA-D018-4F2F-941E-400562825277}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

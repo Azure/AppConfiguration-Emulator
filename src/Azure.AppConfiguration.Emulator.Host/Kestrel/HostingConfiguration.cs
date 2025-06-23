@@ -4,7 +4,7 @@
 using System;
 using System.Security.Cryptography.X509Certificates;
 
-namespace Azure.AppConfiguration.Emulator.Hosting
+namespace Azure.AppConfiguration.Emulator.Host
 {
     public class HostingConfiguration
     {

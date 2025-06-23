@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc.ModelBinding;
 using System;
 using System.Threading.Tasks;
 
-namespace Azure.AppConfiguration.Emulator.Service
+namespace Azure.AppConfiguration.Emulator.Host
 {
     class DecodeSlashRouteValueProviderFactory : IValueProviderFactory
     {
