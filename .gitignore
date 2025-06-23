@@ -297,8 +297,6 @@ wwwroot/
 *.js
 *.js.map
 *.tsbuildinfo
-package-lock.json
-
 
 # Visual Studio 6 build log
 *.plg
