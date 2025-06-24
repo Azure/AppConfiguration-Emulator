@@ -30,9 +30,9 @@ export default function KeyValueList({ onEdit }: Props) {
     fetchKeyValues();
   }, []);
 
-  const handleDelete = async (key: string, label?: string) => {
+  const handleDelete = async (kv: KeyValue) => {
     if (window.confirm('Are you sure you want to delete this key value?')) {
-      const success = await keyValueService.deleteKeyValue(key, label);
+      const success = await keyValueService.deleteKeyValue(kv);
       if (success) {
         fetchKeyValues();
       }
@@ -97,7 +97,7 @@ export default function KeyValueList({ onEdit }: Props) {
                       Edit
                     </button>
                     <button 
-                      onClick={() => handleDelete(kv.key, kv.label)}
+                      onClick={() => handleDelete(kv)}
                       className="delete-button"
                     >
                       Delete

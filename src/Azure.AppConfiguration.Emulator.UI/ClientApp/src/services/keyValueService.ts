@@ -40,10 +40,10 @@ export const keyValueService = {
     }
   },
 
-  deleteKeyValue: async (key: string, label?: string): Promise<boolean> => {
+  deleteKeyValue: async (kv: KeyValue): Promise<boolean> => {
     try {
-      await axios.delete(`${API_BASE_URL}/kv/${encodeURIComponent(key)}`, {
-        params: { label }
+      await axios.delete(`${API_BASE_URL}/kv/${encodeURIComponent(kv.key)}`, {
+        params: { label: kv.label }
       });
       return true;
     } catch (error) {
