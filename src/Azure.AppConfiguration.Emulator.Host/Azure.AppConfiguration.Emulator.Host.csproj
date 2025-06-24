@@ -9,4 +9,16 @@
     <ProjectReference Include="..\Azure.AppConfiguration.Emulator.UI\Azure.AppConfiguration.Emulator.UI.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Update="appsettings.Development.json" CopyToPublishDirectory="Never" CopyToOutputDirectory="Never" />
+  </ItemGroup>
+
+  <Target Name="CopyUISpaFiles" AfterTargets="Publish">
+    <ItemGroup>
+      <UISpaFiles Include="$(MSBuildProjectDirectory)\..\Azure.AppConfiguration.Emulator.UI\ClientApp\dist\**\*" />
+    </ItemGroup>
+
+    <Copy SourceFiles="@(UISpaFiles)" DestinationFolder="$(PublishDir)wwwroot\%(RecursiveDir)" />
+  </Target>
+
 </Project>
