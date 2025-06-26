@@ -61,7 +61,7 @@ namespace Azure.AppConfiguration.Emulator.Authentication.EntraId
 
         public bool CanValidate(string scheme) => scheme == AuthenticationShemes.EntraId;
 
-        public bool CanChallenge() => _tenant.EntraIdAuthenticationEnabled;
+        public bool CanChallenge() => true;
 
         public async ValueTask<CredentialValidationResult> Validate(
             Credential credential,

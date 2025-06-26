@@ -42,7 +42,7 @@ namespace Microsoft.AppConfig.Service.Authentication
 
         public bool CanValidate(string scheme) => scheme == AuthenticationShemes.HmacSha256;
 
-        public bool CanChallenge() => _tenant.HmacSha256Enabled;
+        public bool CanChallenge() => true;
 
         public async ValueTask<CredentialValidationResult> Validate(
             Credential credential,

@@ -27,7 +27,7 @@ namespace Microsoft.AppConfig.Service.Authentication.Anonymous
 
         public bool CanValidate(string scheme) => scheme == AuthenticationSchemes.Anonymous;
 
-        public bool CanChallenge() => _tenant.AnonymousAuthEnabled;
+        public bool CanChallenge() => true;
 
         public ValueTask<CredentialValidationResult> Validate(
             Credential credential,
