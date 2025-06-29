@@ -11,7 +11,6 @@ public static class IntegrationExtentions
 {
     public static IApplicationBuilder UseUI(this IApplicationBuilder app)
     {
-        app.UseStaticFiles();
         app.UseSpaStaticFiles();
         app.UseSpa(
             x =>
