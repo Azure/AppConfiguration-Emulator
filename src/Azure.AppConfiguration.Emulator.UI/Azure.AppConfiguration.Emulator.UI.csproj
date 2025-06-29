@@ -23,25 +23,16 @@
 
   <Target Name="NpmBuild" BeforeTargets="Build">
     <Message Importance="high" Text="Running npm build..." />
-    <Exec WorkingDirectory="$(SpaRoot)" Command="npm i" Condition=" !Exists('$(SpaRoot)node_modules') " />
+    <Exec WorkingDirectory="$(SpaRoot)" Command="npm ci" Condition=" !Exists('$(SpaRoot)node_modules') " />
     <Exec WorkingDirectory="$(SpaRoot)" Command="npm run build" />
   </Target>
 
-  <Target Name="CopySpaToOutputDir" AfterTargets="NpmBuild">
-    <Message Importance="high" Text="Copying SPA files to output directory..." />
-    <Message Importance="high" Text="OutputPath: $(OutputPath)" />
+  <Target Name="CopyUI">
+    <Message Importance="high" Text="Copying UI to directory: $(DestinationDir)" />
     <ItemGroup>
       <SpaDistFiles Include="$(SpaRoot)dist\**" />
     </ItemGroup>
-    <Copy SourceFiles="@(SpaDistFiles)" DestinationFolder="$(OutputPath)wwwroot\%(RecursiveDir)" />
-  </Target>
-
-  <Target Name="CopySpaToPublishDir">
-    <Message Importance="high" Text="Copying SPA files to publish directory..." />
-    <ItemGroup>
-      <SpaDistFiles Include="$(SpaRoot)dist\**" />
-    </ItemGroup>
-    <Copy SourceFiles="@(SpaDistFiles)" DestinationFolder="$(PublishDir)wwwroot\%(RecursiveDir)" />
+    <Copy SourceFiles="@(SpaDistFiles)" DestinationFolder="$(DestinationDir)wwwroot\%(RecursiveDir)" />
   </Target>
 
 </Project>

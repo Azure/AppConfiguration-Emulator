@@ -14,11 +14,18 @@
     <Content Update="appsettings.Development.json" CopyToPublishDirectory="Never" CopyToOutputDirectory="Never" />
   </ItemGroup>
 
+  <Target Name="CopyUIAfterBuild" AfterTargets="Build">
+    <MSBuild
+      Projects="..\Azure.AppConfiguration.Emulator.UI\Azure.AppConfiguration.Emulator.UI.csproj"
+      Targets="CopyUI"
+      Properties="DestinationDir=$(MSBuildProjectDirectory)\$(OutputPath);Configuration=$(Configuration)" />
+  </Target>
+
   <Target Name="PublishUI" AfterTargets="Publish">
     <MSBuild
       Projects="..\Azure.AppConfiguration.Emulator.UI\Azure.AppConfiguration.Emulator.UI.csproj"
-      Targets="CopySpaToPublishDir"
-      Properties="PublishDir=$(PublishDir);Configuration=$(Configuration)" />
+      Targets="CopyUI"
+      Properties="DestinationDir=$(PublishDir);Configuration=$(Configuration)" />
   </Target>
 
 </Project>
