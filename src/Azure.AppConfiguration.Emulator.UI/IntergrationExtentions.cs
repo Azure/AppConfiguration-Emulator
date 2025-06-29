@@ -11,10 +11,12 @@ public static class IntegrationExtentions
 {
     public static IApplicationBuilder UseUI(this IApplicationBuilder app)
     {
+        app.UseStaticFiles();
+        app.UseSpaStaticFiles();
         app.UseSpa(
             x =>
             {
-                x.Options.SourcePath = "ClientApp";
+                x.Options.SourcePath = "wwwroot";
             });
 
         return app;
@@ -24,31 +26,17 @@ public static class IntegrationExtentions
     {
         string hostPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
 
-        // Try wwwroot first (where publish puts files)
         string wwwrootPath = Path.GetFullPath(Path.Combine(hostPath, "wwwroot"));
 
-        // Fall back to ClientApp/dist (for development)
-        string distPath = Path.GetFullPath(Path.Combine(hostPath, "ClientApp/dist"));
-
-        string rootPath;
-
-        if (Directory.Exists(wwwrootPath))
+        if (!Directory.Exists(wwwrootPath))
         {
-            rootPath = wwwrootPath;
-        }
-        else if (Directory.Exists(distPath))
-        {
-            rootPath = distPath;
-        }
-        else
-        {
-            throw new DirectoryNotFoundException($"Neither '{wwwrootPath}' nor '{distPath}' exists. Ensure the ClientApp has been built.");
+            throw new DirectoryNotFoundException($"'{wwwrootPath}' does not exist. Ensure the UI has been built.");
         }
 
         services.AddSpaStaticFiles(
             x =>
             {
-                x.RootPath = rootPath;
+                x.RootPath = wwwrootPath;
             });
 
         return services;
