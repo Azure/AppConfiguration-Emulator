@@ -77,8 +77,7 @@ Currently, there are no automated tests included in this solution.
 You can manually test the emulator by:
 
 1. **Using the Web UI**: Navigate to `http://127.0.0.1:8483` in your browser
-2. **Using Azure SDK**: Configure your Azure App Configuration client to point to `http://127.0.0.1:8483`
-3. **Using REST API**: Make HTTP requests directly to the emulator endpoints
+2. **Using REST API**: Make HTTP requests directly to the emulator endpoints
 
 ### API Testing Example
 ```bash
