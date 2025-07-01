@@ -2,6 +2,10 @@
 
 The Azure App Configuration Emulator is a local development tool that provides a lightweight implementation of the Azure App Configuration service. This emulator allows developers to test and develop applications locally without requiring an active Azure subscription or connection to the cloud service.
 
+![Web UI Screenshot](docs/images/web-ui-screenshot.png)
+
+![Creating and Retrieving Configuration Demo](docs/images/create-retrieve-demo.gif)
+
 ## Features
 
 - **Local Azure App Configuration API**: Emulates the Azure App Configuration REST API
