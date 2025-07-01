@@ -44,12 +44,6 @@ Build the entire solution including the UI components:
 dotnet build
 ```
 
-The build process will:
-- Compile all C# projects
-- Install npm dependencies for the UI component
-- Build the React/TypeScript frontend using Vite
-- Generate the production-ready UI assets
-
 ## Run
 
 To run the Azure App Configuration Emulator locally:
