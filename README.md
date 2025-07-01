@@ -71,10 +71,7 @@ Press `Ctrl+C` in the terminal to stop the emulator.
 ## Test
 
 ### Running Tests
-Currently, there are no automated tests included in this solution. To run tests (when available):
-```bash
-dotnet test
-```
+Currently, there are no automated tests included in this solution.
 
 ### Manual Testing
 You can manually test the emulator by:
