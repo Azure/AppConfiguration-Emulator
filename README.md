@@ -1,14 +1,97 @@
-# Project
+# Azure App Configuration Emulator
 
-> This repo has been populated by an initial template to help get you started. Please
-> make sure to update the content to build a great experience for community-building.
+The Azure App Configuration Emulator is a local development tool that provides a lightweight implementation of the Azure App Configuration service. This emulator allows developers to test and develop applications locally without requiring an active Azure subscription or connection to the cloud service.
 
-As the maintainer of this project, please make a few updates:
+![Creating and Retrieving Configuration Demo](docs/images/create-retrieve-demo.gif)
 
-- Improving this README.MD file to provide a great experience
-- Updating SUPPORT.MD with content about this project's support experience
-- Understanding the security reporting process in SECURITY.MD
-- Remove this section from the README
+## Features
+
+- **Local Azure App Configuration API**: Emulates the Azure App Configuration REST API
+- **Web UI**: Provides a web-based interface for managing configuration settings
+- **Multiple Authentication Methods**: Supports HMAC, Entra ID, and anonymous authentication
+- **Configuration Snapshots**: Supports creating and managing configuration snapshots
+- **Cross-platform**: Runs on Windows, macOS, and Linux
+
+## Prerequisites
+
+Before building and running the Azure App Configuration Emulator, ensure you have the following technologies installed:
+
+### For Building and Running
+- **.NET 8.0 SDK** - Required for building and running the C# application
+  - Download from: https://dotnet.microsoft.com/download/dotnet/8.0
+  - Minimum version: 8.0.100
+- **Node.js and npm** - Required for building the React/TypeScript UI component
+  - Download from: https://nodejs.org/
+  - Minimum Node.js version: 16.x or later
+
+## Build
+
+Follow these steps to build the Azure App Configuration Emulator:
+
+### 1. Clone the Repository
+```bash
+git clone https://github.com/Azure/AppConfiguration-Emulator.git
+cd AppConfiguration-Emulator
+```
+
+### 2. Restore Dependencies
+Restore all .NET package dependencies:
+```bash
+dotnet restore
+```
+
+### 3. Build the Solution
+Build the entire solution including the UI components:
+```bash
+dotnet build
+```
+
+## Run
+
+To run the Azure App Configuration Emulator locally:
+
+### Start the Emulator
+```bash
+dotnet run --project src/Azure.AppConfiguration.Emulator.Host/Azure.AppConfiguration.Emulator.Host.csproj
+```
+
+### Access the Application
+Once started, the emulator will be available at:
+- **API Endpoint**: `http://127.0.0.1:8483`
+- **Web UI**: `http://127.0.0.1:8483` (serves both API and UI)
+
+### Default Configuration
+The emulator runs with the following default settings in development mode:
+- **Port**: 8483
+- **Authentication**: Anonymous authentication enabled
+- **Anonymous User Role**: Owner (full permissions)
+- **Logging Level**: Debug
+
+### Stopping the Emulator
+Press `Ctrl+C` in the terminal to stop the emulator.
+
+## Test
+
+### Running Tests
+Currently, there are no automated tests included in this solution.
+
+### Manual Testing
+You can manually test the emulator by:
+
+1. **Using the Web UI**: Navigate to `http://127.0.0.1:8483` in your browser
+2. **Using REST API**: Make HTTP requests directly to the emulator endpoints
+
+### API Testing Example
+```bash
+# Example: List configuration settings
+curl -X GET "http://127.0.0.1:8483/kv" \
+  -H "Accept: application/json"
+```
+
+## Development
+
+### Configuration
+The emulator can be configured through `appsettings.json` and `appsettings.Development.json` files in the Host project.
 
 ## Contributing
 
