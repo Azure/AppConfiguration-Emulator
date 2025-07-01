@@ -88,14 +88,6 @@ curl -X GET "http://127.0.0.1:8483/kv" \
 
 ## Development
 
-### Project Structure
-- `src/Azure.AppConfiguration.Emulator.Host/` - Main application host
-- `src/Azure.AppConfiguration.Emulator.Service/` - Core API services
-- `src/Azure.AppConfiguration.Emulator.UI/` - Web UI components
-- `src/Azure.AppConfiguration.Emulator.Authentication*/` - Authentication providers
-- `src/Azure.AppConfiguration.Emulator.ConfigurationSettings/` - Configuration management
-- `src/Azure.AppConfiguration.Emulator.ConfigurationSnapshots/` - Snapshot functionality
-
 ### Configuration
 The emulator can be configured through `appsettings.json` and `appsettings.Development.json` files in the Host project.
 
