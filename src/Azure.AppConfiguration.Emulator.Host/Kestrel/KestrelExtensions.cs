@@ -32,7 +32,7 @@ namespace Azure.AppConfiguration.Emulator.Host
 
             //
             // Listen on configured ports
-            options.Listen(IPAddress.Loopback, hostingConfiguration.Port, listenOptions =>
+            options.Listen(IPAddress.Any, hostingConfiguration.Port, listenOptions =>
             {
                 if (useHttps)
                 {

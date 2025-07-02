@@ -99,7 +99,6 @@ namespace Azure.AppConfiguration.Emulator.Host
         {
             app.UseDiagnostics();
 
-            app.UseStaticFiles();
             app.UseSpaStaticFiles();
 
             app.UseSystemErrors()

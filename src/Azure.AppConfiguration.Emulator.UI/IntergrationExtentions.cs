@@ -14,7 +14,7 @@ public static class IntegrationExtentions
         app.UseSpa(
             x =>
             {
-                x.Options.SourcePath = "ClientApp";
+                x.Options.SourcePath = "wwwroot";
             });
 
         return app;
@@ -23,17 +23,18 @@ public static class IntegrationExtentions
     public static IServiceCollection AddUI(this IServiceCollection services)
     {
         string hostPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-        string distPath = Path.GetFullPath(Path.Combine(hostPath, "ClientApp/dist"));
 
-        if (!Directory.Exists(distPath))
+        string wwwrootPath = Path.GetFullPath(Path.Combine(hostPath, "wwwroot"));
+
+        if (!Directory.Exists(wwwrootPath))
         {
-            throw new DirectoryNotFoundException($"'{distPath}' does not exist. Ensure the ClientApp has been built.");
+            throw new DirectoryNotFoundException($"'{wwwrootPath}' does not exist. Ensure the UI has been built.");
         }
 
         services.AddSpaStaticFiles(
             x =>
             {
-                x.RootPath = distPath;
+                x.RootPath = wwwrootPath;
             });
 
         return services;

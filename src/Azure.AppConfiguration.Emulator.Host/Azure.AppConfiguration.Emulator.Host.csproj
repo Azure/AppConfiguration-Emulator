@@ -2,11 +2,30 @@
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
+    <Version>1.0.0-preview</Version>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Azure.AppConfiguration.Emulator.Service\Azure.AppConfiguration.Emulator.Service.csproj" />
     <ProjectReference Include="..\Azure.AppConfiguration.Emulator.UI\Azure.AppConfiguration.Emulator.UI.csproj" />
   </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="appsettings.Development.json" CopyToPublishDirectory="Never" CopyToOutputDirectory="Never" />
+  </ItemGroup>
+
+  <Target Name="CopyUIAfterBuild" AfterTargets="Build">
+    <MSBuild
+      Projects="..\Azure.AppConfiguration.Emulator.UI\Azure.AppConfiguration.Emulator.UI.csproj"
+      Targets="CopyUI"
+      Properties="DestinationDir=$(MSBuildProjectDirectory)\$(OutputPath);Configuration=$(Configuration)" />
+  </Target>
+
+  <Target Name="PublishUI" AfterTargets="Publish">
+    <MSBuild
+      Projects="..\Azure.AppConfiguration.Emulator.UI\Azure.AppConfiguration.Emulator.UI.csproj"
+      Targets="CopyUI"
+      Properties="DestinationDir=$(PublishDir);Configuration=$(Configuration)" />
+  </Target>
 
 </Project>
