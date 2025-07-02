@@ -98,6 +98,9 @@ namespace Azure.AppConfiguration.Emulator.Host
         public void Configure(IApplicationBuilder app, IHostEnvironment env)
         {
             app.UseDiagnostics();
+
+            app.UseSpaStaticFiles();
+
             app.UseSystemErrors()
                .UseRouting()
                .UseAuthentication()
