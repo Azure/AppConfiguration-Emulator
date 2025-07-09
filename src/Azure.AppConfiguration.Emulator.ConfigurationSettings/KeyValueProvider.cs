@@ -746,7 +746,7 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
                 return false;
             }
 
-            string[] args = token.Split('\n', 3, StringSplitOptions.RemoveEmptyEntries);
+            string[] args = token.Split('\n', 3, StringSplitOptions.None);
 
             if (args.Length < 2)
             {
