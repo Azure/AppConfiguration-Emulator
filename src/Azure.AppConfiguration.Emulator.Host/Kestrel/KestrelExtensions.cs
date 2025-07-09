@@ -32,8 +32,13 @@ namespace Azure.AppConfiguration.Emulator.Host
 
             IPAddress ipAddress = IPAddress.Any;
 
-            if (!string.IsNullOrEmpty(hostingConfiguration.IPAddress) && IPAddress.TryParse(hostingConfiguration.IPAddress, out IPAddress parsedAddress))
+            if (!string.IsNullOrEmpty(hostingConfiguration.IPAddress))
             {
+                if (!IPAddress.TryParse(hostingConfiguration.IPAddress, out IPAddress parsedAddress))
+                {
+                    throw new ArgumentException($"Invalid IP address '{hostingConfiguration.IPAddress}' in configuration.", nameof(hostingConfiguration.IPAddress));
+                }
+
                 ipAddress = parsedAddress;
             }
 
