@@ -10,6 +10,8 @@ namespace Azure.AppConfiguration.Emulator.Host
     {
         private X509Certificate2 _cert;
 
+        public string IPAddress { get; set; } = "0.0.0.0";
+
         /// <summary>
         /// Port to be used for listening to HTTP requests
         /// </summary>
