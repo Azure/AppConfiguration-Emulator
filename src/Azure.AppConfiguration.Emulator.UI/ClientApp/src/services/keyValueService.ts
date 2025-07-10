@@ -3,16 +3,31 @@ import { KeyValue, KeyValueRequest } from '../models/keyValue';
 
 const API_BASE_URL = '';
 
+interface KeyValueResponse {
+  items: KeyValue[];
+  '@nextLink'?: string;
+}
+
 export const keyValueService = {
-  getKeyValues: async (keyFilter?: string, labelFilter?: string): Promise<KeyValue[]> => {
+  getKeyValues: async (keyFilter?: string, labelFilter?: string, nextLink?: string): Promise<KeyValueResponse> => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/kv`, {
-        params: { key: keyFilter, label: labelFilter }
-      });
-      return response.data.items;
+      let url = nextLink ? `${API_BASE_URL}${nextLink}` : `${API_BASE_URL}/kv`;
+      let params: any = {};
+      
+      // Only add filters if we're not using a nextLink (first page)
+      if (!nextLink) {
+        if (keyFilter) params.key = keyFilter;
+        if (labelFilter) params.label = labelFilter;
+      }
+      
+      const response = await axios.get(url, { params });
+      return {
+        items: response.data.items || [],
+        '@nextLink': response.data['@nextLink']
+      };
     } catch (error) {
       console.error('Error fetching key values:', error);
-      return [];
+      return { items: [] };
     }
   },
 
