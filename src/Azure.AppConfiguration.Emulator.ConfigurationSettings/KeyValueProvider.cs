@@ -588,6 +588,19 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
                         {
                             i = ~i;
                         }
+                        else
+                        {
+                            // When i >= 0, binary search found an exact match
+                            // But we need to find the first item with this key to include all matches
+                            // Backtrack to find the first occurrence of the key
+                            int startIndex = i;
+                            while (startIndex > 0 && options.KeyFilter.Match(_cache[startIndex - 1].Key))
+                            {
+                                startIndex--;
+                            }
+
+                            i = startIndex;
+                        }
 
                         items = items.Concat(
                             _cache
