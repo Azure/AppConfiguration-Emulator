@@ -538,6 +538,109 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSettings.Tests
             Assert.Contains(labels, l => l.Name == "dev");
             Assert.Contains(labels, l => l.Name == "prod");
         }
+
+        [Fact]
+        public async Task QueryRevisions_IncludesDeletedItems_WhileRegularQueriesDont()
+        {
+            // Arrange
+            // Create a new list of test key values including a deleted one
+            var testKeyValuesWithDeleted = new List<KeyValue>
+            {
+                new KeyValue
+                {
+                    Key = "kv1",
+                    Label = "prod",
+                    Value = "v1",
+                    Etag = "k4CS96c5WjZ3YL7aSRnryQ",
+                    Timestamp = DateTimeOffset.UtcNow.AddMinutes(-10),
+                    RevisionTTL = TimeSpan.FromDays(7)
+                },
+                new KeyValue
+                {
+                    Key = "kv1",
+                    Label = "prod",
+                    Etag = "E6UIwxN_UBJVQWv1cwdnsw",
+                    Timestamp = DateTimeOffset.UtcNow.AddMinutes(-9),
+                    Deleted = DateTimeOffset.UtcNow.AddMinutes(-9), // Marked as deleted
+                    RevisionTTL = TimeSpan.FromDays(7)
+                },
+                new KeyValue
+                {
+                    Key = "kv1",
+                    Label = "prod",
+                    Value = "v2",
+                    Etag = "BEhc_7t-4hFuIllQGJzYWQ",
+                    Timestamp = DateTimeOffset.UtcNow.AddMinutes(-8),
+                    RevisionTTL = TimeSpan.FromDays(7)
+                },
+                new KeyValue
+                {
+                    Key = "kv1",
+                    Label = "prod",
+                    Etag = "YbI3hYG2DUWOXMCF33Os8Q",
+                    Timestamp = DateTimeOffset.UtcNow.AddMinutes(-7),
+                    Deleted = DateTimeOffset.UtcNow.AddMinutes(-7), // Marked as deleted again
+                    RevisionTTL = TimeSpan.FromDays(7)
+                },
+                new KeyValue
+                {
+                    Key = "kv1",
+                    Label = "prod",
+                    Value = "v3",
+                    Etag = "beV9smccBkywiv8c54XM7g",
+                    Timestamp = DateTimeOffset.UtcNow.AddMinutes(-6),
+                    RevisionTTL = TimeSpan.FromDays(7)
+                }
+            };
+
+            // Set up mock storage with our test data
+            var mockStorage = new Mock<IKeyValueStorage>();
+            mockStorage.Setup(s => s.QueryKeyValues(It.IsAny<CancellationToken>()))
+                .Returns(testKeyValuesWithDeleted.ToAsyncEnumerable());
+
+            // Set up tenant options
+            var tenantOptions = new TenantOptions();
+            var mockTenantOptions = Options.Create(tenantOptions);
+
+            // Create the provider with our mock storage
+            var provider = new KeyValueProvider(mockStorage.Object, mockTenantOptions);
+            await provider.StartAsync(CancellationToken.None);
+
+            // Act - Call all three methods
+            // 1. QueryRevisions should include all versions, including deleted ones
+            var revisions = await provider.QueryRevisions(
+                new KeyValueSearchOptions { KeyFilter = new StringFilter { EqualsTo = "kv1" } },
+                CancellationToken.None);
+
+            // 2. GetKeyValue should only return the latest non-deleted version
+            var keyValue = await provider.GetKeyValue("kv1", "prod", CancellationToken.None);
+
+            // 3. QueryKeyValues should only return non-deleted items
+            var keyValues = await provider.QueryKeyValues(
+                new KeyValueSearchOptions { KeyFilter = new StringFilter { EqualsTo = "kv1" } },
+                CancellationToken.None);
+
+            // Assert
+            // 1. Verify QueryRevisions includes all 3 versions (including deleted ones)
+            Assert.Equal(3, revisions.Count());
+            Assert.Contains(revisions, kv => kv.Etag == "k4CS96c5WjZ3YL7aSRnryQ"); // First version
+            Assert.Contains(revisions, kv => kv.Etag == "BEhc_7t-4hFuIllQGJzYWQ"); // Second version
+            Assert.Contains(revisions, kv => kv.Etag == "beV9smccBkywiv8c54XM7g"); // Third version
+
+            // 2. Verify GetKeyValue returns only the latest non-deleted version (v3)
+            Assert.NotNull(keyValue);
+            Assert.Equal("kv1", keyValue.Key);
+            Assert.Equal("prod", keyValue.Label);
+            Assert.Equal("v3", keyValue.Value);
+            Assert.Equal("beV9smccBkywiv8c54XM7g", keyValue.Etag);
+
+            // 3. Verify QueryKeyValues returns only the latest non-deleted version
+            Assert.Single(keyValues);
+            Assert.Equal("kv1", keyValues.First().Key);
+            Assert.Equal("prod", keyValues.First().Label);
+            Assert.Equal("v3", keyValues.First().Value);
+            Assert.Equal("beV9smccBkywiv8c54XM7g", keyValues.First().Etag);
+        }
     }
 
     // Extension method to convert IEnumerable to IAsyncEnumerable for testing
