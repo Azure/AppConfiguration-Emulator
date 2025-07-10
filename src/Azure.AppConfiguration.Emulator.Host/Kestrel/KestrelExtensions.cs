@@ -31,16 +31,14 @@ namespace Azure.AppConfiguration.Emulator.Host
                 throw new ArgumentNullException(nameof(hostingConfiguration.Certificate));
             }
 
-            IPAddress ipAddress = IPAddress.Any;
-
-            if (!string.IsNullOrEmpty(hostingConfiguration.IPAddress))
+            if (string.IsNullOrEmpty(hostingConfiguration.IPAddress))
             {
-                if (!IPAddress.TryParse(hostingConfiguration.IPAddress, out IPAddress parsedAddress))
-                {
-                    throw new ConfigurationErrorsException($"Invalid IP address '{hostingConfiguration.IPAddress}' in configuration.");
-                }
+                throw new ArgumentNullException(nameof(hostingConfiguration.IPAddress));
+            }
 
-                ipAddress = parsedAddress;
+            if (!IPAddress.TryParse(hostingConfiguration.IPAddress, out IPAddress ipAddress))
+            {
+                throw new ConfigurationErrorsException($"Invalid IP address '{hostingConfiguration.IPAddress}' in configuration.");
             }
 
             //
