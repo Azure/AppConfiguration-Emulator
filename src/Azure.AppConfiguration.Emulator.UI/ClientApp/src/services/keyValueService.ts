@@ -12,12 +12,10 @@ export const keyValueService = {
   getKeyValues: async (keyFilter?: string, labelFilter?: string, nextLink?: string): Promise<KeyValueResponse> => {
     try {
       let url = nextLink ? `${API_BASE_URL}${nextLink}` : `${API_BASE_URL}/kv`;
-      let params: any = {};
-      
-      // Only add filters if we're not using a nextLink (first page)
+      let params: Record<string, string> = {};
+      // Only add filters if we're not using a nextLink
       if (!nextLink) {
-        if (keyFilter) params.key = keyFilter;
-        if (labelFilter) params.label = labelFilter;
+        params = { key: keyFilter, label: labelFilter };
       }
       
       const response = await axios.get(url, { params });
