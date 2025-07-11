@@ -9,34 +9,65 @@ interface Props {
 export default function KeyValueList({ onEdit }: Props) {
   const [keyValues, setKeyValues] = useState<KeyValue[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [keyFilter, setKeyFilter] = useState('');
   const [labelFilter, setLabelFilter] = useState('');
+  const [nextLink, setNextLink] = useState<string | null>(null);
 
-  const fetchKeyValues = async () => {
-    setLoading(true);
+  const fetchKeyValues = async (reset: boolean = true) => {
+    if (reset) {
+      setLoading(true);
+      setKeyValues([]);
+      setNextLink(null);
+    } else {
+      setLoadingMore(true);
+    }
+    
     try {
-      const data = await keyValueService.getKeyValues(keyFilter || undefined, labelFilter || undefined);
-      setKeyValues(data);
+      const response = await keyValueService.getKeyValues(
+        keyFilter || undefined, 
+        labelFilter || undefined,
+        reset ? undefined : nextLink || undefined
+      );
+      
+      if (reset) {
+        setKeyValues(response.items);
+      } else {
+        setKeyValues(prev => [...prev, ...response.items]);
+      }
+      
+      setNextLink(response['@nextLink'] || null);
       setError(null);
     } catch (err) {
       setError('Failed to load key values');
     } finally {
       setLoading(false);
+      setLoadingMore(false);
+    }
+  };
+
+  const loadMore = () => {
+    if (nextLink && !loadingMore) {
+      fetchKeyValues(false);
     }
   };
 
   useEffect(() => {
-    fetchKeyValues();
+    fetchKeyValues(true);
   }, []);
 
   const handleDelete = async (kv: KeyValue) => {
     if (window.confirm('Are you sure you want to delete this key value?')) {
       const success = await keyValueService.deleteKeyValue(kv);
       if (success) {
-        fetchKeyValues();
+        fetchKeyValues(true);
       }
     }
+  };
+
+  const handleApplyFilters = () => {
+    fetchKeyValues(true);
   };
 
   return (
@@ -60,7 +91,7 @@ export default function KeyValueList({ onEdit }: Props) {
           />
         </div>
         
-        <button onClick={fetchKeyValues} className="filter-button">
+        <button onClick={handleApplyFilters} className="filter-button">
           Apply Filters
         </button>
       </div>
@@ -108,6 +139,18 @@ export default function KeyValueList({ onEdit }: Props) {
             )}
           </tbody>
         </table>
+      )}
+      
+      {nextLink && !loading && (
+        <div className="load-more-container">
+          <button 
+            onClick={loadMore} 
+            disabled={loadingMore} 
+            className="load-more-button"
+          >
+            {loadingMore ? 'Loading...' : 'Load More'}
+          </button>
+        </div>
       )}
     </div>
   );
