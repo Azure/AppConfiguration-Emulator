@@ -8,6 +8,16 @@ export interface KeyValue {
     locked?: boolean;
     tags?: Record<string, string>;
 }
+export interface KeyValueRevision {
+    key: string;
+    label?: string;
+    value?: string;
+    content_type?: string;
+    etag?: string;
+    last_modified?: string;
+    locked?: boolean;
+    tags?: Record<string, string>;
+}
 export interface KeyValueRequest {
     value?: string;
     contentType?: string;

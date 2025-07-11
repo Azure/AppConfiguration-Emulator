@@ -4,9 +4,10 @@ import { KeyValue } from '../models/keyValue';
 
 interface Props {
   onEdit: (keyValue: KeyValue) => void;
+  onViewRevisions: (keyValue: KeyValue) => void;
 }
 
-export default function KeyValueList({ onEdit }: Props) {
+export default function KeyValueList({ onEdit, onViewRevisions }: Props) {
   const [keyValues, setKeyValues] = useState<KeyValue[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -101,6 +102,12 @@ export default function KeyValueList({ onEdit }: Props) {
                       className="delete-button"
                     >
                       Delete
+                    </button>
+                    <button 
+                      onClick={() => onViewRevisions(kv)}
+                      className="view-revisions-button"
+                    >
+                      View Revisions
                     </button>
                   </td>
                 </tr>
