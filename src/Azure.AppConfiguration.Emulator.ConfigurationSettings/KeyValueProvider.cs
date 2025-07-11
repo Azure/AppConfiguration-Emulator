@@ -574,24 +574,24 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
 
                     foreach (string k in keys.OrderBy(x => x))
                     {
-                        int i = _cache.BinarySearch(
-                            continuationOffset,
-                            _cache.Count - continuationOffset,
-                            new KvIndex
-                            {
-                                Key = k,
-                                Label = options.LabelFilter.EqualsTo ?? options.LabelFilter.Prefix
-                            },
-                            comparer);
+                        int i = _cache.Count - continuationOffset;
 
-                        if (i < 0)
+                        while (i > 0)
                         {
-                            i = ~i;
+                            i = _cache.BinarySearch(
+                               continuationOffset,
+                               i,
+                               new KvIndex
+                               {
+                                   Key = k,
+                                   Label = options.LabelFilter.EqualsTo ?? options.LabelFilter.Prefix
+                               },
+                               comparer);
                         }
 
                         items = items.Concat(
                             _cache
-                                .Skip(i)
+                                .Skip(~i)
                                 .TakeWhile(x => options.KeyFilter.Match(x.Key)));
                     }
                 }
