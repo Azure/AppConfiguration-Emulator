@@ -1,0 +1,42 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <Target Name="CopyUIAfterBuild" AfterTargets="Build">
+    <MSBuild
+      Projects="..\..\src\Azure.AppConfiguration.Emulator.UI\Azure.AppConfiguration.Emulator.UI.csproj"
+      Targets="CopyUI"
+      Properties="DestinationDir=$(MSBuildProjectDirectory)\$(OutputPath);Configuration=$(Configuration)" />
+  </Target>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" Version="6.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="8.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="8.0.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
+    <PackageReference Include="Moq" Version="4.20.70" />
+    <PackageReference Include="xunit" Version="2.5.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.5.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+    <Using Include="System.Linq" />
+    <Using Include="System.Collections.Generic" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Azure.AppConfiguration.Emulator.Host\Azure.AppConfiguration.Emulator.Host.csproj" />
+    <ProjectReference Include="..\..\src\Azure.AppConfiguration.Emulator.ConfigurationSettings\Azure.AppConfiguration.Emulator.ConfigurationSettings.csproj" />
+    <ProjectReference Include="..\..\src\Azure.AppConfiguration.Emulator.Tenant\Azure.AppConfiguration.Emulator.Tenant.csproj" />
+    <ProjectReference Include="..\..\src\Azure.AppConfiguration.Emulator.Service\Azure.AppConfiguration.Emulator.Service.csproj" />
+  </ItemGroup>
+
+</Project>
