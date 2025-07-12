@@ -591,7 +591,7 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSettings.Tests
             var provider = new KeyValueProvider(mockStorage.Object, mockTenantOptions);
             await provider.StartAsync(CancellationToken.None);
 
-            var result = await provider.QueryKeyValues(new KeyValueSearchOptions(), CancellationToken.None);
+            Page<KeyValue> result = await provider.QueryKeyValues(new KeyValueSearchOptions(), CancellationToken.None);
 
             Assert.Equal(1, tenantOptions.OutputPageSize);
             Assert.NotNull(result.ContinuationToken);
