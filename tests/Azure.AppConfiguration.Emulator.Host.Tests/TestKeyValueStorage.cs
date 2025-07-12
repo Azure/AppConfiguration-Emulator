@@ -66,6 +66,120 @@ namespace Azure.AppConfiguration.Emulator.Host.Tests
                 Etag = "\"etag5\"",
                 Timestamp = DateTimeOffset.UtcNow.AddHours(-5)
             });
+
+            // Add key-values with tags
+            _items.Add(new KeyValue
+            {
+                Key = "tagged-key1",
+                Label = "dev",
+                Value = "tagged-value1",
+                Etag = "\"etag8\"",
+                Timestamp = DateTimeOffset.UtcNow.AddHours(-8),
+                Tags = new Dictionary<string, string>
+                {
+                    { "environment", "development" },
+                    { "owner", "team1" }
+                }
+            });
+
+            _items.Add(new KeyValue
+            {
+                Key = "tagged-key2",
+                Label = "prod",
+                Value = "tagged-value2",
+                Etag = "\"etag9\"",
+                Timestamp = DateTimeOffset.UtcNow.AddHours(-9),
+                Tags = new Dictionary<string, string>
+                {
+                    { "environment", "production" },
+                    { "owner", "team2" }
+                }
+            });
+
+            // Add key-values with hierarchical keys
+            _items.Add(new KeyValue
+            {
+                Key = "app1:feature1:setting1",
+                Label = "dev",
+                Value = "hierarchical-value1",
+                Etag = "\"etag10\"",
+                Timestamp = DateTimeOffset.UtcNow.AddHours(-10)
+            });
+
+            _items.Add(new KeyValue
+            {
+                Key = "app1:feature1:setting2",
+                Label = "dev",
+                Value = "hierarchical-value2",
+                Etag = "\"etag11\"",
+                Timestamp = DateTimeOffset.UtcNow.AddHours(-11)
+            });
+
+            _items.Add(new KeyValue
+            {
+                Key = "app1:feature2:setting1",
+                Label = "prod",
+                Value = "hierarchical-value3",
+                Etag = "\"etag12\"",
+                Timestamp = DateTimeOffset.UtcNow.AddHours(-12)
+            });
+
+            // Add keys specifically for filter tests
+            _items.Add(new KeyValue
+            {
+                Key = "filtered-key1",
+                Label = "filtered-label1",
+                Value = "filtered-value1",
+                Etag = "\"etag-filter1\"",
+                Timestamp = DateTimeOffset.UtcNow.AddHours(-15)
+            });
+
+            _items.Add(new KeyValue
+            {
+                Key = "filtered-key2",
+                Label = "filtered-label1",
+                Value = "filtered-value2",
+                Etag = "\"etag-filter2\"",
+                Timestamp = DateTimeOffset.UtcNow.AddHours(-16)
+            });
+
+            _items.Add(new KeyValue
+            {
+                Key = "filtered-key3",
+                Label = "filtered-label2",
+                Value = "filtered-value3",
+                Etag = "\"etag-filter3\"",
+                Timestamp = DateTimeOffset.UtcNow.AddHours(-17)
+            });
+
+            // Add key for deletion tests
+            _items.Add(new KeyValue
+            {
+                Key = "test-key-to-delete",
+                Label = "test-label-to-delete",
+                Value = "value-to-delete",
+                Etag = "\"etag-delete\"",
+                Timestamp = DateTimeOffset.UtcNow.AddHours(-18)
+            });
+
+            // Add more deleted key-values
+            _items.Add(new KeyValue
+            {
+                Key = "deleted-key2",
+                Label = "prod",
+                Etag = "\"etag13\"",
+                Deleted = DateTimeOffset.UtcNow.AddHours(-13),
+                Timestamp = DateTimeOffset.UtcNow.AddHours(-13)
+            });
+
+            _items.Add(new KeyValue
+            {
+                Key = "app1:feature3:setting1",
+                Label = "dev",
+                Etag = "\"etag14\"",
+                Deleted = DateTimeOffset.UtcNow.AddHours(-14),
+                Timestamp = DateTimeOffset.UtcNow.AddHours(-14)
+            });
         }
 
         public IAsyncEnumerable<KeyValue> QueryKeyValues(CancellationToken cancellationToken)
