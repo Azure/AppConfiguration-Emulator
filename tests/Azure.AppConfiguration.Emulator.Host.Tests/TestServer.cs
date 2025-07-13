@@ -1,13 +1,7 @@
-using Azure.AppConfiguration.Emulator.ConfigurationSettings;
 using AspNetTestServer = Microsoft.AspNetCore.TestHost.TestServer;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using System;
-using System.IO;
-using System.Net.Http;
 
 namespace Azure.AppConfiguration.Emulator.Host.Tests
 {

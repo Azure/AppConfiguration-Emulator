@@ -1,7 +1,5 @@
-using System.Net.Http;
 using System.Text;
 using System.Text.Json;
-using System.Threading.Tasks;
 
 namespace Azure.AppConfiguration.Emulator.Host.Tests
 {
@@ -77,6 +75,103 @@ namespace Azure.AppConfiguration.Emulator.Host.Tests
 
             return JsonSerializer.Deserialize<LabelsResponse>(content, options);
         }
+
+        public static async Task<KeyValue> GetKeyValue(HttpClient client, string key, string label = null)
+        {
+            string url = $"/kv/{key}";
+            if (!string.IsNullOrEmpty(label))
+            {
+                url += $"?label={label}";
+            }
+
+            var response = await client.GetAsync(url);
+            if (!response.IsSuccessStatusCode)
+            {
+                return null;
+            }
+
+            var content = await response.Content.ReadAsStringAsync();
+
+            var options = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            };
+
+            return JsonSerializer.Deserialize<KeyValue>(content, options);
+        }
+
+        public static async Task<KeyValuesResponse> QueryKeyValues(HttpClient client, string key = null, string label = null)
+        {
+            var queryParams = new List<string>();
+
+            if (!string.IsNullOrEmpty(key))
+            {
+                queryParams.Add($"key={key}");
+            }
+
+            if (!string.IsNullOrEmpty(label))
+            {
+                queryParams.Add($"label={label}");
+            }
+
+            string url = "/kv";
+            if (queryParams.Any())
+            {
+                url += $"?{string.Join("&", queryParams)}";
+            }
+
+            var response = await client.GetAsync(url);
+            var content = await response.Content.ReadAsStringAsync();
+
+            var options = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            };
+
+            return JsonSerializer.Deserialize<KeyValuesResponse>(content, options);
+        }
+
+        public static async Task<HttpResponseMessage> DeleteKeyValue(HttpClient client, string key, string label = null)
+        {
+            string url = $"/kv/{key}";
+            if (!string.IsNullOrEmpty(label))
+            {
+                url += $"?label={label}";
+            }
+
+            return await client.DeleteAsync(url);
+        }
+
+        public static async Task<KeyValuesResponse> GetRevisions(HttpClient client, string key = null, string label = null)
+        {
+            var queryParams = new List<string>();
+
+            if (!string.IsNullOrEmpty(key))
+            {
+                queryParams.Add($"key={key}");
+            }
+
+            if (!string.IsNullOrEmpty(label))
+            {
+                queryParams.Add($"label={label}");
+            }
+
+            string url = "/revisions";
+            if (queryParams.Any())
+            {
+                url += $"?{string.Join("&", queryParams)}";
+            }
+
+            var response = await client.GetAsync(url);
+            var content = await response.Content.ReadAsStringAsync();
+
+            var options = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            };
+
+            return JsonSerializer.Deserialize<KeyValuesResponse>(content, options);
+        }
     }
 
     public class KeysResponse
@@ -97,5 +192,20 @@ namespace Azure.AppConfiguration.Emulator.Host.Tests
         {
             public string Name { get; set; }
         }
+    }
+
+    public class KeyValue
+    {
+        public string Key { get; set; }
+        public string Label { get; set; }
+        public string Value { get; set; }
+        public string ContentType { get; set; }
+        public string ETag { get; set; }
+        public Dictionary<string, string> Tags { get; set; }
+    }
+
+    public class KeyValuesResponse
+    {
+        public List<KeyValue> Items { get; set; }
     }
 }
