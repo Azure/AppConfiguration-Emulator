@@ -5,10 +5,13 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using System;
+using System.IO;
+using System.Net.Http;
 
 namespace Azure.AppConfiguration.Emulator.Host.Tests
 {
-    public class TestServer : IDisposable
+    public class TestServer : ITestServer, IDisposable
     {
 
         private readonly IWebHostBuilder _webHostBuilder;
@@ -17,6 +20,9 @@ namespace Azure.AppConfiguration.Emulator.Host.Tests
 
         public TestServer()
         {
+            // Delete the storage file to ensure a clean state for tests
+            DeleteStorageFile();
+
             IConfiguration config = new ConfigurationBuilder()
                 .AddEnvironmentVariables()
                 .AddJsonFile("appsettings.json")
@@ -24,12 +30,21 @@ namespace Azure.AppConfiguration.Emulator.Host.Tests
 
             _webHostBuilder = WebHost.CreateDefaultBuilder()
                 .UseConfiguration(config)
-                .ConfigureServices((IServiceCollection services) =>
-                {
-                    services.TryAddSingleton<IKeyValueStorage, TestKeyValueStorage>();
-
-                })
                 .UseStartup<Startup>();
+        }
+
+        private void DeleteStorageFile()
+        {
+            string baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
+
+            string storageDirectory = Path.Combine(baseDirectory, ".aace");
+            string storageFilePath = Path.Combine(storageDirectory, "kv.ndjson");
+
+            if (File.Exists(storageFilePath))
+            {
+                File.Delete(storageFilePath);
+                Console.WriteLine($"Deleted storage file: {storageFilePath}");
+            }
         }
 
         public AspNetTestServer Server
@@ -45,7 +60,7 @@ namespace Azure.AppConfiguration.Emulator.Host.Tests
             }
         }
 
-        public HttpClient ServerClient
+        public HttpClient Client
         {
             get
             {

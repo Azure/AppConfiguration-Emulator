@@ -1,3 +1,4 @@
+using System.Net;
 using System.Text.Json;
 using Xunit;
 
@@ -6,7 +7,7 @@ namespace Azure.AppConfiguration.Emulator.Host.Tests
     [Collection("TestServerCollection")]
     public class LabelTests
     {
-        private readonly TestServer _testServer;
+        private readonly ITestServer _testServer;
 
         public LabelTests(TestServerFixture fixture)
         {
@@ -16,79 +17,134 @@ namespace Azure.AppConfiguration.Emulator.Host.Tests
         [Fact]
         public async Task GetLabels_ReturnsDistinctLabels()
         {
-            // Arrange
-            var client = _testServer.ServerClient;
+            // Arrange - Create test key-values with different labels
+            var client = _testServer.Client;
+            var response1 = await TestHelpers.CreateKeyValue(client, "test-key1", "value1", label: "dev");
+            response1.EnsureSuccessStatusCode();
 
-            // Act
-            var response = await client.GetAsync("/labels");
-            response.EnsureSuccessStatusCode();
-            var content = await response.Content.ReadAsStringAsync();
+            var response2 = await TestHelpers.CreateKeyValue(client, "test-key2", "value2", label: "prod");
+            response2.EnsureSuccessStatusCode();
 
-            // Parse the JSON response
-            var options = new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true
-            };
-            var result = JsonSerializer.Deserialize<LabelsResponse>(content, options);
+            var response3 = await TestHelpers.CreateKeyValue(client, "test-key3", "value3", label: "staging");
+            response3.EnsureSuccessStatusCode();
+
+            var response4 = await TestHelpers.CreateKeyValue(client, "test-key4", "value4", label: "dev");
+            response4.EnsureSuccessStatusCode();
+
+            // Act - Get all labels
+            var result = await TestHelpers.GetLabels(client);
 
             // Assert
             Assert.NotNull(result);
             Assert.NotNull(result.Items);
             Assert.NotEmpty(result.Items);
 
-            // Verify test labels are returned - we expect at least test-label1, dev, and prod
-            // from the seed data in TestKeyValueStorage
-            var testLabel1 = result.Items.Find(l => l.Name == "test-label1");
-            Assert.NotNull(testLabel1);
-
-            var devLabel = result.Items.Find(l => l.Name == "dev");
-            Assert.NotNull(devLabel);
-
-            var prodLabel = result.Items.Find(l => l.Name == "prod");
-            Assert.NotNull(prodLabel);
+            Assert.Contains(result.Items, l => l.Name == "dev");
+            Assert.Contains(result.Items, l => l.Name == "prod");
+            Assert.Contains(result.Items, l => l.Name == "staging");
         }
 
         [Fact]
-        public async Task GetLabels_WithFilter_ReturnsFilteredLabels()
+        public async Task GetLabels_WithName_ReturnsExactLabelMatch()
         {
-            // Arrange
-            var client = _testServer.ServerClient;
+            // Arrange - Create test key-values with different labels
+            var client = _testServer.Client;
+            var response1 = await TestHelpers.CreateKeyValue(client, "test-key1", "value1", label: "dev");
+            response1.EnsureSuccessStatusCode();
 
-            // Act - request labels with a filter (only get test-label1)
-            var response = await client.GetAsync("/labels?name=test-label1");
-            response.EnsureSuccessStatusCode();
-            var content = await response.Content.ReadAsStringAsync();
+            var response2 = await TestHelpers.CreateKeyValue(client, "test-key2", "value2", label: "prod");
+            response2.EnsureSuccessStatusCode();
 
-            // Parse the JSON response
-            var options = new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true
-            };
-            var result = JsonSerializer.Deserialize<LabelsResponse>(content, options);
+            var response3 = await TestHelpers.CreateKeyValue(client, "test-key3", "value3", label: "staging");
+            response3.EnsureSuccessStatusCode();
+
+            // Act - Get labels with exact name match
+            var result = await TestHelpers.GetLabels(client, nameFilter: "prod");
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.NotNull(result.Items);
+            Assert.Single(result.Items);
+            Assert.Equal("prod", result.Items[0].Name);
+        }
+
+        [Fact]
+        public async Task GetLabels_WithWildcardNameFilter_ReturnsMatchingLabels()
+        {
+            // Arrange - Create test key-values with different labels
+            var client = _testServer.Client;
+            var response1 = await TestHelpers.CreateKeyValue(client, "test-key1", "value1", label: "dev-1");
+            response1.EnsureSuccessStatusCode();
+
+            var response2 = await TestHelpers.CreateKeyValue(client, "test-key2", "value2", label: "dev-2");
+            response2.EnsureSuccessStatusCode();
+
+            var response3 = await TestHelpers.CreateKeyValue(client, "test-key3", "value3", label: "prod");
+            response3.EnsureSuccessStatusCode();
+
+            // Act - Get labels with wildcard name filter
+            var result = await TestHelpers.GetLabels(client, nameFilter: "dev*");
 
             // Assert
             Assert.NotNull(result);
             Assert.NotNull(result.Items);
             Assert.NotEmpty(result.Items);
 
-            // Should only have test-label1
-            Assert.Single(result.Items);
-            Assert.Equal("test-label1", result.Items[0].Name);
+            Assert.All(result.Items, label => Assert.StartsWith("dev", label.Name));
 
-            // Should not have other labels
-            Assert.DoesNotContain(result.Items, l => l.Name == "dev");
+            Assert.Contains(result.Items, l => l.Name == "dev-1");
+            Assert.Contains(result.Items, l => l.Name == "dev-2");
+
             Assert.DoesNotContain(result.Items, l => l.Name == "prod");
         }
 
-        // Helper class to deserialize the response
-        private class LabelsResponse
+        [Fact]
+        public async Task GetLabels_WithMultipleNameFilter_ReturnsMatchingLabels()
         {
-            public List<Label> Items { get; set; }
+            // Arrange - Create test key-values with different labels
+            var client = _testServer.Client;
+            var response1 = await TestHelpers.CreateKeyValue(client, "test-key1", "value1", label: "dev");
+            response1.EnsureSuccessStatusCode();
 
-            public class Label
-            {
-                public string Name { get; set; }
-            }
+            var response2 = await TestHelpers.CreateKeyValue(client, "test-key2", "value2", label: "prod");
+            response2.EnsureSuccessStatusCode();
+
+            var response3 = await TestHelpers.CreateKeyValue(client, "test-key3", "value3", label: "staging");
+            response3.EnsureSuccessStatusCode();
+
+            // Act - Get labels with multiple name filter (comma-separated)
+            var result = await TestHelpers.GetLabels(client, nameFilter: "dev,staging");
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.NotNull(result.Items);
+            Assert.NotEmpty(result.Items);
+
+            Assert.Equal(2, result.Items.Count);
+
+            Assert.Contains(result.Items, l => l.Name == "dev");
+            Assert.Contains(result.Items, l => l.Name == "staging");
+
+            Assert.DoesNotContain(result.Items, l => l.Name == "prod");
+        }
+
+        [Fact]
+        public async Task GetLabels_WithAsteriskNameFilter_ReturnsAllLabels()
+        {
+            // Arrange - Create test key-value with a label
+            var client = _testServer.Client;
+            var response = await TestHelpers.CreateKeyValue(client, "test-key", "test-value", label: "test-label");
+            response.EnsureSuccessStatusCode();
+
+            // Act - Get labels with asterisk wildcard
+            var result = await TestHelpers.GetLabels(client, nameFilter: "*");
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.NotNull(result.Items);
+            Assert.NotEmpty(result.Items);
+
+            Assert.Contains(result.Items, l => l.Name == "test-label");
         }
     }
 }
