@@ -26,6 +26,7 @@ Application started. Press Ctrl+C to shut down.
 ## .NET SDK Example
 
 Install the following NuGet packages:
+
 ```powershell
 dotnet add package Azure.Data.AppConfiguration
 dotnet add package Microsoft.Extensions.Configuration.AzureAppConfiguration
