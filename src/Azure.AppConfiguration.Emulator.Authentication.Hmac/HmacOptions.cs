@@ -3,7 +3,7 @@
 
 using System;
 
-namespace Microsoft.AppConfig.Service.Authentication
+namespace Microsoft.AppConfig.Service.Authentication.Hmac
 {
     public class HmacOptions
     {

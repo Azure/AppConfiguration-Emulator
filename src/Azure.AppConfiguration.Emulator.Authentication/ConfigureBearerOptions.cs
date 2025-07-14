@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+using Microsoft.AppConfig.Service.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
@@ -30,8 +31,8 @@ namespace Azure.AppConfiguration.Emulator.Authentication
             ICredentialValidator validator = _validators.FirstOrDefault(v => v.CanValidate(scheme));
 
             // 
-            // Scheme
-            options.Challenge = scheme;
+            // Scheme - use "Anonymous" for empty scheme to avoid WWW-Authenticate header with empty value
+            options.Challenge = string.IsNullOrEmpty(scheme) ? "Anonymous" : scheme;
 
             //
             // Handler
@@ -46,7 +47,7 @@ namespace Azure.AppConfiguration.Emulator.Authentication
                     return;
                 }
 
-                Credential credential = context.RequestServices.GetRequiredService<Credential>();
+                Credential credential = context.RequestServices.GetService<Credential>();
 
                 if (credential == null ||
                     validator == null ||
@@ -81,6 +82,11 @@ namespace Azure.AppConfiguration.Emulator.Authentication
                     if (ctx.AuthenticateFailure != null)
                     {
                         ctx.ErrorDescription = ctx.AuthenticateFailure.Message;
+
+                        if (string.Equals(ctx.ErrorDescription, Errors.SchemeNotAllowed))
+                        {
+                            ctx.Error = "authentication_disabled";
+                        }
                     }
                 }
                 else
