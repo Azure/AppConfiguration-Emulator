@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { KeyValue, KeyValueRequest } from '../models/keyValue';
+import { KeyValue, KeyValueRequest, KeyValueRevision } from '../models/keyValue';
 
 const API_BASE_URL = '';
 
@@ -60,6 +60,18 @@ export const keyValueService = {
       return response.data;
     } catch (error) {
       console.error('Error fetching keys:', error);
+      return [];
+    }
+  },
+
+  getKeyValueRevisions: async (key: string, label?: string): Promise<KeyValueRevision[]> => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/revisions`, {
+        params: { key, label }
+      });
+      return response.data.items;
+    } catch (error) {
+      console.error('Error fetching key value revisions:', error);
       return [];
     }
   }
