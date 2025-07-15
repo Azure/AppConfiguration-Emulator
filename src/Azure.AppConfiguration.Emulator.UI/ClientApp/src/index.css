@@ -184,3 +184,71 @@ input, textarea {
   background-color: #6e6e6e;
   cursor: not-allowed;
 }
+
+/* Revisions Component Styles */
+.key-value-revisions {
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.revisions-header {
+  margin-bottom: 30px;
+}
+
+.revisions-header h2 {
+  color: #333;
+  margin-bottom: 15px;
+  font-size: 1.8em;
+  font-weight: 600;
+}
+
+.key-info {
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 4px;
+  padding: 15px;
+  margin-bottom: 20px;
+  font-size: 14px;
+}
+
+.key-info-large {
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 4px;
+  padding: 20px;
+  margin-bottom: 25px;
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.view-revisions-button {
+  background-color: #107c10;
+  margin-left: 5px;
+}
+
+.view-revisions-button:hover {
+  background-color: #0e6e0e;
+}
+
+.no-revisions {
+  text-align: center;
+  padding: 40px;
+  color: #6c757d;
+  font-size: 16px;
+}
+
+.tags-display {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.tag-display {
+  background: #e9ecef;
+  color: #495057;
+  padding: 2px 6px;
+  border-radius: 12px;
+  font-size: 11px;
+  white-space: nowrap;
+}

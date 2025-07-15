@@ -1,4 +1,4 @@
-import { KeyValue, KeyValueRequest } from '../models/keyValue';
+import { KeyValue, KeyValueRequest, KeyValueRevision } from '../models/keyValue';
 interface KeyValueResponse {
     items: KeyValue[];
     '@nextLink'?: string;
@@ -13,5 +13,6 @@ export declare const keyValueService: {
     createOrUpdateKeyValue: (key: string, request: KeyValueRequest, label?: string) => Promise<KeyValue | null>;
     deleteKeyValue: (kv: KeyValue) => Promise<boolean>;
     getKeys: (nameFilter?: string, nextLink?: string) => Promise<KeysResponse>;
+    getKeyValueRevisions: (key: string, label?: string) => Promise<KeyValueRevision[]>;
 };
 export {};

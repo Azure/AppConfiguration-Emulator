@@ -4,6 +4,7 @@ import { useState } from 'react';
 import KeyValueList from './KeyValueList';
 import { KeyValue } from '../models/keyValue';
 import KeyValueEditor from './KeyValueEditor';
+import KeyValueRevisions from './KeyValueRevisions';
 
 export default function App() {
   const [selectedKeyValue, setSelectedKeyValue] = useState<KeyValue | null>(null);
@@ -17,6 +18,13 @@ export default function App() {
     //
     // Navigate to the edit route
     const url = `/ui/edit/${encodeURIComponent(keyValue.key)}${keyValue.label ? `?label=${encodeURIComponent(keyValue.label)}` : ''}`;
+    navigate(url);
+  };
+
+  // 
+  // Handler for viewing revisions of a key value
+  const handleViewRevisions = (keyValue: KeyValue) => {
+    const url = `/ui/revisions/${encodeURIComponent(keyValue.key)}${keyValue.label ? `?label=${encodeURIComponent(keyValue.label)}` : ''}`;
     navigate(url);
   };
 
@@ -38,9 +46,10 @@ export default function App() {
         
         <main>
           <Routes>
-            <Route path="/" element={<KeyValueList onEdit={handleKeyValueEdit} />} />
+            <Route path="/" element={<KeyValueList onEdit={handleKeyValueEdit} onViewRevisions={handleViewRevisions} />} />
             <Route path="/ui/create" element={<KeyValueEditor mode="create" onBack={handleBack}  />} />
             <Route path="/ui/edit/:key" element={<KeyValueEditor mode="edit" keyValue={selectedKeyValue} onBack={handleBack}  />} />
+            <Route path="/ui/revisions/:key" element={<KeyValueRevisions />} />
           </Routes>
         </main>
       </div>
