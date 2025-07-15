@@ -159,6 +159,32 @@ input, textarea {
   margin-bottom: 20px;
 }
 
+.load-more-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.load-more-button {
+  background-color: transparent;
+  color: #0078d4;
+  border: 1px solid #0078d4;
+  padding: 12px 24px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  margin: 0;
+}
+
+.load-more-button:hover:not(:disabled) {
+  background-color: rgba(0, 120, 212, 0.1);
+}
+
+.load-more-button:disabled {
+  background-color: #6e6e6e;
+  cursor: not-allowed;
+}
+
 /* Revisions Component Styles */
 .key-value-revisions {
   padding: 20px;
