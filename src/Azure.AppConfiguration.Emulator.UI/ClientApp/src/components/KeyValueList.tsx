@@ -123,7 +123,7 @@ export default function KeyValueList({ onEdit, onViewRevisions }: Props) {
                   <td>{kv.key}</td>
                   <td>{kv.label || '<null>'}</td>
                   <td>{kv.value || ''}</td>
-                  <td>{kv.contentType || ''}</td>
+                  <td>{kv.content_type || ''}</td>
                   <td>
                     <button onClick={() => onEdit(kv)} className="edit-button">
                       Edit

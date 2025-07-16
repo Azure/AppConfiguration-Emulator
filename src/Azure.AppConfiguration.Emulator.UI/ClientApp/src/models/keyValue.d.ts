@@ -2,7 +2,7 @@ export interface KeyValue {
     key: string;
     label?: string;
     value?: string;
-    contentType?: string;
+    content_type?: string;
     etag?: string;
     lastModified?: string;
     locked?: boolean;
@@ -20,6 +20,6 @@ export interface KeyValueRevision {
 }
 export interface KeyValueRequest {
     value?: string;
-    contentType?: string;
+    content_type?: string;
     tags?: Record<string, string>;
 }
