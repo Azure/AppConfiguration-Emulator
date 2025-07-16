@@ -4,7 +4,7 @@ export interface KeyValue {
     value?: string;
     content_type?: string;
     etag?: string;
-    lastModified?: string;
+    last_modified?: string;
     locked?: boolean;
     tags?: Record<string, string>;
 }
