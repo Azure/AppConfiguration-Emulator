@@ -30,9 +30,19 @@ namespace Azure.AppConfiguration.Emulator.Host
                 throw new ArgumentNullException(nameof(hostingConfiguration.Certificate));
             }
 
+            if (string.IsNullOrEmpty(hostingConfiguration.IPAddress))
+            {
+                throw new ArgumentNullException(nameof(hostingConfiguration.IPAddress));
+            }
+
+            if (!IPAddress.TryParse(hostingConfiguration.IPAddress, out IPAddress ipAddress))
+            {
+                throw new ArgumentException($"Invalid IP address '{hostingConfiguration.IPAddress}' in configuration.", nameof(hostingConfiguration.IPAddress));
+            }
+
             //
             // Listen on configured ports
-            options.Listen(IPAddress.Any, hostingConfiguration.Port, listenOptions =>
+            options.Listen(ipAddress, hostingConfiguration.Port, listenOptions =>
             {
                 if (useHttps)
                 {
