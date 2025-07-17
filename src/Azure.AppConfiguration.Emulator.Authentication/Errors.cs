@@ -7,5 +7,6 @@ namespace Microsoft.AppConfig.Service.Authentication
     {
         public const string InvalidCredential = "Invalid credential";
         public const string SchemeNotAllowed = "The authentication method is not enabled";
+        public const string Forbidden = "forbidden";
     }
 }

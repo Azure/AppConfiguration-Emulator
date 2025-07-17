@@ -85,7 +85,7 @@ namespace Azure.AppConfiguration.Emulator.Authentication
 
                         if (string.Equals(ctx.ErrorDescription, Errors.SchemeNotAllowed))
                         {
-                            ctx.Error = "authentication_disabled";
+                            ctx.Error = Errors.Forbidden;
                         }
                     }
                 }
