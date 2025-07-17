@@ -1,5 +1,7 @@
 import axios from 'axios';
 import { KeyValue, KeyValueRequest, KeyValueRevision } from '../models/keyValue';
+import { KeyValueMapper, KeyValueRequestMapper, KeyValueRevisionMapper } from '../utils/mappers';
+import { deserialize, serialize } from '../utils/serializer';
 
 const API_BASE_URL = '';
 
@@ -24,8 +26,10 @@ export const keyValueService = {
       }
       
       const response = await axios.get(url, { params });
+      const rawItems = response.data.items || [];
+      
       return {
-        items: response.data.items || [],
+        items: rawItems.map((item: any) => deserialize<KeyValue>(KeyValueMapper, item)),
         '@nextLink': response.data['@nextLink']
       };
     } catch (error) {
@@ -39,7 +43,7 @@ export const keyValueService = {
       const response = await axios.get(`${API_BASE_URL}/kv/${encodeURIComponent(key)}`, {
         params: { label }
       });
-      return response.data;
+      return deserialize<KeyValue>(KeyValueMapper, response.data);
     } catch (error) {
       console.error('Error fetching key value:', error);
       return null;
@@ -48,10 +52,11 @@ export const keyValueService = {
 
   createOrUpdateKeyValue: async (key: string, request: KeyValueRequest, label?: string): Promise<KeyValue | null> => {
     try {
-      const response = await axios.put(`${API_BASE_URL}/kv/${encodeURIComponent(key)}`, request, {
+      const serializedRequest = serialize<KeyValueRequest>(KeyValueRequestMapper, request);
+      const response = await axios.put(`${API_BASE_URL}/kv/${encodeURIComponent(key)}`, serializedRequest, {
         params: { label }
       });
-      return response.data;
+      return deserialize<KeyValue>(KeyValueMapper, response.data);
     } catch (error) {
       console.error('Error saving key value:', error);
       return null;
@@ -103,7 +108,8 @@ export const keyValueService = {
       const response = await axios.get(`${API_BASE_URL}/revisions`, {
         params: { key, label }
       });
-      return response.data.items;
+      const rawItems = response.data.items || [];
+      return rawItems.map((item: any) => deserialize<KeyValueRevision>(KeyValueRevisionMapper, item));
     } catch (error) {
       console.error('Error fetching key value revisions:', error);
       return [];
