@@ -33,6 +33,7 @@ namespace Azure.AppConfiguration.Emulator.Service.Formatters.Json
         {
             return base.CanReadType(type) &&
                    (typeof(KeyValueFilterModel).IsAssignableFrom(type) ||
+                    typeof(KeyValueModel).IsAssignableFrom(type) ||
                     typeof(IEnumerable<KeyValue>).IsAssignableFrom(type));
         }
     }
