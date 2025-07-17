@@ -33,7 +33,7 @@ export default function KeyValueEditor({ mode, keyValue, onBack }: Props) {
         const fullKeyValue = await keyValueService.getKeyValue(keyValue.key, keyValue.label);
         if (fullKeyValue) {
           setValue(fullKeyValue.value || '');
-          setContentType(fullKeyValue.content_type || '');
+          setContentType(fullKeyValue.contentType || '');
           setTags(fullKeyValue.tags || {});
         }
         setLoading(false);
@@ -82,7 +82,7 @@ export default function KeyValueEditor({ mode, keyValue, onBack }: Props) {
     
     const request: KeyValueRequest = {
       value,
-      content_type: contentType || undefined,
+      contentType: contentType || undefined,
       tags: Object.keys(tags).length > 0 ? tags : undefined
     };
     
