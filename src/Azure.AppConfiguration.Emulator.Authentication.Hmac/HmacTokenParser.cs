@@ -4,7 +4,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Microsoft.AppConfig.Service.Security.Authentication
+namespace Microsoft.AppConfig.Service.Security.Authentication.Hmac
 {
     internal static class HmacTokenParser
     {

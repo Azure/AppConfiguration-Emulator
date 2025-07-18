@@ -10,14 +10,13 @@ using Azure.AppConfiguration.Emulator.Service.Formatters.Json;
 using Azure.AppConfiguration.Emulator.Service.Validators;
 using Azure.AppConfiguration.Emulator.Tenant;
 using Azure.AppConfiguration.Emulator.Versioning;
-using Microsoft.AppConfig.Service.Authentication;
 using Microsoft.AppConfig.Service.Authentication.Anonymous;
+using Microsoft.AppConfig.Service.Authentication.Hmac;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
-using System.IO;
 
 namespace Azure.AppConfiguration.Emulator.Host
 {
