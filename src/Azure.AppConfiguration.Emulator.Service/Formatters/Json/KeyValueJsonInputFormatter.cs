@@ -32,7 +32,7 @@ namespace Azure.AppConfiguration.Emulator.Service.Formatters.Json
         protected override bool CanReadType(Type type)
         {
             return base.CanReadType(type) &&
-                   (typeof(KeyValueFilterModel).IsAssignableFrom(type) ||
+                   (typeof(KeyValueModel).IsAssignableFrom(type) ||
                     typeof(IEnumerable<KeyValue>).IsAssignableFrom(type));
         }
     }
