@@ -1,7 +1,7 @@
 import { Mapper } from "./mappers";
 
 export function deserialize<T>(mapper: Mapper, input: any): T {
-  const output: any = {};
+  const output: T = {} as T;
   for (const [propName, propDef] of Object.entries(mapper.modelProperties)) {
     const serializedKey = propDef.serializedName;
     if (input.hasOwnProperty(serializedKey)) {
@@ -19,7 +19,7 @@ export function deserialize<T>(mapper: Mapper, input: any): T {
       }
     }
   }
-  return output as T;
+  return output;
 }
 
 export function serialize<T>(mapper: Mapper, input: T): any {

@@ -50,44 +50,6 @@ export const KeyValueMapper: Mapper = {
   }
 };
 
-export const KeyValueRevisionMapper: Mapper = {
-  modelName: "KeyValueRevision", 
-  modelProperties: {
-    key: {
-      serializedName: "key",
-      type: { name: "String" }
-    },
-    label: {
-      serializedName: "label", 
-      type: { name: "String" }
-    },
-    value: {
-      serializedName: "value",
-      type: { name: "String" }
-    },
-    contentType: {
-      serializedName: "content_type",
-      type: { name: "String" }
-    },
-    etag: {
-      serializedName: "etag",
-      type: { name: "String" }
-    },
-    lastModified: {
-      serializedName: "last_modified",
-      type: { name: "Date" }
-    },
-    locked: {
-      serializedName: "locked",
-      type: { name: "Boolean" }
-    },
-    tags: {
-      serializedName: "tags",
-      type: { name: "Object" }
-    }
-  }
-};
-
 export const KeyValueRequestMapper: Mapper = {
   modelName: "KeyValueRequest",
   modelProperties: {

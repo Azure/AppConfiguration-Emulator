@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { KeyValue, KeyValueRequest, KeyValueRevision } from '../models/keyValue';
-import { KeyValueMapper, KeyValueRequestMapper, KeyValueRevisionMapper } from '../utils/mappers';
+import { KeyValueMapper, KeyValueRequestMapper } from '../utils/mappers';
 import { deserialize, serialize } from '../utils/serializer';
 
 const API_BASE_URL = '';
@@ -109,7 +109,7 @@ export const keyValueService = {
         params: { key, label }
       });
       const rawItems = response.data.items || [];
-      return rawItems.map((item: any) => deserialize<KeyValueRevision>(KeyValueRevisionMapper, item));
+      return rawItems.map((item: any) => deserialize<KeyValueRevision>(KeyValueMapper, item));
     } catch (error) {
       console.error('Error fetching key value revisions:', error);
       return [];
