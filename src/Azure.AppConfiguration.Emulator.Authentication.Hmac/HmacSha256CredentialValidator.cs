@@ -6,7 +6,7 @@ using Azure.AppConfiguration.Emulator.Tenant;
 using Microsoft.AppConfig.Service.Authorization;
 using Microsoft.AppConfig.Service.Cryptography;
 using Microsoft.AppConfig.Service.Security;
-using Microsoft.AppConfig.Service.Security.Authentication;
+using Microsoft.AppConfig.Service.Security.Authentication.Hmac;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Primitives;
@@ -20,7 +20,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Microsoft.AppConfig.Service.Authentication
+namespace Microsoft.AppConfig.Service.Authentication.Hmac
 {
     class HmacSha256CredentialValidator : ICredentialValidator
     {
@@ -141,7 +141,7 @@ namespace Microsoft.AppConfig.Service.Authentication
         {
             if (!_tenant.HmacSha256Enabled)
             {
-                result.Error = Errors.DisabledScheme;
+                result.Error = Errors.SchemeNotAllowed;
 
                 return false;
             }
@@ -162,7 +162,7 @@ namespace Microsoft.AppConfig.Service.Authentication
 
             if (string.IsNullOrEmpty(hmacToken.Signature))
             {
-                result.Error = Errors.SignatureNotFound;
+                result.Error = HmacErrors.SignatureNotFound;
 
                 return false;
             }
@@ -173,7 +173,7 @@ namespace Microsoft.AppConfig.Service.Authentication
 
             if (!StringUtils.TryConvertFromBase64String(hmacToken.Signature, out tokenHmac))
             {
-                result.Error = Errors.InvalidSignature;
+                result.Error = HmacErrors.InvalidSignature;
 
                 return false;
             }
@@ -188,7 +188,7 @@ namespace Microsoft.AppConfig.Service.Authentication
             // Compare
             if (!CryptoUtils.CryptoEquals(expectedHmac, tokenHmac))
             {
-                result.Error = Errors.InvalidSignature;
+                result.Error = HmacErrors.InvalidSignature;
 
                 return false;
             }
@@ -217,7 +217,7 @@ namespace Microsoft.AppConfig.Service.Authentication
 
             //
             // Date is required
-            result.Error = Errors.InvalidAccessTokenDate;
+            result.Error = HmacErrors.InvalidAccessTokenDate;
 
             return false;
         }
@@ -226,7 +226,7 @@ namespace Microsoft.AppConfig.Service.Authentication
         {
             if (!dt.HasValue)
             {
-                result.Error = Errors.InvalidAccessTokenDate;
+                result.Error = HmacErrors.InvalidAccessTokenDate;
 
                 return false;
             }
@@ -235,7 +235,7 @@ namespace Microsoft.AppConfig.Service.Authentication
             // Time offset validity: +/- HmacOptions.AccessTokenExpiration
             if ((DateTimeOffset.UtcNow - dt.Value).Duration() > _options.AccessTokenTTL)
             {
-                result.Error = Errors.AccessTokenExpired;
+                result.Error = HmacErrors.AccessTokenExpired;
 
                 return false;
             }
@@ -275,7 +275,7 @@ namespace Microsoft.AppConfig.Service.Authentication
         {
             if (token.SignedHeaders == null || !token.SignedHeaders.Any())
             {
-                result.Error = Errors.SignedHeadersNotFound;
+                result.Error = HmacErrors.SignedHeadersNotFound;
                 return false;
             }
 
@@ -287,7 +287,7 @@ namespace Microsoft.AppConfig.Service.Authentication
             {
                 if (string.IsNullOrEmpty(header))
                 {
-                    result.Error = Errors.InvalidSignedHeaders;
+                    result.Error = HmacErrors.InvalidSignedHeaders;
                     return false;
                 }
 
@@ -295,7 +295,7 @@ namespace Microsoft.AppConfig.Service.Authentication
                 // Ensure all SignedHeaders are available
                 if (!requestHeaders.TryGetValue(header, out StringValues v))
                 {
-                    result.Error = string.Format(Errors.SignHeaderNotFound, header);
+                    result.Error = string.Format(HmacErrors.SignHeaderNotFound, header);
                     return false;
                 }
 
@@ -333,7 +333,7 @@ namespace Microsoft.AppConfig.Service.Authentication
             // Date or x-ms-date
             if (!hasDate)
             {
-                result.Error = string.Format(Errors.SignHeaderNotFound, HeaderNames.Date);
+                result.Error = string.Format(HmacErrors.SignHeaderNotFound, HeaderNames.Date);
                 return false;
             }
 
@@ -341,7 +341,7 @@ namespace Microsoft.AppConfig.Service.Authentication
             // Host
             if (!hasHost)
             {
-                result.Error = string.Format(Errors.SignHeaderNotFound, HeaderNames.Host);
+                result.Error = string.Format(HmacErrors.SignHeaderNotFound, HeaderNames.Host);
                 return false;
             }
 
@@ -349,7 +349,7 @@ namespace Microsoft.AppConfig.Service.Authentication
             // x-ms-content-sha256
             if (!hasContentHash)
             {
-                result.Error = string.Format(Errors.SignHeaderNotFound, HeaderNames.MsContentSha256);
+                result.Error = string.Format(HmacErrors.SignHeaderNotFound, HeaderNames.MsContentSha256);
                 return false;
             }
 
@@ -370,7 +370,7 @@ namespace Microsoft.AppConfig.Service.Authentication
 
             if (hash != hashHeader)
             {
-                result.Error = Errors.InvalidContentHash;
+                result.Error = HmacErrors.InvalidContentHash;
                 return false;
             }
 

@@ -1,15 +1,12 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-namespace Microsoft.AppConfig.Service.Authentication
+namespace Microsoft.AppConfig.Service.Authentication.Hmac
 {
-    static class Errors
+    static class HmacErrors
     {
         public const string InvalidAccessTokenDate = "Invalid access token date";
         public const string AccessTokenExpired = "The access token has expired";
-
-        public const string InvalidCredential = "Invalid Credential";
-        public const string DisabledScheme = "Authentication scheme disabled";
 
         public const string SignedHeadersNotFound = "SignedHeaders parameter is required";
         public const string InvalidSignedHeaders = "Invalid SignedHeaders parameter";

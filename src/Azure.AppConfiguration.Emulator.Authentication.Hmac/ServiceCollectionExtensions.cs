@@ -4,7 +4,7 @@
 using Azure.AppConfiguration.Emulator.Authentication;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Microsoft.AppConfig.Service.Authentication
+namespace Microsoft.AppConfig.Service.Authentication.Hmac
 {
     public static class ServiceCollectionExtensions
     {
