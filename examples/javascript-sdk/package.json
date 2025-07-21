@@ -1,6 +1,8 @@
 {
+  "type": "module",
   "dependencies": {
     "@azure/app-configuration": "latest",
-    "@azure/app-configuration-provider": "latest"
+    "@azure/app-configuration-provider": "latest",
+    "@microsoft/feature-management": "latest"
   }
 }
