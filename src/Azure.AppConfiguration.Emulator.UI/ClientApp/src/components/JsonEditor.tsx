@@ -1,13 +1,16 @@
 import { useState, useEffect } from 'react';
+import { validateFeatureFlagJson } from '../utils/featureFlagValidation';
 
 interface Props {
   isOpen: boolean;
   jsonValue: string;
   onSave: (jsonValue: string) => void;
   onClose: () => void;
+  mode?: 'create' | 'edit';
+  currentName?: string;
 }
 
-export default function JsonEditor({ isOpen, jsonValue, onSave, onClose }: Props) {
+export default function JsonEditor({ isOpen, jsonValue, onSave, onClose, mode, currentName }: Props) {
   const [editedJson, setEditedJson] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isValid, setIsValid] = useState(true);
@@ -20,50 +23,25 @@ export default function JsonEditor({ isOpen, jsonValue, onSave, onClose }: Props
         const formatted = JSON.stringify(parsed, null, 2);
         setEditedJson(formatted);
         
-        // Validate the initial JSON
-        if (!parsed.id) {
-          setError('Field "id" is required in feature flag JSON');
-          setIsValid(false);
-        } else if (parsed.enabled === undefined || parsed.enabled === null) {
-          setError('Field "enabled" is required in feature flag JSON');
-          setIsValid(false);
-        } else {
-          setError(null);
-          setIsValid(true);
-        }
+        // Validate the initial JSON using shared validation
+        const validation = validateFeatureFlagJson(jsonValue, mode, currentName);
+        setIsValid(validation.isValid);
+        setError(validation.error || null);
       } catch {
         setEditedJson(jsonValue);
         setError('Invalid JSON format');
         setIsValid(false);
       }
     }
-  }, [isOpen, jsonValue]);
+  }, [isOpen, jsonValue, mode, currentName]);
 
   const handleJsonChange = (value: string) => {
     setEditedJson(value);
     
-    try {
-      const parsed = JSON.parse(value);
-      
-      // Validate required fields for feature flags
-      if (!parsed.id) {
-        setError('Field "id" is required in feature flag JSON');
-        setIsValid(false);
-        return;
-      }
-      
-      if (parsed.enabled === undefined || parsed.enabled === null) {
-        setError('Field "enabled" is required in feature flag JSON');
-        setIsValid(false);
-        return;
-      }
-      
-      setError(null);
-      setIsValid(true);
-    } catch (err) {
-      setError('Invalid JSON syntax');
-      setIsValid(false);
-    }
+    // Use shared validation utility
+    const validation = validateFeatureFlagJson(value, mode, currentName);
+    setIsValid(validation.isValid);
+    setError(validation.error || null);
   };
 
   const handleSave = () => {

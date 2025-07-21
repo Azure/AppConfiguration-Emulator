@@ -135,25 +135,11 @@ export default function FeatureFlagEditor({ mode, keyValue, onBack }: Props) {
   };
 
   const handleJsonSave = (newJsonValue: string) => {
-    // Validate JSON and required fields
+    // JsonEditor only calls this when validation passes, so we can trust the JSON is valid
     try {
       const parsed = JSON.parse(newJsonValue);
       
-      // Check for required fields
-      if (!parsed.id) {
-        throw new Error('Field "id" is required in feature flag JSON');
-      }
-      
-      if (parsed.enabled === undefined || parsed.enabled === null) {
-        throw new Error('Field "enabled" is required in feature flag JSON');
-      }
-      
-      // When editing an existing feature flag, prevent changing the id
-      if (mode === 'edit' && parsed.id !== name) {
-        throw new Error('Cannot change the feature flag ID when editing an existing feature flag');
-      }
-      
-      // If validation passes, update the state
+      // Update the state with the validated JSON
       setJsonValue(newJsonValue);
       setUseAdvancedMode(true);
       setEnabled(parsed.enabled === true);
@@ -166,16 +152,8 @@ export default function FeatureFlagEditor({ mode, keyValue, onBack }: Props) {
       // Clear any previous errors
       setError(null);
     } catch (err) {
-      // Set error message for invalid JSON or missing required fields
-      if (err instanceof SyntaxError) {
-        setError('Invalid JSON format. Please check your syntax.');
-      } else if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError('Invalid JSON configuration');
-      }
-      // Don't update the state if validation fails
-      return;
+      // This should rarely happen since JsonEditor validates first
+      setError('Failed to process the validated JSON');
     }
   };
 
@@ -296,6 +274,8 @@ export default function FeatureFlagEditor({ mode, keyValue, onBack }: Props) {
         jsonValue={jsonValue}
         onSave={handleJsonSave}
         onClose={() => setIsJsonEditorOpen(false)}
+        mode={mode}
+        currentName={name}
       />
     </div>
   );

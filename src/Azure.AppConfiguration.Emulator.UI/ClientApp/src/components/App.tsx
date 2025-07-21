@@ -1,4 +1,3 @@
-import React from 'react';
 import { Routes, Route, Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import KeyValueList from './KeyValueList';
@@ -12,25 +11,21 @@ export default function App() {
   const [selectedKeyValue, setSelectedKeyValue] = useState<KeyValue | null>(null);
   const navigate = useNavigate();
 
-  //  
   // Handler for editing a key value
   const handleKeyValueEdit = (keyValue: KeyValue) => {
     setSelectedKeyValue(keyValue);
 
-    //
     // Navigate to the edit route
     const url = `/ui/edit/${encodeURIComponent(keyValue.key)}${keyValue.label ? `?label=${encodeURIComponent(keyValue.label)}` : ''}`;
     navigate(url);
   };
 
-  // 
   // Handler for viewing revisions of a key value
   const handleViewRevisions = (keyValue: KeyValue) => {
     const url = `/ui/revisions/${encodeURIComponent(keyValue.key)}${keyValue.label ? `?label=${encodeURIComponent(keyValue.label)}` : ''}`;
     navigate(url);
   };
 
-  // 
   // Handler for editing a feature flag
   const handleFeatureFlagEdit = (keyValue: KeyValue) => {
     setSelectedKeyValue(keyValue);
@@ -38,19 +33,16 @@ export default function App() {
     navigate(url);
   };
 
-  // 
   // Handler for creating a feature flag
   const handleFeatureFlagCreate = () => {
     navigate('/ui/featureflags/create');
   };
 
-  // 
   // Handler for going back to the list view
   const handleBack = () => {
     navigate('/');
   };
 
-  // 
   // Handler for going back to the feature flag list
   const handleFeatureFlagBack = () => {
     navigate('/ui/featureflags');
