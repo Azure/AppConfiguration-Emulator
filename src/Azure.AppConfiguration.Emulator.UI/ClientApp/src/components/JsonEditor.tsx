@@ -19,8 +19,18 @@ export default function JsonEditor({ isOpen, jsonValue, onSave, onClose }: Props
         const parsed = JSON.parse(jsonValue);
         const formatted = JSON.stringify(parsed, null, 2);
         setEditedJson(formatted);
-        setError(null);
-        setIsValid(true);
+        
+        // Validate the initial JSON
+        if (!parsed.id) {
+          setError('Field "id" is required in feature flag JSON');
+          setIsValid(false);
+        } else if (parsed.enabled === undefined || parsed.enabled === null) {
+          setError('Field "enabled" is required in feature flag JSON');
+          setIsValid(false);
+        } else {
+          setError(null);
+          setIsValid(true);
+        }
       } catch {
         setEditedJson(jsonValue);
         setError('Invalid JSON format');
@@ -33,7 +43,21 @@ export default function JsonEditor({ isOpen, jsonValue, onSave, onClose }: Props
     setEditedJson(value);
     
     try {
-      JSON.parse(value);
+      const parsed = JSON.parse(value);
+      
+      // Validate required fields for feature flags
+      if (!parsed.id) {
+        setError('Field "id" is required in feature flag JSON');
+        setIsValid(false);
+        return;
+      }
+      
+      if (parsed.enabled === undefined || parsed.enabled === null) {
+        setError('Field "enabled" is required in feature flag JSON');
+        setIsValid(false);
+        return;
+      }
+      
       setError(null);
       setIsValid(true);
     } catch (err) {
@@ -75,10 +99,16 @@ export default function JsonEditor({ isOpen, jsonValue, onSave, onClose }: Props
         
         <div className="json-editor-content">
           <p className="json-editor-description">
-            Edit the feature flag configuration JSON directly. The JSON must be valid and follow the feature flag schema.
+            Edit the feature flag configuration JSON directly. Required fields: <strong>id</strong> and <strong>enabled</strong>.
           </p>
           
-          {error && <div className="error-message">{error}</div>}
+          <div className={`validation-status ${isValid ? 'valid' : 'invalid'}`}>
+            {isValid ? (
+              <span className="validation-message valid">✓ JSON is valid</span>
+            ) : (
+              <span className="validation-message invalid">✗ {error || 'Invalid JSON'}</span>
+            )}
+          </div>
           
           <div className="json-editor-input-container">
             <textarea

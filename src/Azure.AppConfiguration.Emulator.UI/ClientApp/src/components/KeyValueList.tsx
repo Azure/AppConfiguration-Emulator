@@ -71,6 +71,32 @@ export default function KeyValueList({ onEdit, onViewRevisions }: Props) {
     fetchKeyValues(true);
   };
 
+  const renderTags = (tags: Record<string, string> | undefined) => {
+    if (!tags || Object.keys(tags).length === 0) {
+      return <span className="no-tags">No tags</span>;
+    }
+
+    const tagEntries = Object.entries(tags);
+    const maxDisplayTags = 3; // Show max 3 tags initially
+    const visibleTags = tagEntries.slice(0, maxDisplayTags);
+    const remainingCount = tagEntries.length - maxDisplayTags;
+
+    return (
+      <div className="tags-display" title={tagEntries.map(([k, v]) => `${k}: ${v}`).join(', ')}>
+        {visibleTags.map(([k, v]) => (
+          <span key={k} className="tag-display">
+            {k}: {v}
+          </span>
+        ))}
+        {remainingCount > 0 && (
+          <span className="tag-display more-tags">
+            +{remainingCount} more
+          </span>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="key-value-list">
       <div className="filters">
@@ -109,21 +135,35 @@ export default function KeyValueList({ onEdit, onViewRevisions }: Props) {
               <th>Label</th>
               <th>Value</th>
               <th>Content Type</th>
+              <th>Tags</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
             {keyValues.length === 0 ? (
               <tr>
-                <td colSpan={5}>No key values found</td>
+                <td colSpan={6}>No key values found</td>
               </tr>
             ) : (
               keyValues.map((kv) => (
                 <tr key={`${kv.key}-${kv.label || 'null'}`}>
                   <td>{kv.key}</td>
                   <td>{kv.label || '<null>'}</td>
-                  <td>{kv.value || ''}</td>
-                  <td>{kv.contentType || ''}</td>
+                  <td className="value-cell" title={kv.value || ''}>
+                    {kv.value && kv.value.length > 50 
+                      ? `${kv.value.substring(0, 50)}...` 
+                      : kv.value || ''
+                    }
+                  </td>
+                  <td className="content-type-cell" title={kv.contentType || ''}>
+                    {kv.contentType && kv.contentType.length > 30 
+                      ? `${kv.contentType.substring(0, 30)}...` 
+                      : kv.contentType || ''
+                    }
+                  </td>
+                  <td>
+                    {renderTags(kv.tags)}
+                  </td>
                   <td>
                     <button onClick={() => onEdit(kv)} className="edit-button">
                       Edit

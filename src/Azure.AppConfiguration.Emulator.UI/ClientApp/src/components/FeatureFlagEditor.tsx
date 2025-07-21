@@ -20,11 +20,16 @@ export default function FeatureFlagEditor({ mode, keyValue, onBack }: Props) {
   const [name, setName] = useState('');
   const [label, setLabel] = useState('');
   const [enabled, setEnabled] = useState(false);
+  const [tags, setTags] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [jsonValue, setJsonValue] = useState('');
   const [isJsonEditorOpen, setIsJsonEditorOpen] = useState(false);
   const [useAdvancedMode, setUseAdvancedMode] = useState(false);
+  
+  // For tag editing
+  const [tagKey, setTagKey] = useState('');
+  const [tagValue, setTagValue] = useState('');
 
   useEffect(() => {
     if (mode === 'edit' && keyValue) {
@@ -32,6 +37,16 @@ export default function FeatureFlagEditor({ mode, keyValue, onBack }: Props) {
       setLabel(keyValue.label || '');
       setEnabled(parseFeatureFlagEnabled(keyValue.value || ''));
       setJsonValue(keyValue.value || '');
+      
+      // Fetch the full key value to get all properties including tags
+      const fetchFullKeyValue = async () => {
+        const fullKeyValue = await keyValueService.getKeyValue(keyValue.key, keyValue.label);
+        if (fullKeyValue) {
+          setTags(fullKeyValue.tags || {});
+        }
+      };
+      
+      fetchFullKeyValue();
       
       // Check if this is an advanced feature flag (has conditions)
       try {
@@ -45,10 +60,31 @@ export default function FeatureFlagEditor({ mode, keyValue, onBack }: Props) {
       setName('');
       setLabel('');
       setEnabled(false);
+      setTags({});
       setJsonValue('');
       setUseAdvancedMode(false);
     }
   }, [mode, keyValue]);
+
+  const handleAddTag = () => {
+    if (!tagKey.trim()) return;
+    
+    setTags(prev => ({
+      ...prev,
+      [tagKey]: tagValue
+    }));
+    
+    setTagKey('');
+    setTagValue('');
+  };
+
+  const handleRemoveTag = (key: string) => {
+    setTags(prev => {
+      const newTags = { ...prev };
+      delete newTags[key];
+      return newTags;
+    });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -71,7 +107,8 @@ export default function FeatureFlagEditor({ mode, keyValue, onBack }: Props) {
         key,
         {
           value,
-          contentType: FEATURE_FLAG_CONTENT_TYPE
+          contentType: FEATURE_FLAG_CONTENT_TYPE,
+          tags: Object.keys(tags).length > 0 ? tags : undefined
         },
         label.trim() || undefined
       );
@@ -91,22 +128,54 @@ export default function FeatureFlagEditor({ mode, keyValue, onBack }: Props) {
   const handleAdvancedEdit = () => {
     // If not in advanced mode, create a base JSON with current simple values
     if (!useAdvancedMode) {
-      const baseJson = createFeatureFlagValue(name.trim() || 'new-feature', enabled);
+      const baseJson = createFeatureFlagValue(name.trim(), enabled);
       setJsonValue(baseJson);
     }
     setIsJsonEditorOpen(true);
   };
 
   const handleJsonSave = (newJsonValue: string) => {
-    setJsonValue(newJsonValue);
-    setUseAdvancedMode(true);
-    
-    // Update the enabled state from the JSON
+    // Validate JSON and required fields
     try {
       const parsed = JSON.parse(newJsonValue);
+      
+      // Check for required fields
+      if (!parsed.id) {
+        throw new Error('Field "id" is required in feature flag JSON');
+      }
+      
+      if (parsed.enabled === undefined || parsed.enabled === null) {
+        throw new Error('Field "enabled" is required in feature flag JSON');
+      }
+      
+      // When editing an existing feature flag, prevent changing the id
+      if (mode === 'edit' && parsed.id !== name) {
+        throw new Error('Cannot change the feature flag ID when editing an existing feature flag');
+      }
+      
+      // If validation passes, update the state
+      setJsonValue(newJsonValue);
+      setUseAdvancedMode(true);
       setEnabled(parsed.enabled === true);
-    } catch {
-      // Keep current enabled state if JSON is invalid
+      
+      // If there's an id in the JSON and we're in create mode, set it as the name
+      if (parsed.id && mode === 'create') {
+        setName(parsed.id);
+      }
+      
+      // Clear any previous errors
+      setError(null);
+    } catch (err) {
+      // Set error message for invalid JSON or missing required fields
+      if (err instanceof SyntaxError) {
+        setError('Invalid JSON format. Please check your syntax.');
+      } else if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('Invalid JSON configuration');
+      }
+      // Don't update the state if validation fails
+      return;
     }
   };
 
@@ -118,7 +187,7 @@ export default function FeatureFlagEditor({ mode, keyValue, onBack }: Props) {
       
       <form onSubmit={handleSubmit} className="key-value-form">
         <div className="form-group">
-          <label htmlFor="name">Feature Flag Name:</label>
+          <label htmlFor="name">Name:</label>
           <input
             id="name"
             type="text"
@@ -140,6 +209,47 @@ export default function FeatureFlagEditor({ mode, keyValue, onBack }: Props) {
           />
         </div>
         
+        <div className="form-group">
+          <label>Tags:</label>
+          
+          <div className="tags-container">
+            {Object.entries(tags).map(([k, v]) => (
+              <div key={k} className="tag">
+                <span>{k}: {v}</span>
+                <button
+                  type="button"
+                  onClick={() => handleRemoveTag(k)}
+                  className="remove-tag"
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+          </div>
+          
+          <div className="add-tag">
+            <input
+              type="text"
+              placeholder="Tag Key"
+              value={tagKey}
+              onChange={(e) => setTagKey(e.target.value)}
+            />
+            <input
+              type="text"
+              placeholder="Tag Value"
+              value={tagValue}
+              onChange={(e) => setTagValue(e.target.value)}
+            />
+            <button
+              type="button"
+              onClick={handleAddTag}
+              className="add-tag-button"
+            >
+              Add Tag
+            </button>
+          </div>
+        </div>
+
         <div className="form-group">
           <label className="toggle-label">
             <span>Enabled State:</span>
