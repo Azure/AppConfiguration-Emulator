@@ -25,15 +25,12 @@ namespace Azure.AppConfiguration.Emulator.Service.Formatters.Json
             MvcNewtonsoftJsonOptions jsonOptions)
             : base(logger, serializerSettings, charPool, objectPoolProvider, options, jsonOptions)
         {
-            SupportedMediaTypes.Insert(0, MediaTypeHeaderValues.KvsApplication);
             SupportedMediaTypes.Insert(0, MediaTypeHeaderValues.KeyValueApplication);
         }
 
         protected override bool CanReadType(Type type)
         {
-            return base.CanReadType(type) &&
-                   (typeof(KeyValueFilterModel).IsAssignableFrom(type) ||
-                    typeof(IEnumerable<KeyValue>).IsAssignableFrom(type));
+            return base.CanReadType(type) && typeof(KeyValueModel).IsAssignableFrom(type);
         }
     }
 }

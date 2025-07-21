@@ -72,8 +72,8 @@ export default function KeyValueRevisions() {
                     <td>
                       {revision.value || '<empty>'}
                     </td>
-                    <td>{revision.content_type || '<none>'}</td>
-                    <td>{revision.last_modified ? formatDate(revision.last_modified) : '<unknown>'}</td>
+                    <td>{revision.contentType || '<none>'}</td>
+                    <td>{revision.lastModified?.toISOString() || '<unknown>'}</td>
                     <td>{revision.etag || '<none>'}</td>
                     <td>
                       {revision.tags && Object.keys(revision.tags).length > 0 ? (
