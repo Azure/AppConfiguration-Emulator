@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { keyValueService } from '../services/keyValueService';
 import { KeyValue } from '../models/keyValue';
+import { renderTags } from '../utils/tagUtils';
 
 interface Props {
   onEdit: (keyValue: KeyValue) => void;
@@ -109,21 +110,35 @@ export default function KeyValueList({ onEdit, onViewRevisions }: Props) {
               <th>Label</th>
               <th>Value</th>
               <th>Content Type</th>
+              <th>Tags</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
             {keyValues.length === 0 ? (
               <tr>
-                <td colSpan={5}>No key values found</td>
+                <td colSpan={6}>No key values found</td>
               </tr>
             ) : (
               keyValues.map((kv) => (
                 <tr key={`${kv.key}-${kv.label || 'null'}`}>
                   <td>{kv.key}</td>
                   <td>{kv.label || '<null>'}</td>
-                  <td>{kv.value || ''}</td>
-                  <td>{kv.contentType || ''}</td>
+                  <td className="value-cell" title={kv.value || ''}>
+                    {kv.value && kv.value.length > 50 
+                      ? `${kv.value.substring(0, 50)}...` 
+                      : kv.value || ''
+                    }
+                  </td>
+                  <td className="content-type-cell" title={kv.contentType || ''}>
+                    {kv.contentType && kv.contentType.length > 30 
+                      ? `${kv.contentType.substring(0, 30)}...` 
+                      : kv.contentType || ''
+                    }
+                  </td>
+                  <td>
+                    {renderTags(kv.tags)}
+                  </td>
                   <td>
                     <button onClick={() => onEdit(kv)} className="edit-button">
                       Edit

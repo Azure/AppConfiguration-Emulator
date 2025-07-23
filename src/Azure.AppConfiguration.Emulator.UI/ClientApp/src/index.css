@@ -42,6 +42,16 @@ button {
   margin-left: 10px;
 }
 
+/* Ensure proper spacing between action buttons */
+.key-value-table button {
+  margin-right: 8px;
+  margin-left: 0;
+}
+
+.key-value-table button:last-child {
+  margin-right: 0;
+}
+
 button:hover {
   background-color: #106ebe;
 }
@@ -74,6 +84,56 @@ button:hover {
 .key-value-table th {
   background-color: #f0f0f0;
   font-weight: 600;
+}
+
+/* Ensure Actions column has minimum width and proper spacing */
+.key-value-table th:last-child,
+.key-value-table td:last-child {
+  min-width: 200px;
+  white-space: nowrap;
+}
+
+/* Limit the width of Value and Content Type columns */
+.value-cell {
+  max-width: 300px;
+  word-break: break-word;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.content-type-cell {
+  max-width: 200px;
+  word-break: break-word;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Tags display in table cells */
+.key-value-table .tags-display {
+  max-height: 60px;
+  overflow-y: auto;
+  max-width: 250px;
+}
+
+.key-value-table .tag-display {
+  background: #e9ecef;
+  color: #495057;
+  padding: 2px 6px;
+  border-radius: 12px;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.key-value-table .no-tags {
+  color: #6c757d;
+  font-style: italic;
+  font-size: 12px;
+}
+
+.key-value-table .more-tags {
+  background: #d1ecf1 !important;
+  color: #0c5460 !important;
+  font-weight: 500;
 }
 
 .filters {
@@ -251,4 +311,295 @@ input, textarea {
   border-radius: 12px;
   font-size: 11px;
   white-space: nowrap;
+}
+
+/* Feature Flag Styles */
+.feature-flag-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.feature-flag-header h2 {
+  color: #333;
+  margin: 0;
+  font-size: 1.8em;
+  font-weight: 600;
+}
+
+.create-button {
+  background-color: #107c10;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.create-button:hover {
+  background-color: #0e6e0e;
+}
+
+.no-feature-flags {
+  text-align: center;
+  padding: 60px 20px;
+  color: #6c757d;
+}
+
+.no-feature-flags p {
+  font-size: 18px;
+  margin-bottom: 20px;
+}
+
+.flag-name {
+  font-weight: 500;
+  color: #333;
+}
+
+/* Toggle Switch Styles */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 24px;
+  margin-right: 10px;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: 0.3s;
+  border-radius: 24px;
+}
+
+.toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: 0.3s;
+  border-radius: 50%;
+}
+
+input:checked + .toggle-slider {
+  background-color: #107c10;
+}
+
+input:checked + .toggle-slider:before {
+  transform: translateX(26px);
+}
+
+.status-text {
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.status-text.enabled {
+  color: #107c10;
+}
+
+.status-text.disabled {
+  color: #d13438;
+}
+
+.toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  cursor: pointer;
+}
+
+.toggle-label span:first-child {
+  font-weight: 500;
+  min-width: 100px;
+}
+
+.form-hint {
+  display: block;
+  color: #6c757d;
+  font-size: 12px;
+  margin-top: 5px;
+}
+
+.advanced-edit-button {
+  background-color: #6f42c1;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  margin: 0;
+}
+
+.advanced-edit-button:hover {
+  background-color: #5a32a3;
+}
+
+.advanced-mode-hint {
+  color: #107c10;
+  font-weight: 500;
+}
+
+/* JSON Editor Modal Styles */
+.json-editor-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.json-editor-modal {
+  background: white;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 800px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.json-editor-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.json-editor-header h3 {
+  margin: 0;
+  color: #333;
+  font-size: 1.4em;
+}
+
+.close-button {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #666;
+  padding: 0;
+  margin: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.close-button:hover {
+  background-color: #f0f0f0;
+  border-radius: 4px;
+}
+
+.json-editor-content {
+  padding: 20px;
+  flex: 1;
+  overflow: hidden;
+}
+
+.json-editor-description {
+  margin: 0 0 15px 0;
+  color: #6c757d;
+  font-size: 14px;
+}
+
+.validation-status {
+  margin-bottom: 15px;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.validation-status.valid {
+  background-color: #d4edda;
+  border: 1px solid #c3e6cb;
+  color: #155724;
+}
+
+.validation-status.invalid {
+  background-color: #f8d7da;
+  border: 1px solid #f5c6cb;
+  color: #721c24;
+}
+
+.validation-message {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.json-editor-input-container {
+  height: 400px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.json-editor-textarea {
+  width: 100%;
+  height: 100%;
+  border: none;
+  padding: 15px;
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-size: 14px;
+  resize: none;
+  outline: none;
+  background-color: #f8f9fa;
+}
+
+.json-editor-textarea.invalid {
+  border-left: 4px solid #d13438;
+  background-color: #fdf2f2;
+}
+
+.json-editor-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 20px;
+  border-top: 1px solid #e0e0e0;
+}
+
+.json-editor-actions button {
+  margin: 0;
+}
+
+.json-editor-actions button:disabled {
+  background-color: #e0e0e0 !important;
+  color: #999 !important;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.json-editor-actions button:disabled:hover {
+  background-color: #e0e0e0 !important;
 }
