@@ -42,6 +42,16 @@ button {
   margin-left: 10px;
 }
 
+/* Ensure proper spacing between action buttons */
+.key-value-table button {
+  margin-right: 8px;
+  margin-left: 0;
+}
+
+.key-value-table button:last-child {
+  margin-right: 0;
+}
+
 button:hover {
   background-color: #106ebe;
 }
@@ -74,6 +84,56 @@ button:hover {
 .key-value-table th {
   background-color: #f0f0f0;
   font-weight: 600;
+}
+
+/* Ensure Actions column has minimum width and proper spacing */
+.key-value-table th:last-child,
+.key-value-table td:last-child {
+  min-width: 200px;
+  white-space: nowrap;
+}
+
+/* Limit the width of Value and Content Type columns */
+.value-cell {
+  max-width: 300px;
+  word-break: break-word;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.content-type-cell {
+  max-width: 200px;
+  word-break: break-word;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Tags display in table cells */
+.key-value-table .tags-display {
+  max-height: 60px;
+  overflow-y: auto;
+  max-width: 250px;
+}
+
+.key-value-table .tag-display {
+  background: #e9ecef;
+  color: #495057;
+  padding: 2px 6px;
+  border-radius: 12px;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.key-value-table .no-tags {
+  color: #6c757d;
+  font-style: italic;
+  font-size: 12px;
+}
+
+.key-value-table .more-tags {
+  background: #d1ecf1 !important;
+  color: #0c5460 !important;
+  font-weight: 500;
 }
 
 .filters {
