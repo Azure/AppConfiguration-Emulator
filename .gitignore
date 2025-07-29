@@ -59,6 +59,8 @@ BenchmarkDotNet.Artifacts/
 
 # Data files
 *.ndjson*
+# But include test data files
+!tests/**/*.ndjson
 
 # .NET Core
 project.lock.json
