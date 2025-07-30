@@ -32,7 +32,7 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
         private int _init;
         private bool _disposed;
         private long _scanTicks = 0;
-        private bool _coalesceItems;
+        private int _coalesceItems;
 
         private static readonly IComparer<KvIndex> EqualComparer = Comparer<KvIndex>.Create(
             (a, b) =>
@@ -371,11 +371,7 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
                 // Scan the cache
                 long ticks = Interlocked.Read(ref _scanTicks);
 
-                if (ticks < DateTimeOffset.UtcNow.Ticks &&
-                    Interlocked.CompareExchange(
-                        ref _scanTicks,
-                        DateTimeOffset.UtcNow.Add(CacheScanFrequence).Ticks,
-                        ticks) == ticks)
+                if (ticks < DateTimeOffset.UtcNow.Ticks)
                 {
                     _ = ScanCacheExpired(_cts.Token);
                 }
@@ -773,34 +769,27 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
 
             try
             {
-                if (!_coalesceItems &&
-                    await GetExpiredItemsCount(cancellationToken) > MinCoalescingItems)
+                if (Interlocked.Increment(ref _coalesceItems) == 1 &&
+                    await GetExpiredItemsCount(cancellationToken) >= MinCoalescingItems)
                 {
-                    _coalesceItems = true;
+                    await RemoveExpiredItems(cancellationToken);
                 }
-
-                if (!_coalesceItems)
-                {
-                    return;
-                }
-
-                await RemoveExpiredItems(cancellationToken);
-
-                _coalesceItems = false;
             }
             catch (TimeoutException)
             {
                 //
                 // Ignore timeout
-                return;
             }
-            catch
+            finally
             {
-                //
-                // Pull up the scan if failed
-                _scanTicks = DateTimeOffset.UtcNow.AddSeconds(60).Ticks;
-
-                throw;
+                if (Interlocked.Decrement(ref _coalesceItems) == 0)
+                {
+                    //
+                    // Set next scan
+                    Interlocked.Exchange(
+                        ref _scanTicks,
+                        DateTimeOffset.UtcNow.Add(CacheScanFrequence).Ticks);
+                }
             }
         }
 
