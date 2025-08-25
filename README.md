@@ -1,5 +1,7 @@
 # Azure App Configuration Emulator
 
+[![MCR](https://img.shields.io/badge/MCR-mcr.microsoft.com%2Fazure--app--configuration%2Fapp--configuration--emulator-blue)](https://mcr.microsoft.com/artifact/mar/azure-app-configuration/app-configuration-emulator/about)
+
 The Azure App Configuration Emulator is a local development tool that provides a lightweight implementation of the Azure App Configuration service. This emulator allows developers to test and develop applications locally without requiring an active Azure subscription or connection to the cloud service.
 
 ![Creating and Retrieving Configuration Demo](docs/images/create-retrieve-demo.gif)
@@ -8,8 +10,8 @@ The Azure App Configuration Emulator is a local development tool that provides a
 
 - **Local Azure App Configuration API**: Emulates the Azure App Configuration REST API
 - **Web UI**: Provides a web-based interface for managing configuration settings
-- **Multiple Authentication Methods**: Supports HMAC, Entra ID, and anonymous authentication
-- **Configuration Snapshots**: Supports creating and managing configuration snapshots
+- **Multiple Authentication Methods**: Supports HMAC, Entra ID (WIP), and anonymous authentication
+- **Configuration Snapshots**: Supports creating and managing configuration snapshots （WIP)
 - **Cross-platform**: Runs on Windows, macOS, and Linux
 
 ## Prerequisites
