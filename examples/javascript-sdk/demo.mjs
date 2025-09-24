@@ -1,7 +1,7 @@
 const connectionString = process.env.APP_CONFIGURATION_EMULATOR_CONNECTION_STRING
 
 if (connectionString === undefined) {
-    throw new Error("APP_CONFIGURATION_EMULATOR_CONNECTION_STRING environment variable not found. Please run the start-emulator.ps1 script first.");
+    throw new Error("APP_CONFIGURATION_EMULATOR_CONNECTION_STRING environment variable not found. Please run the start-emulator script first.");
 }
 
 import { AppConfigurationClient } from "@azure/app-configuration";
