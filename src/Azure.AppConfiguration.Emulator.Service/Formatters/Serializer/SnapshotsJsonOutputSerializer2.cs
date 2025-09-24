@@ -15,7 +15,7 @@ using System.Threading.Tasks;
 namespace Azure.AppConfiguration.Emulator.Service.Formatters.Serializer
 {
     [ApiVersion(ApiVersions.V23_11)]
-    [ApiVersion(ApiVersions.V24_09_preview)]
+    [ApiVersion(ApiVersions.V24_09)]
     class SnapshotsJsonOutputSerializer2 : IOuputSerializer<IEnumerable<Snapshot>>
     {
         public async Task WriteContent(JsonWriter jw, IEnumerable<Snapshot> items, long fields)

@@ -19,7 +19,7 @@ namespace Azure.AppConfiguration.Emulator.Service
     [ApiVersion(ApiVersions.V23_05_preview)]
     [ApiVersion(ApiVersions.V23_10)]
     [ApiVersion(ApiVersions.V23_11)]
-    [ApiVersion(ApiVersions.V24_09_preview)]
+    [ApiVersion(ApiVersions.V24_09)]
     [ApiController]
     [Route("keys")]
     [Authorize(AzPolicies.KeyValueRead)]
