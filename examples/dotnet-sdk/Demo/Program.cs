@@ -13,7 +13,7 @@ namespace AppConfigurationEmulatorDemo
 
             if (string.IsNullOrEmpty(connectionString))
             {
-                throw new InvalidOperationException("APP_CONFIGURATION_EMULATOR_CONNECTION_STRING environment variable not found. Please run the start-emulator.ps1 script first.");
+                throw new InvalidOperationException("APP_CONFIGURATION_EMULATOR_CONNECTION_STRING environment variable not found. Please run the start-emulator script first.");
             }
 
             var client = new ConfigurationClient(connectionString);
