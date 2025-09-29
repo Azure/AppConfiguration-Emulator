@@ -66,3 +66,17 @@ npm install
 
 node azure-sdk.mjs
 ```
+
+## Go SDK Example
+
+This repository includes a Go SDK example in the `go-sdk` directory:
+
+```powershell
+cd go-sdk
+
+go mod init emulator-example-app
+
+go get github.com/Azure/AppConfiguration-GoProvider/azureappconfiguration
+
+go run main.go
+```
