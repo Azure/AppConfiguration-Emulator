@@ -17,7 +17,7 @@ namespace Azure.AppConfiguration.Emulator.Host.Tests
         public async Task CreateAndGetKeyIncludeSyncTokenHeader()
         {
             var client = _testServer.Client;
-            string key = $"sync-token-{Guid.NewGuid()}";
+            string key = $"sync-token-test-key";
 
             var createResponse = await TestHelpers.CreateKeyValue(client, key, "value");
             createResponse.EnsureSuccessStatusCode();
@@ -38,10 +38,10 @@ namespace Azure.AppConfiguration.Emulator.Host.Tests
         }
 
         [Fact]
-        public async Task GetMissingKeyReturnsSyncTokenHeader()
+        public async Task GetUnexistingKeyIncludesSyncTokenHeader()
         {
             var client = _testServer.Client;
-            string key = $"sync-token-missing-{Guid.NewGuid()}";
+            string key = $"sync-token-unexisting-key";
 
             var response = await client.GetAsync($"/kv/{key}");
 
