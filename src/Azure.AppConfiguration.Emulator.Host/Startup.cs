@@ -6,7 +6,6 @@ using Azure.AppConfiguration.Emulator.ConfigurationSettings;
 using Azure.AppConfiguration.Emulator.ConfigurationSnapshots;
 using Azure.AppConfiguration.Emulator.Integration;
 using Azure.AppConfiguration.Emulator.Service;
-using Azure.AppConfiguration.Emulator.Service.Filters;
 using Azure.AppConfiguration.Emulator.Service.Formatters.Json;
 using Azure.AppConfiguration.Emulator.Service.Validators;
 using Azure.AppConfiguration.Emulator.Tenant;

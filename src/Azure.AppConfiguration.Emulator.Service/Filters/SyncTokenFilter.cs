@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Filters;
 using System.Threading.Tasks;
 
-namespace Azure.AppConfiguration.Emulator.Service.Filters
+namespace Azure.AppConfiguration.Emulator.Service
 {
     public class SyncTokenFilter : ActionFilterAttribute
     {
