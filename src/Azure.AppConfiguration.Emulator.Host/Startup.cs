@@ -63,6 +63,7 @@ namespace Azure.AppConfiguration.Emulator.Host
             {
                 o.ValueProviderFactories.Insert(0, new DecodeSlashRouteValueProviderFactory());
 
+                o.Filters.Add(new SyncTokenFilter());
                 o.Filters.Add(new PreConditionFilter());
                 o.Filters.Add(new NotFoundFilter());
                 o.Filters.Add(new BadRequestFilter());
