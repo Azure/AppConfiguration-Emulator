@@ -26,11 +26,9 @@ namespace Azure.AppConfiguration.Emulator.Service
 {
 #if SNAPSHOTS
 
-    [ApiVersion(ApiVersions.V22_11_preview)]
-    [ApiVersion(ApiVersions.V23_05_preview)]
     [ApiVersion(ApiVersions.V23_10)]
     [ApiVersion(ApiVersions.V23_11)]
-    [ApiVersion(ApiVersions.V24_09_preview)]
+    [ApiVersion(ApiVersions.V24_09)]
     [ApiController]
     [Authorize]
     [ValidateActionParameters]
