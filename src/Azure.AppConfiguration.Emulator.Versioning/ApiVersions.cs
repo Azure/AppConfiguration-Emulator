@@ -18,6 +18,6 @@ namespace Azure.AppConfiguration.Emulator.Versioning
 
         public const string V23_11 = "2023-11-01";
 
-        public const string V24_09_preview = "2024-09-01-preview";
+        public const string V24_09 = "2024-09-01";
     }
 }
