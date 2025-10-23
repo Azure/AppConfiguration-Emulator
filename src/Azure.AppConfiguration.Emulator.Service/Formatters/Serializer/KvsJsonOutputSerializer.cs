@@ -15,7 +15,6 @@ using System.Threading.Tasks;
 namespace Azure.AppConfiguration.Emulator.Service.Formatters.Serializer
 {
     [ApiVersion(ApiVersions.V1)]
-    [ApiVersion(ApiVersions.V22_11_preview)]
     class KvsJsonOutputSerializer : IOuputSerializer<IEnumerable<KeyValue>>
     {
         public async Task WriteContent(JsonWriter jw, IEnumerable<KeyValue> items, long fields)

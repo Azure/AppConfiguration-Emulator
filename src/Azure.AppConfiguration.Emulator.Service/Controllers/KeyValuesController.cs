@@ -21,11 +21,9 @@ using TagsAttribute = Azure.AppConfiguration.Emulator.Service.Validators.TagsAtt
 namespace Azure.AppConfiguration.Emulator.Service
 {
     [ApiVersion(ApiVersions.V1)]
-    [ApiVersion(ApiVersions.V22_11_preview)]
-    [ApiVersion(ApiVersions.V23_05_preview)]
     [ApiVersion(ApiVersions.V23_10)]
     [ApiVersion(ApiVersions.V23_11)]
-    [ApiVersion(ApiVersions.V24_09_preview)]
+    [ApiVersion(ApiVersions.V24_09)]
     [ApiController]
     [Route("kv")]
     [Authorize]
@@ -75,7 +73,7 @@ namespace Azure.AppConfiguration.Emulator.Service
         [IfNull(StatusCodes.Status404NotFound)]
         [TimeGateFilter]
         [AuthorizationScope(ResourceType = ResourceType.Kv)]
-        [AllowVersionedParameter(name: "tags", minApiVersion: ApiVersions.V24_09_preview)]
+        [AllowVersionedParameter(name: "tags", minApiVersion: ApiVersions.V24_09)]
         public async Task<KeyValue> GetKeyValue(
             [Required]
             string key,
