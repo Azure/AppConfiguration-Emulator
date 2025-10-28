@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-using Azure.AppConfiguration.Emulator.ConfigurationSettings; // KeyValue type
+using Azure.AppConfiguration.Emulator.ConfigurationSettings;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Options;
 using System;
