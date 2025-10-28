@@ -23,6 +23,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Azure.AppConfiguration.Emulator.ConfigurationSnapshots\Azure.AppConfiguration.Emulator.ConfigurationSnapshots.csproj" />
+    <ProjectReference Include="..\..\src\Azure.AppConfiguration.Emulator.ConfigurationSettings\Azure.AppConfiguration.Emulator.ConfigurationSettings.csproj" />
   </ItemGroup>
 
 </Project>
