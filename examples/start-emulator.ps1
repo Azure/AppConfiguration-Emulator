@@ -16,3 +16,11 @@ $EmulatorProjectDir = Split-Path $EmulatorProjectPath -Parent
 
 $emulatorCommand = "cd '$EmulatorProjectDir'; `$env:Tenant__HmacSha256Enabled='true'; `$env:Tenant__AccessKeys__0__Id='$AccessKeyId'; `$env:Tenant__AccessKeys__0__Secret='$AccessKeySecret'; dotnet run"
 Start-Process powershell.exe -ArgumentList "-NoExit", "-Command", $emulatorCommand
+
+Write-Host ""
+Write-Host "=================================================" -ForegroundColor Green
+Write-Host "Azure App Configuration Emulator Started!" -ForegroundColor Green
+Write-Host "=================================================" -ForegroundColor Green
+Write-Host "Connection String:" -ForegroundColor Yellow
+Write-Host $connectionString -ForegroundColor Cyan
+Write-Host "=================================================" -ForegroundColor Green
