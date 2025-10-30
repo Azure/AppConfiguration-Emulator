@@ -52,79 +52,131 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
         {
             if (name.SequenceEqual(SnapshotJsonFields.Id.EncodedUtf8Bytes))
             {
-                if (reader.Read() && reader.TokenType == JsonTokenType.String) snapshot.Id = reader.GetString();
+                if (reader.Read() && reader.TokenType == JsonTokenType.String)
+                {
+                    snapshot.Id = reader.GetString();
+                }
+
                 return;
             }
 
             if (name.SequenceEqual(SnapshotJsonFields.Name.EncodedUtf8Bytes))
             {
-                if (reader.Read() && reader.TokenType == JsonTokenType.String) snapshot.Name = reader.GetString();
+                if (reader.Read() && reader.TokenType == JsonTokenType.String)
+                {
+                    snapshot.Name = reader.GetString();
+                }
+
                 return;
             }
 
             if (name.SequenceEqual(SnapshotJsonFields.Etag.EncodedUtf8Bytes))
             {
-                if (reader.Read() && reader.TokenType == JsonTokenType.String) snapshot.Etag = reader.GetString();
+                if (reader.Read() && reader.TokenType == JsonTokenType.String)
+                {
+                    snapshot.Etag = reader.GetString();
+                }
+
                 return;
             }
 
             if (name.SequenceEqual(SnapshotJsonFields.Status.EncodedUtf8Bytes))
             {
-                if (reader.Read() && reader.TokenType == JsonTokenType.String) snapshot.Status = ParseStatus(reader.GetString());
+                if (reader.Read() && reader.TokenType == JsonTokenType.String)
+                {
+                    snapshot.Status = ParseStatus(reader.GetString());
+                }
+
                 return;
             }
 
             if (name.SequenceEqual(SnapshotJsonFields.StatusCode.EncodedUtf8Bytes))
             {
-                if (reader.Read()) snapshot.StatusCode = reader.GetInt32();
+                if (reader.Read())
+                {
+                    snapshot.StatusCode = reader.GetInt32();
+                }
+
                 return;
             }
 
             if (name.SequenceEqual(SnapshotJsonFields.CompositionType.EncodedUtf8Bytes))
             {
-                if (reader.Read() && reader.TokenType == JsonTokenType.String) snapshot.CompositionType = ParseCompositionType(reader.GetString());
+                if (reader.Read() && reader.TokenType == JsonTokenType.String)
+                {
+                    snapshot.CompositionType = ParseCompositionType(reader.GetString());
+                }
+
                 return;
             }
 
             if (name.SequenceEqual(SnapshotJsonFields.RetentionPeriodSeconds.EncodedUtf8Bytes))
             {
-                if (reader.Read()) snapshot.RetentionPeriod = TimeSpan.FromSeconds(reader.GetInt64());
+                if (reader.Read())
+                {
+                    snapshot.RetentionPeriod = TimeSpan.FromSeconds(reader.GetInt64());
+                }
+
                 return;
             }
 
             if (name.SequenceEqual(SnapshotJsonFields.Created.EncodedUtf8Bytes))
             {
-                if (reader.Read()) snapshot.Created = reader.GetDateTimeOffset();
+                if (reader.Read())
+                {
+                    snapshot.Created = reader.GetDateTimeOffset();
+                }
+
                 return;
             }
 
             if (name.SequenceEqual(SnapshotJsonFields.LastModified.EncodedUtf8Bytes))
             {
-                if (reader.Read()) snapshot.LastModified = reader.GetDateTimeOffset();
+                if (reader.Read())
+                {
+                    snapshot.LastModified = reader.GetDateTimeOffset();
+                }
+
                 return;
             }
 
             if (name.SequenceEqual(SnapshotJsonFields.Expires.EncodedUtf8Bytes))
             {
-                if (reader.Read()) snapshot.Expires = reader.GetDateTimeOffset();
+                if (reader.Read())
+                {
+                    snapshot.Expires = reader.GetDateTimeOffset();
+                }
+
                 return;
             }
 
             if (name.SequenceEqual(SnapshotJsonFields.ItemsCount.EncodedUtf8Bytes))
             {
-                if (reader.Read()) snapshot.ItemCount = reader.GetInt64();
+                if (reader.Read())
+                {
+                    snapshot.ItemCount = reader.GetInt64();
+                }
+
                 return;
             }
 
             if (name.SequenceEqual(SnapshotJsonFields.SizeBytes.EncodedUtf8Bytes))
             {
-                if (reader.Read()) snapshot.Size = reader.GetInt64();
+                if (reader.Read())
+                {
+                    snapshot.Size = reader.GetInt64();
+                }
+
                 return;
             }
 
             if (name.SequenceEqual(SnapshotJsonFields.Tags.EncodedUtf8Bytes))
             {
-                if (reader.Read()) snapshot.Tags = reader.ReadDictionary();
+                if (reader.Read())
+                {
+                    snapshot.Tags = reader.ReadDictionary();
+                }
+
                 return;
             }
 
@@ -146,13 +198,21 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
                                     ReadOnlySpan<byte> pn = reader.ValueSpan;
                                     if (pn.SequenceEqual(SnapshotJsonFields.Key.EncodedUtf8Bytes))
                                     {
-                                        if (reader.Read() && reader.TokenType == JsonTokenType.String) key = reader.GetString();
+                                        if (reader.Read() && reader.TokenType == JsonTokenType.String)
+                                        {
+                                            key = reader.GetString();
+                                        }
+
                                         continue;
                                     }
 
                                     if (pn.SequenceEqual(SnapshotJsonFields.Label.EncodedUtf8Bytes))
                                     {
-                                        if (reader.Read() && reader.TokenType == JsonTokenType.String) label = reader.GetString();
+                                        if (reader.Read() && reader.TokenType == JsonTokenType.String)
+                                        {
+                                            label = reader.GetString();
+                                        }
+
                                         continue;
                                     }
                                 }
@@ -190,37 +250,61 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
                             ReadOnlySpan<byte> pn = reader.ValueSpan;
                             if (pn.SequenceEqual(SnapshotJsonFields.Category.EncodedUtf8Bytes))
                             {
-                                if (reader.Read() && reader.TokenType == JsonTokenType.String) media.Category = reader.GetString();
+                                if (reader.Read() && reader.TokenType == JsonTokenType.String)
+                                {
+                                    media.Category = reader.GetString();
+                                }
+
                                 continue;
                             }
 
                             if (pn.SequenceEqual(SnapshotJsonFields.MediaName.EncodedUtf8Bytes))
                             {
-                                if (reader.Read() && reader.TokenType == JsonTokenType.String) media.Name = reader.GetString();
+                                if (reader.Read() && reader.TokenType == JsonTokenType.String)
+                                {
+                                    media.Name = reader.GetString();
+                                }
+
                                 continue;
                             }
 
                             if (pn.SequenceEqual(SnapshotJsonFields.MediaSize.EncodedUtf8Bytes))
                             {
-                                if (reader.Read()) media.Size = reader.GetInt64();
+                                if (reader.Read())
+                                {
+                                    media.Size = reader.GetInt64();
+                                }
+
                                 continue;
                             }
 
                             if (pn.SequenceEqual(SnapshotJsonFields.Etag.EncodedUtf8Bytes))
                             {
-                                if (reader.Read() && reader.TokenType == JsonTokenType.String) media.Etag = reader.GetString();
+                                if (reader.Read() && reader.TokenType == JsonTokenType.String)
+                                {
+                                    media.Etag = reader.GetString();
+                                }
+
                                 continue;
                             }
 
                             if (pn.SequenceEqual(SnapshotJsonFields.ContentType.EncodedUtf8Bytes))
                             {
-                                if (reader.Read() && reader.TokenType == JsonTokenType.String) media.ContentType = reader.GetString();
+                                if (reader.Read() && reader.TokenType == JsonTokenType.String)
+                                {
+                                    media.ContentType = reader.GetString();
+                                }
+
                                 continue;
                             }
 
                             if (pn.SequenceEqual(SnapshotJsonFields.Sha256.EncodedUtf8Bytes))
                             {
-                                if (reader.Read() && reader.TokenType == JsonTokenType.String) media.Sha256Hash = DecodeBase64Url(reader.GetString());
+                                if (reader.Read() && reader.TokenType == JsonTokenType.String)
+                                {
+                                    media.Sha256Hash = DecodeBase64Url(reader.GetString());
+                                }
+
                                 continue;
                             }
                         }
@@ -256,11 +340,26 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
 
         private static byte[] DecodeBase64Url(string value)
         {
-            if (string.IsNullOrEmpty(value)) return null;
+            if (string.IsNullOrEmpty(value))
+            {
+                return null;
+            }
+
             string base64 = value.Replace('-', '+').Replace('_', '/');
             int pad = base64.Length % 4;
-            if (pad > 0) base64 = base64 + new string('=', 4 - pad);
-            try { return Convert.FromBase64String(base64); } catch { return null; }
+            if (pad > 0)
+            {
+                base64 = base64 + new string('=', 4 - pad);
+            }
+
+            try
+            {
+                return Convert.FromBase64String(base64);
+            }
+            catch
+            {
+                return null;
+            }
         }
     }
 }
