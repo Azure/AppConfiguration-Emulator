@@ -10,6 +10,6 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
 {
     public interface ISnapshotContentsStorage
     {
-        Task SaveSnapshotContent(Snapshot snapshot, IEnumerable<KeyValue> items, CancellationToken cancellationToken);
+        Task<Snapshot> Provision(Snapshot snapshot, CancellationToken cancellationToken);
     }
 }

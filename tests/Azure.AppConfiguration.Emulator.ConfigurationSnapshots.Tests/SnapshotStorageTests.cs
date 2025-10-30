@@ -85,7 +85,7 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots.Tests
                 Options.Create(storageOptions),
                 _env.Object);
 
-            var manager = new SnapshotsManager(storage, kvProvider, NullLogger<SnapshotsManager>.Instance);
+            var contentsStorage = new SnapshotContentsStorage(kvProvider, Options.Create(storageOptions), _env.Object);
 
             var snapshot = new Snapshot
             {
@@ -105,25 +105,21 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots.Tests
 
             await storage.AddSnapshot(snapshot, CancellationToken.None);
 
-            var initial = await storage.QuerySnapshots().ToListAsync();
-            var storedInitial = initial.Single();
+            List<Snapshot> initial = await storage.QuerySnapshots().ToListAsync();
+            Snapshot storedInitial = initial.Single();
             Assert.Equal("snap1", storedInitial.Id);
             Assert.Equal(SnapshotStatus.Provisioning, storedInitial.Status);
             Assert.Equal(0, storedInitial.ItemCount);
             Assert.Null(storedInitial.Media);
 
-            // Provision via manager
-            await manager.Provision(snapshot, CancellationToken.None);
+            Snapshot ready = await contentsStorage.Provision(snapshot, CancellationToken.None);
 
-            var after = await storage.QuerySnapshots().ToListAsync();
-            var readySnapshot = after.Single();
-            Assert.Equal(SnapshotStatus.Ready, readySnapshot.Status);
-            Assert.Equal(1, readySnapshot.ItemCount);
-            Assert.NotNull(readySnapshot.Media);
-            Assert.Equal(1, readySnapshot.Media.Size);
+            Assert.Equal(SnapshotStatus.Ready, ready.Status);
+            Assert.Equal(1, ready.ItemCount);
+            Assert.NotNull(ready.Media);
+            Assert.Equal(1, ready.Media.Size);
 
-            // Verify content
-            var content = await storage.ReadSnapshotContent(readySnapshot, 0).ToListAsync();
+            List<KeyValue> content = await storage.ReadSnapshotContent(ready, 0).ToListAsync();
             Assert.Single(content);
             Assert.Equal("k1", content[0].Key);
             Assert.Equal("l1", content[0].Label);
@@ -152,7 +148,7 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots.Tests
                 Options.Create(providerOptions),
                 Options.Create(storageOptions),
                 _env.Object);
-            var manager = new SnapshotsManager(storage, kvProvider, NullLogger<SnapshotsManager>.Instance);
+            var contentsStorage = new SnapshotContentsStorage(kvProvider, Options.Create(storageOptions), _env.Object);
             var snapshot = new Snapshot
             {
                 Id = "snap2",
@@ -167,24 +163,26 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots.Tests
             };
             await storage.AddSnapshot(snapshot, CancellationToken.None);
 
-            // Provision
-            await manager.Provision(snapshot, CancellationToken.None);
-            var ready = (await storage.QuerySnapshots().ToListAsync()).Single(x => x.Id == "snap2");
-            Assert.Equal(SnapshotStatus.Ready, ready.Status);
+            Snapshot ready = await contentsStorage.Provision(snapshot, CancellationToken.None);
 
-            // Update status to Archived and change Etag
+            Assert.Equal(SnapshotStatus.Ready, ready.Status);
+            List<KeyValue> content = await storage.ReadSnapshotContent(ready, 0).ToListAsync();
+            Assert.Single(content);
+            Assert.Equal("k1", content[0].Key);
+
+            // Update status to Archived
             ready.Etag = "etag-archived";
             ready.Status = SnapshotStatus.Archived;
             ready.LastModified = DateTimeOffset.UtcNow;
             await storage.UpdateSnapshot(ready, CancellationToken.None);
 
             // Fetch again
-            var updated = (await storage.QuerySnapshots().ToListAsync()).Single(x => x.Id == "snap2");
+            Snapshot updated = (await storage.QuerySnapshots().ToListAsync()).Single(x => x.Id == "snap2");
             Assert.Equal(SnapshotStatus.Archived, updated.Status);
             Assert.Equal("etag-archived", updated.Etag);
 
             // Content access should yield no items
-            var content = await storage.ReadSnapshotContent(updated, 0).ToListAsync();
+            content = await storage.ReadSnapshotContent(updated, 0).ToListAsync();
             Assert.Empty(content);
         }
     }

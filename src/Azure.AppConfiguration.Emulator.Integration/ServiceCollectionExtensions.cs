@@ -69,8 +69,8 @@ namespace Azure.AppConfiguration.Emulator.Integration
         public static IServiceCollection AddConfigurationSnapshots(this IServiceCollection services)
         {
             services.TryAddSingleton<ISnapshotsStorage, SnapshotsStorage>();
+            services.TryAddSingleton<ISnapshotContentsStorage, SnapshotContentsStorage>();
             services.TryAddSingleton<ISnapshotProvider, SnapshotProvider>();
-            services.TryAddSingleton<ISnapshotsManager, SnapshotsManager>();
             services.AddHostedService<SnapshotsService>();
 
             return services;

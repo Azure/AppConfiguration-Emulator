@@ -8,7 +8,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text;
@@ -18,7 +17,7 @@ using System.Threading.Tasks;
 
 namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
 {
-    public class SnapshotsStorage : ISnapshotsStorage, ISnapshotContentsStorage
+    public class SnapshotsStorage : ISnapshotsStorage
     {
         private readonly SnapshotProviderOptions _providerOptions;
         private readonly SnapshotsStorageOptions _options;
@@ -224,7 +223,7 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
             ValidateSnapshot(snapshot);
             if (snapshot.Status != SnapshotStatus.Ready)
             {
-                yield break; // not ready: no content access
+                yield break;
             }
 
             string filePath = GetContentFilePath(snapshot.Id);
@@ -258,65 +257,6 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
 
                 yield return kv;
             }
-        }
-
-        public async Task SaveSnapshotContent(
-            Snapshot snapshot,
-            IEnumerable<KeyValue> items,
-            CancellationToken cancellationToken)
-        {
-            ValidateSnapshot(snapshot);
-            if (items == null)
-            {
-                throw new ArgumentNullException(nameof(items));
-            }
-
-            string filePath = GetContentFilePath(snapshot.Id);
-            string tempFilePath = filePath + ".tmp";
-
-            try
-            {
-                using var fs = new FileStream(
-                    tempFilePath,
-                    FileMode.Create,
-                    FileAccess.Write,
-                    FileShare.None,
-                    _options.WriteBufferSize);
-
-                using CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-                cts.CancelAfter(_options.WriteTimeout);
-
-                foreach (var kv in items)
-                {
-                    if (fs.Position > 0)
-                    {
-                        fs.WriteDelimiter();
-                    }
-
-                    using var json = new Utf8JsonWriter(fs);
-                    json.WriteKeyValue(kv);
-                    await json.FlushAsync(cts.Token);
-                }
-
-                await fs.FlushAsync(cts.Token);
-            }
-            catch (OperationCanceledException ex) when (!cancellationToken.IsCancellationRequested)
-            {
-                throw new TimeoutException("SaveSnapshotContent", ex);
-            }
-
-            ReplaceFile(tempFilePath, filePath);
-
-            snapshot.Media ??= new MediaInfo();
-            snapshot.Media.Category = "snapshots";
-            snapshot.Media.Name = Path.GetFileName(filePath);
-            snapshot.Media.ContentType = "application/x-ndjson";
-            var fi = new FileInfo(filePath);
-            snapshot.Size = fi.Length;
-            snapshot.ItemCount = await CountLines(filePath, cancellationToken);
-            snapshot.Media.Size = snapshot.ItemCount;
-            snapshot.Media.Etag = SnapshotHelper.GenerateEtag();
-            snapshot.Media.Sha256Hash = ComputeSha256(filePath);
         }
 
         private static void ValidateSnapshot(Snapshot snapshot)
@@ -391,8 +331,7 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
 
             string directoryPath = Path.GetDirectoryName(filePath);
 
-            if (!string.IsNullOrEmpty(directoryPath) &&
-                !Directory.Exists(directoryPath))
+            if (!string.IsNullOrEmpty(directoryPath) && !Directory.Exists(directoryPath))
             {
                 _ = Directory.CreateDirectory(directoryPath);
             }

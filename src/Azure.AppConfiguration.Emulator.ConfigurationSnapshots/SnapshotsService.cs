@@ -15,32 +15,21 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
     public class SnapshotsService : BackgroundService
     {
         private readonly ISnapshotsStorage _storage;
-        private readonly ISnapshotsManager _manager;
+        private readonly ISnapshotContentsStorage _contents;
         private readonly ILogger<SnapshotsService> _logger;
         private static readonly TimeSpan _pollInterval = TimeSpan.FromSeconds(10);
 
         public SnapshotsService(
             ISnapshotsStorage storage,
-            ISnapshotsManager manager,
+            ISnapshotContentsStorage contents,
             ILogger<SnapshotsService> logger)
         {
-            if (storage == null)
-            {
-                throw new ArgumentNullException(nameof(storage));
-            }
-
-            if (manager == null)
-            {
-                throw new ArgumentNullException(nameof(manager));
-            }
-
-            if (logger == null)
-            {
-                throw new ArgumentNullException(nameof(logger));
-            }
+            if (storage == null) throw new ArgumentNullException(nameof(storage));
+            if (contents == null) throw new ArgumentNullException(nameof(contents));
+            if (logger == null) throw new ArgumentNullException(nameof(logger));
 
             _storage = storage;
-            _manager = manager;
+            _contents = contents;
             _logger = logger;
         }
 
@@ -81,18 +70,24 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
 
             await foreach (var snapshot in _storage.QuerySnapshots().WithCancellation(cancellationToken))
             {
-                if (snapshot == null)
-                {
-                    continue;
-                }
+                if (snapshot == null) continue;
 
-                var beforeStatus = snapshot.Status;
-                await _manager.Provision(snapshot, cancellationToken);
+                var before = snapshot.Status;
+                var updated = await _contents.Provision(snapshot, cancellationToken);
 
-                if (beforeStatus == SnapshotStatus.Provisioning && snapshot.Status == SnapshotStatus.Ready)
+                if (before == SnapshotStatus.Provisioning)
                 {
-                    provisioned++;
-                    _logger.LogInformation("Provisioned snapshot {SnapshotId}.", snapshot.Id);
+                    await _storage.UpdateSnapshot(updated, cancellationToken);
+
+                    if (updated.Status == SnapshotStatus.Ready)
+                    {
+                        provisioned++;
+                        _logger.LogInformation("Provisioned snapshot {SnapshotId}.", updated.Id);
+                    }
+                    else if (updated.Status == SnapshotStatus.Failed)
+                    {
+                        _logger.LogWarning("Failed to provision snapshot {SnapshotId}.", updated.Id);
+                    }
                 }
             }
 
