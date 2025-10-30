@@ -18,23 +18,20 @@ using System.Threading.Tasks;
 
 namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
 {
-    public class SnapshotsStorage : ISnapshotsStorage
+    public class SnapshotsStorage : ISnapshotsStorage, ISnapshotContentsStorage
     {
         private readonly SnapshotProviderOptions _providerOptions;
         private readonly SnapshotsStorageOptions _options;
         private readonly string _metadataFilePath;
         private readonly string _contentDirectory;
-        private readonly IKeyValueProvider _keyValueProvider; // dependency
 
         public SnapshotsStorage(
             IOptions<SnapshotProviderOptions> providerOptions,
             IOptions<SnapshotsStorageOptions> options,
-            IHostingEnvironment host,
-            IKeyValueProvider keyValueProvider)
+            IHostingEnvironment host)
         {
             _providerOptions = providerOptions?.Value ?? throw new ArgumentNullException(nameof(providerOptions));
             _options = options?.Value ?? throw new ArgumentNullException(nameof(options));
-            _keyValueProvider = keyValueProvider ?? throw new ArgumentNullException(nameof(keyValueProvider));
 
             ValidateOptions(_options);
 
@@ -142,7 +139,7 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
             snapshot.ItemCount = 0;
             snapshot.Size = 0;
             snapshot.LastModified = DateTimeOffset.UtcNow;
-            snapshot.Media = null; // will be populated after content build
+            snapshot.Media = null; // will be populated after external content build
 
             using CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             cts.CancelAfter(_options.WriteTimeout);
@@ -170,50 +167,6 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
             catch (OperationCanceledException ex) when (!cancellationToken.IsCancellationRequested)
             {
                 throw new TimeoutException("AddSnapshot", ex);
-            }
-
-            // Fire-and-forget content provisioning
-            _ = Task.Run(async () => await ProvisionContentAsync(snapshot.Id, snapshot.Filters), CancellationToken.None);
-        }
-
-        private async Task ProvisionContentAsync(string snapshotId, IEnumerable<KeyValueFilter> filters)
-        {
-            try
-            {
-                var snapshot = await GetSnapshot(snapshotId, CancellationToken.None);
-                if (snapshot == null)
-                {
-                    return; // snapshot record missing
-                }
-
-                // Build content
-                var contentItems = await QuerySnapshotContent(snapshot, CancellationToken.None);
-                await SaveSnapshotContent(snapshot, contentItems, CancellationToken.None);
-
-                snapshot.Status = SnapshotStatus.Ready;
-                snapshot.StatusCode = 200;
-                snapshot.LastModified = DateTimeOffset.UtcNow;
-
-                await UpdateSnapshot(snapshot, CancellationToken.None);
-            }
-            catch
-            {
-                // On failure attempt to mark snapshot failed
-                try
-                {
-                    var snapshot = await GetSnapshot(snapshotId, CancellationToken.None);
-                    if (snapshot != null)
-                    {
-                        snapshot.Status = SnapshotStatus.Failed;
-                        snapshot.StatusCode = 500;
-                        snapshot.LastModified = DateTimeOffset.UtcNow;
-                        await UpdateSnapshot(snapshot, CancellationToken.None);
-                    }
-                }
-                catch
-                {
-                    // swallow secondary failures
-                }
             }
         }
 
@@ -436,8 +389,6 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
                 return;
             }
 
-            //
-            // Ensure the directory exists
             string directoryPath = Path.GetDirectoryName(filePath);
 
             if (!string.IsNullOrEmpty(directoryPath) &&
@@ -446,8 +397,6 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
                 _ = Directory.CreateDirectory(directoryPath);
             }
 
-            //
-            // Create an empty file
             using FileStream fs = new FileStream(filePath, FileMode.Append);
             using StreamWriter writer = new StreamWriter(fs);
         }
@@ -501,51 +450,6 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
             using FileStream fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
             using SHA256 sha = SHA256.Create();
             return sha.ComputeHash(fs);
-        }
-
-        private async Task<IEnumerable<KeyValue>> QuerySnapshotContent(Snapshot snapshot, CancellationToken cancellationToken)
-        {
-            List<KeyValue> result = new();
-            if (snapshot.Filters == null)
-            {
-                return result; // empty snapshot
-            }
-
-            foreach (var f in snapshot.Filters)
-            {
-                var keyFilter = new StringFilter
-                {
-                    EqualsTo = f.Key,
-                    IsNull = f.Key == null
-                };
-                var labelFilter = new StringFilter
-                {
-                    EqualsTo = f.Label,
-                    IsNull = f.Label == null
-                };
-
-                string continuation = null;
-                do
-                {
-                    var page = await _keyValueProvider.QueryKeyValues(
-                        new KeyValueSearchOptions
-                        {
-                            KeyFilter = keyFilter,
-                            LabelFilter = labelFilter,
-                            ContinuationToken = continuation
-                        },
-                        cancellationToken);
-
-                    result.AddRange(page);
-                    continuation = page.ContinuationToken;
-                }
-                while (!string.IsNullOrEmpty(continuation));
-            }
-
-            // Deduplicate potential overlaps (same key/label across multiple filters)
-            return result
-                .GroupBy(k => (k.Key, k.Label))
-                .Select(g => g.First());
         }
     }
 }

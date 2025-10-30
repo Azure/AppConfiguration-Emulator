@@ -2,6 +2,7 @@ using Azure.AppConfiguration.Emulator.ConfigurationSettings;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Options;
 using Moq;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots.Tests
 {
@@ -82,8 +83,9 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots.Tests
             var storage = new SnapshotsStorage(
                 Options.Create(providerOptions),
                 Options.Create(storageOptions),
-                _env.Object,
-                kvProvider);
+                _env.Object);
+
+            var manager = new SnapshotsManager(storage, kvProvider, NullLogger<SnapshotsManager>.Instance);
 
             var snapshot = new Snapshot
             {
@@ -110,23 +112,11 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots.Tests
             Assert.Equal(0, storedInitial.ItemCount);
             Assert.Null(storedInitial.Media);
 
-            // Poll for readiness (up to 5 seconds)
-            Snapshot? readySnapshot = null;
-            var timeoutAt = DateTimeOffset.UtcNow.AddSeconds(5);
-            while (DateTimeOffset.UtcNow < timeoutAt)
-            {
-                var current = await storage.QuerySnapshots().ToListAsync();
-                var s = current.Single();
-                if (s.Status == SnapshotStatus.Ready)
-                {
-                    readySnapshot = s;
-                    break;
-                }
+            // Provision via manager
+            await manager.Provision(snapshot, CancellationToken.None);
 
-                await Task.Delay(100);
-            }
-
-            Assert.NotNull(readySnapshot); // provisioning finished
+            var after = await storage.QuerySnapshots().ToListAsync();
+            var readySnapshot = after.Single();
             Assert.Equal(SnapshotStatus.Ready, readySnapshot.Status);
             Assert.Equal(1, readySnapshot.ItemCount);
             Assert.NotNull(readySnapshot.Media);
@@ -161,8 +151,8 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots.Tests
             var storage = new SnapshotsStorage(
                 Options.Create(providerOptions),
                 Options.Create(storageOptions),
-                _env.Object,
-                kvProvider);
+                _env.Object);
+            var manager = new SnapshotsManager(storage, kvProvider, NullLogger<SnapshotsManager>.Instance);
             var snapshot = new Snapshot
             {
                 Id = "snap2",
@@ -177,23 +167,10 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots.Tests
             };
             await storage.AddSnapshot(snapshot, CancellationToken.None);
 
-            // Wait until ready
-            Snapshot? ready = null;
-            var timeoutAt = DateTimeOffset.UtcNow.AddSeconds(5);
-            while (DateTimeOffset.UtcNow < timeoutAt)
-            {
-                var current = await storage.QuerySnapshots().ToListAsync();
-                var s = current.Single(x => x.Id == "snap2");
-                if (s.Status == SnapshotStatus.Ready)
-                {
-                    ready = s;
-                    break;
-                }
-
-                await Task.Delay(100);
-            }
-
-            Assert.NotNull(ready);
+            // Provision
+            await manager.Provision(snapshot, CancellationToken.None);
+            var ready = (await storage.QuerySnapshots().ToListAsync()).Single(x => x.Id == "snap2");
+            Assert.Equal(SnapshotStatus.Ready, ready.Status);
 
             // Update status to Archived and change Etag
             ready.Etag = "etag-archived";

@@ -70,6 +70,7 @@ namespace Azure.AppConfiguration.Emulator.Integration
         {
             services.TryAddSingleton<ISnapshotsStorage, SnapshotsStorage>();
             services.TryAddSingleton<ISnapshotProvider, SnapshotProvider>();
+            services.TryAddSingleton<ISnapshotsManager, SnapshotsManager>();
             services.AddHostedService<SnapshotsService>();
 
             return services;

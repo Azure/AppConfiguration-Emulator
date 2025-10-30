@@ -15,14 +15,23 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
     public class SnapshotsService : BackgroundService
     {
         private readonly ISnapshotsStorage _storage;
+        private readonly ISnapshotsManager _manager;
         private readonly ILogger<SnapshotsService> _logger;
         private static readonly TimeSpan _pollInterval = TimeSpan.FromSeconds(10);
 
-        public SnapshotsService(ISnapshotsStorage storage, ILogger<SnapshotsService> logger)
+        public SnapshotsService(
+            ISnapshotsStorage storage,
+            ISnapshotsManager manager,
+            ILogger<SnapshotsService> logger)
         {
             if (storage == null)
             {
                 throw new ArgumentNullException(nameof(storage));
+            }
+
+            if (manager == null)
+            {
+                throw new ArgumentNullException(nameof(manager));
             }
 
             if (logger == null)
@@ -31,6 +40,7 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
             }
 
             _storage = storage;
+            _manager = manager;
             _logger = logger;
         }
 
@@ -42,46 +52,10 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
             {
                 try
                 {
-                    int provisioningCount = 0;
-                    int readyCount = 0;
-                    int archivedCount = 0;
-                    int failedCount = 0;
-
-                    await foreach (var snapshot in _storage.QuerySnapshots().WithCancellation(stoppingToken))
-                    {
-                        if (snapshot == null)
-                        {
-                            continue;
-                        }
-
-                        if (snapshot.Status == SnapshotStatus.Provisioning)
-                        {
-                            provisioningCount++;
-                        }
-                        else if (snapshot.Status == SnapshotStatus.Ready)
-                        {
-                            readyCount++;
-                        }
-                        else if (snapshot.Status == SnapshotStatus.Archived)
-                        {
-                            archivedCount++;
-                        }
-                        else if (snapshot.Status == SnapshotStatus.Failed)
-                        {
-                            failedCount++;
-                        }
-                    }
-
-                    if (provisioningCount > 0)
-                    {
-                        _logger.LogDebug("Provisioning snapshots detected: {ProvisioningCount}", provisioningCount);
-                    }
-
-                    _logger.LogInformation("Snapshot status counts: provisioning={ProvisioningCount}, ready={ReadyCount}, archived={ArchivedCount}, failed={FailedCount}", provisioningCount, readyCount, archivedCount, failedCount);
+                    await ProcessSnapshotsAsync(stoppingToken);
                 }
                 catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
                 {
-                    // Graceful shutdown; swallow.
                 }
                 catch (Exception ex)
                 {
@@ -99,6 +73,33 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
             }
 
             _logger.LogInformation("SnapshotsService stopped.");
+        }
+
+        private async Task ProcessSnapshotsAsync(CancellationToken cancellationToken)
+        {
+            int provisioned = 0;
+
+            await foreach (var snapshot in _storage.QuerySnapshots().WithCancellation(cancellationToken))
+            {
+                if (snapshot == null)
+                {
+                    continue;
+                }
+
+                var beforeStatus = snapshot.Status;
+                await _manager.Provision(snapshot, cancellationToken);
+
+                if (beforeStatus == SnapshotStatus.Provisioning && snapshot.Status == SnapshotStatus.Ready)
+                {
+                    provisioned++;
+                    _logger.LogInformation("Provisioned snapshot {SnapshotId}.", snapshot.Id);
+                }
+            }
+
+            if (provisioned > 0)
+            {
+                _logger.LogInformation("Provisioned {Provisioned} snapshot(s) this cycle.", provisioned);
+            }
         }
     }
 }

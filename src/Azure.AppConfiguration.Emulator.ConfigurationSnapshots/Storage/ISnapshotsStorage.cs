@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
 {
-    public interface ISnapshotsStorage
+    public interface ISnapshotsStorage : ISnapshotContentsStorage
     {
         IAsyncEnumerable<Snapshot> QuerySnapshots();
 
