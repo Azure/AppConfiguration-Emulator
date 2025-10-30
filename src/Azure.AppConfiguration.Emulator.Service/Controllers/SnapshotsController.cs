@@ -24,8 +24,6 @@ using Page = Azure.AppConfiguration.Emulator.ConfigurationSettings.Page<Azure.Ap
 
 namespace Azure.AppConfiguration.Emulator.Service
 {
-#if SNAPSHOTS
-
     [ApiVersion(ApiVersions.V23_10)]
     [ApiVersion(ApiVersions.V23_11)]
     [ApiVersion(ApiVersions.V24_09)]
@@ -330,5 +328,4 @@ namespace Azure.AppConfiguration.Emulator.Service
             return new ObjectResult(snapshot.ToOperationStatus());
         }
     }
-#endif
 }
