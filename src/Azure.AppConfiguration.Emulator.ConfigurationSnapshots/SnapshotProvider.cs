@@ -19,51 +19,38 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
         private readonly TenantOptions _tenant;
         private readonly SnapshotProviderOptions _options;
         private readonly ISnapshotsStorage _storage;
+        private readonly ISnapshotContentsStorage _contents;
 
         public SnapshotProvider(
             ISnapshotsStorage appConfigurationStorage,
+            ISnapshotContentsStorage contents,
             IOptions<TenantOptions> tenant,
             IOptions<SnapshotProviderOptions> options)
         {
             ValidateOptions(options?.Value);
 
             _storage = appConfigurationStorage ?? throw new ArgumentNullException(nameof(appConfigurationStorage));
+            _contents = contents ?? throw new ArgumentNullException(nameof(contents));
             _tenant = tenant?.Value ?? throw new ArgumentNullException(nameof(tenant));
             _options = options?.Value ?? throw new ArgumentNullException(nameof(options));
         }
 
         public async Task Create(Snapshot snapshot, CancellationToken cancellationToken)
         {
-            if (snapshot == null)
-            {
-                throw new ArgumentNullException(nameof(snapshot));
-            }
-
-            if (string.IsNullOrEmpty(snapshot.Name))
-            {
-                throw new ArgumentNullException(nameof(snapshot.Name));
-            }
-
-            if (snapshot.Filters == null)
-            {
-                throw new ArgumentNullException(nameof(snapshot.Filters));
-            }
+            if (snapshot == null) throw new ArgumentNullException(nameof(snapshot));
+            if (string.IsNullOrEmpty(snapshot.Name)) throw new ArgumentNullException(nameof(snapshot.Name));
+            if (snapshot.Filters == null) throw new ArgumentNullException(nameof(snapshot.Filters));
 
             int filterCount = snapshot.Filters.Count();
-
-            if (filterCount < _options.MinFilterCount ||
-                filterCount > _options.MaxFilterCount)
+            if (filterCount < _options.MinFilterCount || filterCount > _options.MaxFilterCount)
             {
                 throw new ArgumentOutOfRangeException(nameof(snapshot.Filters));
             }
 
-            //
-            // Verify filters create valid queries
             foreach (KeyValueFilter filter in snapshot.Filters)
             {
                 if (snapshot.CompositionType == CompositionType.Key)
                 {
-                    // SearchQueryException will be thrown if the label is invalid
                     ValidateLabelForComposeByKey(filter.Label);
                 }
             }
@@ -95,173 +82,84 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
             snapshot.StatusCode = entry.StatusCode;
         }
 
-        public Task<IEnumerable<Snapshot>> Get(
-            SnapshotSearchOptions options,
-            CancellationToken cancellationToken)
+        public Task<IEnumerable<Snapshot>> Get(SnapshotSearchOptions options, CancellationToken cancellationToken)
         {
-            if (options == null)
-            {
-                throw new ArgumentNullException(nameof(options));
-            }
-
+            if (options == null) throw new ArgumentNullException(nameof(options));
             if (options.Status == SnapshotStatusSearch.None)
             {
-                throw new ArgumentException(
-                    "At least one status is required for search.",
-                    nameof(options.Status));
+                throw new ArgumentException("At least one status is required for search.", nameof(options.Status));
             }
-
-            //
-            // TODO: Implement search
 
             throw new NotImplementedException();
         }
 
-        public async Task<IEnumerable<KeyValue>> GetContent(
-            Snapshot snapshot,
-            SnapshotContentSearchOptions options,
-            CancellationToken cancellationToken)
+        public async Task<IEnumerable<KeyValue>> GetContent(Snapshot snapshot, SnapshotContentSearchOptions options, CancellationToken cancellationToken)
         {
-            if (snapshot == null)
-            {
-                throw new ArgumentNullException(nameof(snapshot));
-            }
-
-            if (options == null)
-            {
-                throw new ArgumentNullException(nameof(options));
-            }
-
-            if (snapshot.Status != SnapshotStatus.Ready &&         // Snapshot isn't in servable state
-                snapshot.Status != SnapshotStatus.Archived)
+            if (snapshot == null) throw new ArgumentNullException(nameof(snapshot));
+            if (options == null) throw new ArgumentNullException(nameof(options));
+            if (snapshot.Status != SnapshotStatus.Ready && snapshot.Status != SnapshotStatus.Archived)
             {
                 throw new InvalidOperationException("Snapshot is not in a servable state");
             }
 
             MediaInfo media = snapshot.Media;
+            if (media == null) return Enumerable.Empty<KeyValue>();
 
             long offset;
-
             if (options.ContinuationToken == null)
             {
                 offset = 0;
             }
-            else
+            else if (!long.TryParse(options.ContinuationToken, out offset) || offset < 0 || offset >= media.Size)
             {
-                if (!long.TryParse(options.ContinuationToken, out offset) ||
-                    offset < 0 ||
-                    offset >= media.Size)
-                {
-                    //
-                    // Empty result on invalid continuation
-                    return Enumerable.Empty<KeyValue>();
-                }
+                return Enumerable.Empty<KeyValue>();
             }
 
-            return await _storage
-                .ReadSnapshotContent(snapshot, offset)
-                .Take(MaxItemCount)
-                .ToListAsync(cancellationToken);
+            return await _contents.GetContent(media, offset, cancellationToken)
+                                   .Take(MaxItemCount)
+                                   .ToListAsync(cancellationToken);
         }
 
         public Task Archive(Snapshot snapshot, CancellationToken cancellationToken)
         {
-            if (snapshot == null)
-            {
-                throw new ArgumentNullException(nameof(snapshot));
-            }
-
+            if (snapshot == null) throw new ArgumentNullException(nameof(snapshot));
             if (snapshot.Status != SnapshotStatus.Ready)
             {
                 throw new InvalidOperationException("The snapshot is not in a state that is able to be archived.");
             }
 
-            return UpdateStatus(
-                snapshot,
-                SnapshotStatus.Archived,
-                cancellationToken);
+            return UpdateStatus(snapshot, SnapshotStatus.Archived, cancellationToken);
         }
 
         public Task Recover(Snapshot snapshot, CancellationToken cancellationToken)
         {
-            if (snapshot == null)
-            {
-                throw new ArgumentNullException(nameof(snapshot));
-            }
-
+            if (snapshot == null) throw new ArgumentNullException(nameof(snapshot));
             if (snapshot.Status != SnapshotStatus.Archived)
             {
                 throw new InvalidOperationException("The snapshot is in an unrecoverable state.");
             }
 
-            return UpdateStatus(
-                snapshot,
-                SnapshotStatus.Ready,
-                cancellationToken);
+            return UpdateStatus(snapshot, SnapshotStatus.Ready, cancellationToken);
         }
 
-        private static bool IsExpired(Snapshot snapshot)
+        private Task UpdateStatus(Snapshot snapshot, SnapshotStatus status, CancellationToken cancellationToken)
         {
-            Debug.Assert(snapshot != null);
-
-            return DateTimeOffset.UtcNow >= snapshot.Expires;
-        }
-
-        private Task UpdateStatus(
-            Snapshot snapshot,
-            SnapshotStatus status,
-            CancellationToken cancellationToken)
-        {
-            Debug.Assert(
-                snapshot != null &&
-                snapshot.Status != status);
-
             snapshot.Status = status;
-
-            if (status == SnapshotStatus.Archived)
-            {
-                //
-                // Archive
-
-                snapshot.Expires = DateTimeOffset.UtcNow + snapshot.RetentionPeriod;
-            }
-            else
-            {
-                Debug.Assert(status == SnapshotStatus.Ready);
-
-                //
-                // Recover
-
-                snapshot.Expires = null;
-            }
-
-            //
-            // etag
+            snapshot.Expires = (status == SnapshotStatus.Archived) ? DateTimeOffset.UtcNow + snapshot.RetentionPeriod : null;
             snapshot.Etag = SnapshotHelper.GenerateEtag();
-
             return Update(snapshot, cancellationToken);
         }
 
         private Task Update(Snapshot snapshot, CancellationToken cancellationToken)
         {
-            Debug.Assert(snapshot != null);
-            Debug.Assert(snapshot.Id != null);
-            Debug.Assert(!string.IsNullOrEmpty(snapshot.Etag));
-
             return _storage.UpdateSnapshot(snapshot, cancellationToken);
         }
 
         private static void ValidateLabelForComposeByKey(string label)
         {
-            if (string.IsNullOrEmpty(label))
-            {
-                return;
-            }
-
+            if (string.IsNullOrEmpty(label)) return;
             ReadOnlySpan<char> span = label.AsSpan();
-
-            if (SearchQuery.ContainsWildcard(span) ||
-                SearchQuery.IsListSearch(span))
+            if (SearchQuery.ContainsWildcard(span) || SearchQuery.IsListSearch(span))
             {
                 throw new SearchQueryException(nameof(label), "Unexpected label which could match multiple values for a key");
             }
@@ -269,35 +167,12 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
 
         private void ValidateOptions(SnapshotProviderOptions options)
         {
-            if (options == null)
-            {
-                throw new ArgumentNullException(nameof(options));
-            }
-
-            if (options.OutputPageSize <= 0)
-            {
-                throw new ArgumentOutOfRangeException(nameof(options.OutputPageSize));
-            }
-
-            if (options.ReadTimeout <= TimeSpan.Zero)
-            {
-                throw new ArgumentOutOfRangeException(nameof(options.ReadTimeout));
-            }
-
-            if (options.WriteTimeout <= TimeSpan.Zero)
-            {
-                throw new ArgumentOutOfRangeException(nameof(options.WriteTimeout));
-            }
-
-            if (options.RetryTimeout <= TimeSpan.Zero)
-            {
-                throw new ArgumentOutOfRangeException(nameof(options.RetryTimeout));
-            }
-
-            if (options.ConflictRetryTimeout <= TimeSpan.Zero)
-            {
-                throw new ArgumentOutOfRangeException(nameof(options.ConflictRetryTimeout));
-            }
+            if (options == null) throw new ArgumentNullException(nameof(options));
+            if (options.OutputPageSize <= 0) throw new ArgumentOutOfRangeException(nameof(options.OutputPageSize));
+            if (options.ReadTimeout <= TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(options.ReadTimeout));
+            if (options.WriteTimeout <= TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(options.WriteTimeout));
+            if (options.RetryTimeout <= TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(options.RetryTimeout));
+            if (options.ConflictRetryTimeout <= TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(options.ConflictRetryTimeout));
         }
 
         private int MaxItemCount => _options.OutputPageSize;

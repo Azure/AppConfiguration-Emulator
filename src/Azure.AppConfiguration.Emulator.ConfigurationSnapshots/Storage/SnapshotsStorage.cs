@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-using Azure.AppConfiguration.Emulator.ConfigurationSettings;
+using Azure.AppConfiguration.Emulator.ConfigurationSettings; // Needed for NdJsonStreamReader and stream extensions
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Options;
 using System;
@@ -17,18 +17,15 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
 {
     public class SnapshotsStorage : ISnapshotsStorage
     {
-        private readonly ISnapshotContentsStorage _contentStorage;
         private readonly SnapshotProviderOptions _providerOptions;
         private readonly SnapshotsStorageOptions _options;
         private readonly string _metadataFilePath;
 
         public SnapshotsStorage(
-            ISnapshotContentsStorage contentStorage,
             IOptions<SnapshotProviderOptions> providerOptions,
             IOptions<SnapshotsStorageOptions> options,
             IHostingEnvironment host)
         {
-            _contentStorage = contentStorage ?? throw new ArgumentNullException(nameof(contentStorage));
             _providerOptions = providerOptions?.Value ?? throw new ArgumentNullException(nameof(providerOptions));
             _options = options?.Value ?? throw new ArgumentNullException(nameof(options));
 
@@ -192,11 +189,6 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
             }
 
             ReplaceFile(tempFilePath, _metadataFilePath);
-        }
-
-        public IAsyncEnumerable<KeyValue> ReadSnapshotContent(Snapshot snapshot, long offset)
-        {
-            return _contentStorage.Get(snapshot, offset, CancellationToken.None);
         }
 
         private static void ValidateSnapshot(Snapshot snapshot)

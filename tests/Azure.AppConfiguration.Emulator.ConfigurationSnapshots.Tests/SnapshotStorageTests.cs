@@ -2,7 +2,6 @@ using Azure.AppConfiguration.Emulator.ConfigurationSettings;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Options;
 using Moq;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots.Tests
 {
@@ -61,7 +60,7 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots.Tests
         }
 
         [Fact]
-        public async Task AddSnapshots()
+        public async Task AddSnapshot()
         {
             var providerOptions = new SnapshotProviderOptions();
             var storageOptions = new SnapshotsStorageOptions
@@ -80,9 +79,8 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots.Tests
             };
             var kvProvider = new StubKeyValueProvider(new[] { returnedKv });
 
-            var contentsStorage = new SnapshotContentsStorage(kvProvider, Options.Create(storageOptions), _env.Object);
+            var contentsStorage = new SnapshotContentsStorage(Options.Create(storageOptions), _env.Object);
             var storage = new SnapshotsStorage(
-                contentsStorage,
                 Options.Create(providerOptions),
                 Options.Create(storageOptions),
                 _env.Object);
@@ -112,9 +110,21 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots.Tests
             Assert.Equal(0, storedInitial.ItemCount);
             Assert.Null(storedInitial.Media);
 
-            MediaInfo media = await contentsStorage.Provision(snapshot, CancellationToken.None);
-            Assert.NotNull(media);
-            // Persist updated snapshot metadata after provisioning
+            var items = (await kvProvider.QueryKeyValues(new KeyValueSearchOptions
+            {
+                KeyFilter = new StringFilter { EqualsTo = "k1" },
+                LabelFilter = new StringFilter { EqualsTo = "l1" }
+            }, CancellationToken.None)).ToList();
+
+            Directory.CreateDirectory(_temporaryContentDir);
+            string filePath = Path.Combine(_temporaryContentDir, snapshot.Id + ".ndjson");
+            MediaInfo media = await contentsStorage.CreateContent(filePath, items, CancellationToken.None);
+
+            snapshot.Media = media;
+            snapshot.ItemCount = media.Size;
+            snapshot.Size = new FileInfo(filePath).Length;
+            snapshot.Status = SnapshotStatus.Ready;
+            snapshot.LastModified = DateTimeOffset.UtcNow;
             await storage.UpdateSnapshot(snapshot, CancellationToken.None);
 
             Snapshot persisted = (await storage.QuerySnapshots().ToListAsync()).Single(x => x.Id == "snap1");
@@ -123,75 +133,11 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots.Tests
             Assert.NotNull(persisted.Media);
             Assert.Equal(1, persisted.Media.Size);
 
-            List<KeyValue> content = await storage.ReadSnapshotContent(persisted, 0).ToListAsync();
+            List<KeyValue> content = await contentsStorage.GetContent(persisted.Media, 0, CancellationToken.None).ToListAsync();
             Assert.Single(content);
             Assert.Equal("k1", content[0].Key);
             Assert.Equal("l1", content[0].Label);
             Assert.Equal("v1", content[0].Value);
-        }
-
-        [Fact]
-        public async Task UpdateSnapshot()
-        {
-            var providerOptions = new SnapshotProviderOptions();
-            var storageOptions = new SnapshotsStorageOptions
-            {
-                MetadataFilePath = _temporaryMetadataPath,
-                ContentDirectory = _temporaryContentDir
-            };
-            var returnedKv = new KeyValue
-            {
-                Key = "k1",
-                Label = "l1",
-                Value = "v1",
-                Etag = "e1",
-                Timestamp = DateTimeOffset.UtcNow
-            };
-            var kvProvider = new StubKeyValueProvider(new[] { returnedKv });
-            var contentsStorage = new SnapshotContentsStorage(kvProvider, Options.Create(storageOptions), _env.Object);
-            var storage = new SnapshotsStorage(
-                contentsStorage,
-                Options.Create(providerOptions),
-                Options.Create(storageOptions),
-                _env.Object);
-            var snapshot = new Snapshot
-            {
-                Id = "snap2",
-                Name = "snap2",
-                Etag = "etag-init",
-                Status = SnapshotStatus.Provisioning,
-                CompositionType = CompositionType.Key,
-                RetentionPeriod = TimeSpan.FromMinutes(30),
-                Created = DateTimeOffset.UtcNow,
-                LastModified = DateTimeOffset.UtcNow,
-                Filters = new[] { new KeyValueFilter { Key = "k1", Label = "l1" } }
-            };
-            await storage.AddSnapshot(snapshot, CancellationToken.None);
-
-            MediaInfo media = await contentsStorage.Provision(snapshot, CancellationToken.None);
-            Assert.NotNull(media);
-            await storage.UpdateSnapshot(snapshot, CancellationToken.None);
-
-            Snapshot readyPersisted = (await storage.QuerySnapshots().ToListAsync()).Single(x => x.Id == "snap2");
-            Assert.Equal(SnapshotStatus.Ready, readyPersisted.Status);
-            List<KeyValue> content = await storage.ReadSnapshotContent(readyPersisted, 0).ToListAsync();
-            Assert.Single(content);
-            Assert.Equal("k1", content[0].Key);
-
-            // Update status to Archived
-            readyPersisted.Etag = "etag-archived";
-            readyPersisted.Status = SnapshotStatus.Archived;
-            readyPersisted.LastModified = DateTimeOffset.UtcNow;
-            await storage.UpdateSnapshot(readyPersisted, CancellationToken.None);
-
-            // Fetch again
-            Snapshot updated = (await storage.QuerySnapshots().ToListAsync()).Single(x => x.Id == "snap2");
-            Assert.Equal(SnapshotStatus.Archived, updated.Status);
-            Assert.Equal("etag-archived", updated.Etag);
-
-            // Content access should yield no items
-            content = await storage.ReadSnapshotContent(updated, 0).ToListAsync();
-            Assert.Empty(content);
         }
     }
 

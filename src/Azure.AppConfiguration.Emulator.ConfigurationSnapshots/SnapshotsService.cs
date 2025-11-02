@@ -1,9 +1,13 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+using Azure.AppConfiguration.Emulator.ConfigurationSettings;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -16,21 +20,20 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
     {
         private readonly ISnapshotsStorage _storage;
         private readonly ISnapshotContentsStorage _contents;
+        private readonly IKeyValueProvider _kvProvider;
         private readonly ILogger<SnapshotsService> _logger;
         private static readonly TimeSpan _pollInterval = TimeSpan.FromSeconds(10);
 
         public SnapshotsService(
             ISnapshotsStorage storage,
             ISnapshotContentsStorage contents,
+            IKeyValueProvider kvProvider,
             ILogger<SnapshotsService> logger)
         {
-            if (storage == null) throw new ArgumentNullException(nameof(storage));
-            if (contents == null) throw new ArgumentNullException(nameof(contents));
-            if (logger == null) throw new ArgumentNullException(nameof(logger));
-
-            _storage = storage;
-            _contents = contents;
-            _logger = logger;
+            _storage = storage ?? throw new ArgumentNullException(nameof(storage));
+            _contents = contents ?? throw new ArgumentNullException(nameof(contents));
+            _kvProvider = kvProvider ?? throw new ArgumentNullException(nameof(kvProvider));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -70,29 +73,30 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
 
             await foreach (Snapshot snapshot in _storage.QuerySnapshots().WithCancellation(cancellationToken))
             {
-                if (snapshot == null)
+                if (snapshot == null || snapshot.Status != SnapshotStatus.Provisioning)
                 {
                     continue;
                 }
 
-                SnapshotStatus before = snapshot.Status;
-                MediaInfo media = await _contents.Provision(snapshot, cancellationToken);
-                // snapshot object mutated by Provision; use existing reference
-                Snapshot updated = snapshot;
+                IEnumerable<KeyValue> items = await CollectItemsAsync(snapshot, cancellationToken);
 
-                if (before == SnapshotStatus.Provisioning)
+                string filePath = BuildContentFilePath(snapshot.Id);
+
+                MediaInfo media = await _contents.CreateContent(filePath, items, cancellationToken);
+
+                snapshot.Media = media;
+                snapshot.ItemCount = media.Size; // item count
+                snapshot.Size = new FileInfo(filePath).Length; // bytes
+                snapshot.Status = SnapshotStatus.Ready;
+                snapshot.StatusCode = 200;
+                snapshot.LastModified = DateTimeOffset.UtcNow;
+
+                await _storage.UpdateSnapshot(snapshot, cancellationToken);
+
+                if (snapshot.Status == SnapshotStatus.Ready)
                 {
-                    await _storage.UpdateSnapshot(updated, cancellationToken);
-
-                    if (updated.Status == SnapshotStatus.Ready)
-                    {
-                        provisioned++;
-                        _logger.LogInformation("Provisioned snapshot {SnapshotId}.", updated.Id);
-                    }
-                    else if (updated.Status == SnapshotStatus.Failed)
-                    {
-                        _logger.LogWarning("Failed to provision snapshot {SnapshotId}.", updated.Id);
-                    }
+                    provisioned++;
+                    _logger.LogInformation("Provisioned snapshot {SnapshotId}.", snapshot.Id);
                 }
             }
 
@@ -100,6 +104,42 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
             {
                 _logger.LogInformation("Provisioned {Provisioned} snapshot(s) this cycle.", provisioned);
             }
+        }
+
+        private async Task<IEnumerable<KeyValue>> CollectItemsAsync(Snapshot snapshot, CancellationToken cancellationToken)
+        {
+            if (snapshot.Filters == null)
+            {
+                return Enumerable.Empty<KeyValue>();
+            }
+
+            var result = new List<KeyValue>();
+            foreach (KeyValueFilter f in snapshot.Filters)
+            {
+                var keyFilter = new StringFilter { EqualsTo = f.Key, IsNull = f.Key == null };
+                var labelFilter = new StringFilter { EqualsTo = f.Label, IsNull = f.Label == null };
+                string continuation = null;
+                do
+                {
+                    var page = await _kvProvider.QueryKeyValues(new KeyValueSearchOptions
+                    {
+                        KeyFilter = keyFilter,
+                        LabelFilter = labelFilter,
+                        ContinuationToken = continuation,
+                        Tags = f.Tags
+                    }, cancellationToken);
+
+                    result.AddRange(page);
+                    continuation = page.ContinuationToken;
+                } while (!string.IsNullOrEmpty(continuation));
+            }
+
+            return result.GroupBy(k => (k.Key, k.Label)).Select(g => g.First());
+        }
+
+        private string BuildContentFilePath(string snapshotId)
+        {
+            return Path.Combine(AppContext.BaseDirectory, ".aace", "snapshots", snapshotId + ".ndjson");
         }
     }
 }

@@ -3,7 +3,6 @@
 
 using Azure.AppConfiguration.Emulator.ConfigurationSettings;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -11,8 +10,8 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
 {
     public interface ISnapshotContentsStorage
     {
-        Task<MediaInfo> Provision(Snapshot snapshot, CancellationToken cancellationToken);
+        Task<MediaInfo> CreateContent(string filePath, IEnumerable<KeyValue> items, CancellationToken cancellationToken);
 
-        IAsyncEnumerable<KeyValue> Get(Snapshot snapshot, long offset, CancellationToken cancellationToken);
+        IAsyncEnumerable<KeyValue> GetContent(MediaInfo media, long offset, CancellationToken cancellationToken);
     }
 }
