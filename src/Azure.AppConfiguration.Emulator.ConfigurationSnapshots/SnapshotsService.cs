@@ -70,10 +70,13 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
 
             await foreach (var snapshot in _storage.QuerySnapshots().WithCancellation(cancellationToken))
             {
-                if (snapshot == null) continue;
+                if (snapshot == null)
+                {
+                    continue;
+                }
 
-                var before = snapshot.Status;
-                var updated = await _contents.Provision(snapshot, cancellationToken);
+                SnapshotStatus before = snapshot.Status;
+                Snapshot updated = await _contents.Provision(snapshot, cancellationToken);
 
                 if (before == SnapshotStatus.Provisioning)
                 {
