@@ -80,12 +80,12 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots.Tests
             };
             var kvProvider = new StubKeyValueProvider(new[] { returnedKv });
 
+            var contentsStorage = new SnapshotContentsStorage(kvProvider, Options.Create(storageOptions), _env.Object);
             var storage = new SnapshotsStorage(
+                contentsStorage,
                 Options.Create(providerOptions),
                 Options.Create(storageOptions),
                 _env.Object);
-
-            var contentsStorage = new SnapshotContentsStorage(kvProvider, Options.Create(storageOptions), _env.Object);
 
             var snapshot = new Snapshot
             {
@@ -144,11 +144,12 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots.Tests
                 Timestamp = DateTimeOffset.UtcNow
             };
             var kvProvider = new StubKeyValueProvider(new[] { returnedKv });
+            var contentsStorage = new SnapshotContentsStorage(kvProvider, Options.Create(storageOptions), _env.Object);
             var storage = new SnapshotsStorage(
+                contentsStorage,
                 Options.Create(providerOptions),
                 Options.Create(storageOptions),
                 _env.Object);
-            var contentsStorage = new SnapshotContentsStorage(kvProvider, Options.Create(storageOptions), _env.Object);
             var snapshot = new Snapshot
             {
                 Id = "snap2",

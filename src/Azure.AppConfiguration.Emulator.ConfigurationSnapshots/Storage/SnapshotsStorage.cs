@@ -9,8 +9,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
-using System.Security.Cryptography;
-using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -19,16 +17,18 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
 {
     public class SnapshotsStorage : ISnapshotsStorage
     {
+        private readonly ISnapshotContentsStorage _contentStorage;
         private readonly SnapshotProviderOptions _providerOptions;
         private readonly SnapshotsStorageOptions _options;
         private readonly string _metadataFilePath;
-        private readonly string _contentDirectory;
 
         public SnapshotsStorage(
+            ISnapshotContentsStorage contentStorage,
             IOptions<SnapshotProviderOptions> providerOptions,
             IOptions<SnapshotsStorageOptions> options,
             IHostingEnvironment host)
         {
+            _contentStorage = contentStorage ?? throw new ArgumentNullException(nameof(contentStorage));
             _providerOptions = providerOptions?.Value ?? throw new ArgumentNullException(nameof(providerOptions));
             _options = options?.Value ?? throw new ArgumentNullException(nameof(options));
 
@@ -42,16 +42,7 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
 
             _metadataFilePath = Path.GetFullPath(_metadataFilePath);
 
-            _contentDirectory = _options.ContentDirectory;
-            if (!Path.IsPathRooted(_contentDirectory))
-            {
-                _contentDirectory = Path.Combine(host.ContentRootPath, _contentDirectory);
-            }
-
-            _contentDirectory = Path.GetFullPath(_contentDirectory);
-
             InsureFileExist(_metadataFilePath);
-            InsureDirectoryExist(_contentDirectory);
         }
 
         public async IAsyncEnumerable<Snapshot> QuerySnapshots(
@@ -108,9 +99,7 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
             return QuerySnapshots(CancellationToken.None);
         }
 
-        public Task<Snapshot> GetSnapshot(string snapshotId, CancellationToken cancellationToken) => GetSnapshotInternal(snapshotId, cancellationToken);
-
-        private async Task<Snapshot> GetSnapshotInternal(string snapshotId, CancellationToken cancellationToken)
+        public async Task<Snapshot> GetSnapshot(string snapshotId, CancellationToken cancellationToken)
         {
             if (string.IsNullOrEmpty(snapshotId))
             {
@@ -213,50 +202,9 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
             ReplaceFile(tempFilePath, _metadataFilePath);
         }
 
-        public IAsyncEnumerable<KeyValue> ReadSnapshotContent(Snapshot snapshot, long offset) => ReadSnapshotContentInternal(snapshot, offset, CancellationToken.None);
-
-        private async IAsyncEnumerable<KeyValue> ReadSnapshotContentInternal(
-            Snapshot snapshot,
-            long offset,
-            [EnumeratorCancellation] CancellationToken cancellationToken)
+        public IAsyncEnumerable<KeyValue> ReadSnapshotContent(Snapshot snapshot, long offset)
         {
-            ValidateSnapshot(snapshot);
-            if (snapshot.Status != SnapshotStatus.Ready)
-            {
-                yield break;
-            }
-
-            string filePath = GetContentFilePath(snapshot.Id);
-            if (!File.Exists(filePath))
-            {
-                throw new FileNotFoundException($"Snapshot content file not found for snapshot '{snapshot.Id}'", filePath);
-            }
-
-            using var fs = new FileStream(
-                filePath,
-                FileMode.Open,
-                FileAccess.Read,
-                FileShare.Read);
-
-            var reader = new NdJsonStreamReader<KeyValue>(
-                fs,
-                (ref Utf8JsonReader r, out KeyValue kv) => r.TryReadKeyValue(out kv),
-                _options.ReadBufferSizeHint,
-                _options.MaxReadBufferSize);
-
-            using CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-            cts.CancelAfter(_options.ReadTimeout);
-
-            long index = 0;
-            await foreach (var kv in reader.ReadItems(cts.Token))
-            {
-                if (index++ < offset)
-                {
-                    continue;
-                }
-
-                yield return kv;
-            }
+            return _contentStorage.Get(snapshot, offset, CancellationToken.None);
         }
 
         private static void ValidateSnapshot(Snapshot snapshot)
@@ -340,16 +288,6 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
             using StreamWriter writer = new StreamWriter(fs);
         }
 
-        private static void InsureDirectoryExist(string directoryPath)
-        {
-            if (!Directory.Exists(directoryPath))
-            {
-                Directory.CreateDirectory(directoryPath);
-            }
-        }
-
-        private string GetContentFilePath(string snapshotId) => Path.Combine(_contentDirectory, snapshotId + ".ndjson");
-
         private static void ReplaceFile(string tempFilePath, string targetFilePath)
         {
             if (File.Exists(targetFilePath))
@@ -367,28 +305,6 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
             {
                 File.Delete(tempFilePath);
             }
-        }
-
-        private static async Task<long> CountLines(string filePath, CancellationToken cancellationToken)
-        {
-            long count = 0;
-            using var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
-            using var reader = new StreamReader(fs, Encoding.UTF8, true, 1024, leaveOpen: true);
-            while (!reader.EndOfStream)
-            {
-                await reader.ReadLineAsync();
-                ++count;
-                cancellationToken.ThrowIfCancellationRequested();
-            }
-
-            return count;
-        }
-
-        private static byte[] ComputeSha256(string filePath)
-        {
-            using FileStream fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
-            using SHA256 sha = SHA256.Create();
-            return sha.ComputeHash(fs);
         }
     }
 }

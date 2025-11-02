@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text.Json;
 using System.Threading;
@@ -69,6 +70,55 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
             }
 
             return snapshot;
+        }
+
+        // Stream snapshot content entries from persisted file starting at offset.
+        public async IAsyncEnumerable<KeyValue> Get(
+            Snapshot snapshot,
+            long offset,
+            [EnumeratorCancellation] CancellationToken cancellationToken)
+        {
+            if (snapshot == null)
+            {
+                throw new ArgumentNullException(nameof(snapshot));
+            }
+
+            if (snapshot.Status != SnapshotStatus.Ready && snapshot.Status != SnapshotStatus.Archived)
+            {
+                yield break;
+            }
+
+            string filePath = GetContentFilePath(snapshot.Id);
+            if (!File.Exists(filePath))
+            {
+                yield break;
+            }
+
+            using var fs = new FileStream(
+                filePath,
+                FileMode.Open,
+                FileAccess.Read,
+                FileShare.Read);
+
+            var reader = new NdJsonStreamReader<KeyValue>(
+                fs,
+                (ref Utf8JsonReader r, out KeyValue kv) => r.TryReadKeyValue(out kv),
+                _options.ReadBufferSizeHint,
+                _options.MaxReadBufferSize);
+
+            using CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            cts.CancelAfter(_options.ReadTimeout);
+
+            long index = 0;
+            await foreach (var kv in reader.ReadItems(cts.Token))
+            {
+                if (index++ < offset)
+                {
+                    continue;
+                }
+
+                yield return kv;
+            }
         }
 
         private async Task<IEnumerable<KeyValue>> GetContentAsync(Snapshot snapshot, CancellationToken cancellationToken)
