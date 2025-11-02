@@ -3,7 +3,6 @@
 
 using System;
 using System.Text.Json;
-using System.Collections.Generic;
 using Azure.AppConfiguration.Emulator.ConfigurationSettings;
 
 namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots

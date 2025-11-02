@@ -18,16 +18,18 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
 
             while (reader.Read())
             {
+                //
+                // Read top-level properties
                 if (depth == 1 && reader.TokenType == JsonTokenType.PropertyName && !reader.HasValueSequence)
                 {
                     s ??= new Snapshot();
-                    ReadSnapshotProperty(s, reader.ValueSpan, ref reader);
+                    s.SetProperty(reader.ValueSpan, ref reader);
                     continue;
                 }
 
                 if (reader.TokenType == JsonTokenType.StartObject)
                 {
-                    depth++;
+                    ++depth;
                     continue;
                 }
 
@@ -48,8 +50,10 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
             return snapshot != null;
         }
 
-        private static void ReadSnapshotProperty(Snapshot snapshot, ReadOnlySpan<byte> name, ref Utf8JsonReader reader)
+        private static void SetProperty(this Snapshot snapshot, ReadOnlySpan<byte> name, ref Utf8JsonReader reader)
         {
+            //
+            // id
             if (name.SequenceEqual(SnapshotJsonFields.Id.EncodedUtf8Bytes))
             {
                 if (reader.Read() && reader.TokenType == JsonTokenType.String)
@@ -60,6 +64,8 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
                 return;
             }
 
+            //
+            // name
             if (name.SequenceEqual(SnapshotJsonFields.Name.EncodedUtf8Bytes))
             {
                 if (reader.Read() && reader.TokenType == JsonTokenType.String)
@@ -70,6 +76,8 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
                 return;
             }
 
+            //
+            // etag
             if (name.SequenceEqual(SnapshotJsonFields.Etag.EncodedUtf8Bytes))
             {
                 if (reader.Read() && reader.TokenType == JsonTokenType.String)
@@ -80,6 +88,8 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
                 return;
             }
 
+            //
+            // status
             if (name.SequenceEqual(SnapshotJsonFields.Status.EncodedUtf8Bytes))
             {
                 if (reader.Read() && reader.TokenType == JsonTokenType.String)
@@ -90,6 +100,8 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
                 return;
             }
 
+            //
+            // status_code
             if (name.SequenceEqual(SnapshotJsonFields.StatusCode.EncodedUtf8Bytes))
             {
                 if (reader.Read())
@@ -100,6 +112,8 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
                 return;
             }
 
+            //
+            // composition_type
             if (name.SequenceEqual(SnapshotJsonFields.CompositionType.EncodedUtf8Bytes))
             {
                 if (reader.Read() && reader.TokenType == JsonTokenType.String)
@@ -110,6 +124,8 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
                 return;
             }
 
+            //
+            // retention_period_seconds
             if (name.SequenceEqual(SnapshotJsonFields.RetentionPeriodSeconds.EncodedUtf8Bytes))
             {
                 if (reader.Read())
@@ -120,36 +136,44 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
                 return;
             }
 
+            //
+            // created
             if (name.SequenceEqual(SnapshotJsonFields.Created.EncodedUtf8Bytes))
             {
                 if (reader.Read())
                 {
-                    snapshot.Created = reader.GetDateTimeOffset();
+                    snapshot.Created = DateTimeOffset.FromUnixTimeSeconds(reader.GetInt64());
                 }
 
                 return;
             }
 
+            //
+            // last_modified
             if (name.SequenceEqual(SnapshotJsonFields.LastModified.EncodedUtf8Bytes))
             {
                 if (reader.Read())
                 {
-                    snapshot.LastModified = reader.GetDateTimeOffset();
+                    snapshot.LastModified = DateTimeOffset.FromUnixTimeSeconds(reader.GetInt64());
                 }
 
                 return;
             }
 
+            //
+            // expires
             if (name.SequenceEqual(SnapshotJsonFields.Expires.EncodedUtf8Bytes))
             {
                 if (reader.Read())
                 {
-                    snapshot.Expires = reader.GetDateTimeOffset();
+                    snapshot.Expires = DateTimeOffset.FromUnixTimeSeconds(reader.GetInt64());
                 }
 
                 return;
             }
 
+            //
+            // items_count
             if (name.SequenceEqual(SnapshotJsonFields.ItemsCount.EncodedUtf8Bytes))
             {
                 if (reader.Read())
@@ -160,6 +184,8 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
                 return;
             }
 
+            //
+            // size_bytes
             if (name.SequenceEqual(SnapshotJsonFields.SizeBytes.EncodedUtf8Bytes))
             {
                 if (reader.Read())
@@ -170,6 +196,8 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
                 return;
             }
 
+            //
+            // tags
             if (name.SequenceEqual(SnapshotJsonFields.Tags.EncodedUtf8Bytes))
             {
                 if (reader.Read())
@@ -180,6 +208,8 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
                 return;
             }
 
+            //
+            // filters
             if (name.SequenceEqual(SnapshotJsonFields.Filters.EncodedUtf8Bytes))
             {
                 if (reader.Read() && reader.TokenType == JsonTokenType.StartArray)
@@ -238,6 +268,8 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
                 return;
             }
 
+            //
+            // media
             if (name.SequenceEqual(SnapshotJsonFields.Media.EncodedUtf8Bytes))
             {
                 if (reader.Read() && reader.TokenType == JsonTokenType.StartObject)
@@ -248,6 +280,8 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
                         if (reader.TokenType == JsonTokenType.PropertyName && !reader.HasValueSequence)
                         {
                             ReadOnlySpan<byte> pn = reader.ValueSpan;
+                            //
+                            // category
                             if (pn.SequenceEqual(SnapshotJsonFields.Category.EncodedUtf8Bytes))
                             {
                                 if (reader.Read() && reader.TokenType == JsonTokenType.String)
@@ -258,6 +292,8 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
                                 continue;
                             }
 
+                            //
+                            // media name
                             if (pn.SequenceEqual(SnapshotJsonFields.MediaName.EncodedUtf8Bytes))
                             {
                                 if (reader.Read() && reader.TokenType == JsonTokenType.String)
@@ -268,6 +304,8 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
                                 continue;
                             }
 
+                            //
+                            // media size
                             if (pn.SequenceEqual(SnapshotJsonFields.MediaSize.EncodedUtf8Bytes))
                             {
                                 if (reader.Read())
@@ -278,6 +316,8 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
                                 continue;
                             }
 
+                            //
+                            // etag
                             if (pn.SequenceEqual(SnapshotJsonFields.Etag.EncodedUtf8Bytes))
                             {
                                 if (reader.Read() && reader.TokenType == JsonTokenType.String)
@@ -288,6 +328,8 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
                                 continue;
                             }
 
+                            //
+                            // content_type
                             if (pn.SequenceEqual(SnapshotJsonFields.ContentType.EncodedUtf8Bytes))
                             {
                                 if (reader.Read() && reader.TokenType == JsonTokenType.String)
@@ -298,6 +340,8 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
                                 continue;
                             }
 
+                            //
+                            // sha256
                             if (pn.SequenceEqual(SnapshotJsonFields.Sha256.EncodedUtf8Bytes))
                             {
                                 if (reader.Read() && reader.TokenType == JsonTokenType.String)
