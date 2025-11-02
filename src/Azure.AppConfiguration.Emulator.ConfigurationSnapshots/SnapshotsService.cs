@@ -68,7 +68,7 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
         {
             int provisioned = 0;
 
-            await foreach (var snapshot in _storage.QuerySnapshots().WithCancellation(cancellationToken))
+            await foreach (Snapshot snapshot in _storage.QuerySnapshots().WithCancellation(cancellationToken))
             {
                 if (snapshot == null)
                 {
@@ -76,7 +76,9 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
                 }
 
                 SnapshotStatus before = snapshot.Status;
-                Snapshot updated = await _contents.Provision(snapshot, cancellationToken);
+                MediaInfo media = await _contents.Provision(snapshot, cancellationToken);
+                // snapshot object mutated by Provision; use existing reference
+                Snapshot updated = snapshot;
 
                 if (before == SnapshotStatus.Provisioning)
                 {

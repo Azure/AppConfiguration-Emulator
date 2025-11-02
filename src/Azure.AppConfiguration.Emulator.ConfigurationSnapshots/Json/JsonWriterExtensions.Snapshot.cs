@@ -3,6 +3,7 @@
 
 using System;
 using System.Text.Json;
+using System.Collections.Generic;
 using Azure.AppConfiguration.Emulator.ConfigurationSettings;
 
 namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
@@ -11,63 +12,118 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
     {
         public static void WriteSnapshot(this Utf8JsonWriter writer, Snapshot snapshot)
         {
-            if (writer == null) throw new ArgumentNullException(nameof(writer));
-            if (snapshot == null) throw new ArgumentNullException(nameof(snapshot));
+            if (writer == null)
+            {
+                throw new ArgumentNullException(nameof(writer));
+            }
+
+            if (snapshot == null)
+            {
+                throw new ArgumentNullException(nameof(snapshot));
+            }
 
             writer.WriteStartObject();
 
-            writer.WriteString(SnapshotJsonFields.Id, snapshot.Id);
-            writer.WriteString(SnapshotJsonFields.Name, snapshot.Name);
+            //
+            // id
+            if (snapshot.Id != null)
+            {
+                writer.WriteString(SnapshotJsonFields.Id, snapshot.Id);
+            }
+
+            //
+            // name
+            if (snapshot.Name != null)
+            {
+                writer.WriteString(SnapshotJsonFields.Name, snapshot.Name);
+            }
+
+            //
+            // etag
             if (snapshot.Etag != null)
             {
                 writer.WriteString(SnapshotJsonFields.Etag, snapshot.Etag);
             }
 
+            //
+            // status
             writer.WriteString(SnapshotJsonFields.Status, ToStatus(snapshot.Status));
+
+            //
+            // status_code
             writer.WriteNumber(SnapshotJsonFields.StatusCode, snapshot.StatusCode);
+
+            //
+            // composition_type
             writer.WriteString(SnapshotJsonFields.CompositionType, ToCompositionType(snapshot.CompositionType));
+
+            //
+            // retention_period_seconds
             writer.WriteNumber(SnapshotJsonFields.RetentionPeriodSeconds, (long)snapshot.RetentionPeriod.TotalSeconds);
-            writer.WritePropertyName(SnapshotJsonFields.Created);
-            writer.WriteStringValue(snapshot.Created);
-            writer.WritePropertyName(SnapshotJsonFields.LastModified);
-            writer.WriteStringValue(snapshot.LastModified);
+
+            //
+            // created
+            writer.WriteNumber(SnapshotJsonFields.Created, snapshot.Created.ToUnixTimeSeconds());
+
+            //
+            // last_modified
+            writer.WriteNumber(SnapshotJsonFields.LastModified, snapshot.LastModified.ToUnixTimeSeconds());
+
+            //
+            // expires
             if (snapshot.Expires.HasValue)
             {
-                writer.WritePropertyName(SnapshotJsonFields.Expires);
-                writer.WriteStringValue(snapshot.Expires.Value);
+                writer.WriteNumber(SnapshotJsonFields.Expires, snapshot.Expires.Value.ToUnixTimeSeconds());
             }
 
+            //
+            // items_count
             writer.WriteNumber(SnapshotJsonFields.ItemsCount, snapshot.ItemCount);
+
+            //
+            // size_bytes
             writer.WriteNumber(SnapshotJsonFields.SizeBytes, snapshot.Size);
 
+            //
+            // tags
             if (snapshot.Tags != null)
             {
-                writer.WriteStartObject(SnapshotJsonFields.Tags);
-                foreach (var t in snapshot.Tags)
-                {
-                    writer.WriteString(t.Key, t.Value);
-                }
-
-                writer.WriteEndObject();
+                writer.WriteDictionary(SnapshotJsonFields.Tags, snapshot.Tags);
             }
 
+            //
+            // filters
             if (snapshot.Filters != null)
             {
                 writer.WriteStartArray(SnapshotJsonFields.Filters);
-                foreach (var f in snapshot.Filters)
+                foreach (KeyValueFilter f in snapshot.Filters)
                 {
-                    writer.WriteStartObject();
-                    writer.WriteString(SnapshotJsonFields.Key, f.Key);
-                    writer.WriteString(SnapshotJsonFields.Label, f.Label);
-                    writer.WriteEndObject();
+                    if (f != null)
+                    {
+                        writer.WriteStartObject();
+                        if (f.Key != null)
+                        {
+                            writer.WriteString(SnapshotJsonFields.Key, f.Key);
+                        }
+
+                        if (f.Label != null)
+                        {
+                            writer.WriteString(SnapshotJsonFields.Label, f.Label);
+                        }
+
+                        writer.WriteEndObject();
+                    }
                 }
 
                 writer.WriteEndArray();
             }
 
+            //
+            // media
             if (snapshot.Media != null)
             {
                 writer.WriteStartObject(SnapshotJsonFields.Media);
+
                 if (snapshot.Media.Category != null)
                 {
                     writer.WriteString(SnapshotJsonFields.Category, snapshot.Media.Category);

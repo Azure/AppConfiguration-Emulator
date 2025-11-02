@@ -29,20 +29,24 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
         {
             _keyValueProvider = keyValueProvider ?? throw new ArgumentNullException(nameof(keyValueProvider));
             _options = options?.Value ?? throw new ArgumentNullException(nameof(options));
-            if (host == null) throw new ArgumentNullException(nameof(host));
-
-            _contentDirectory = _options.ContentDirectory;
-            if (!Path.IsPathRooted(_contentDirectory))
+            if (host == null)
             {
-                _contentDirectory = Path.Combine(host.ContentRootPath, _contentDirectory);
+                throw new ArgumentNullException(nameof(host));
             }
 
-            _contentDirectory = Path.GetFullPath(_contentDirectory);
+            string directory = _options.ContentDirectory;
+            if (!Path.IsPathRooted(directory))
+            {
+                directory = Path.Combine(host.ContentRootPath, directory);
+            }
+
+            directory = Path.GetFullPath(directory);
+            _contentDirectory = directory;
 
             EnsureDirectory(_contentDirectory);
         }
 
-        public async Task<Snapshot> Provision(Snapshot snapshot, CancellationToken cancellationToken)
+        public async Task<MediaInfo> Provision(Snapshot snapshot, CancellationToken cancellationToken)
         {
             if (snapshot == null)
             {
@@ -51,16 +55,21 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
 
             if (snapshot.Status != SnapshotStatus.Provisioning)
             {
-                return snapshot;
+                return snapshot.Media;
             }
+
+            MediaInfo media = new MediaInfo();
+            media.Category = "snapshots";
+            media.ContentType = "application/x-ndjson";
 
             try
             {
                 IEnumerable<KeyValue> items = await GetContentAsync(snapshot, cancellationToken);
-                await WriteContentFileAsync(snapshot, items, cancellationToken);
+                MediaInfo updated = await WriteContentFileAsync(snapshot, items, media, cancellationToken);
                 snapshot.Status = SnapshotStatus.Ready;
                 snapshot.StatusCode = 200;
                 snapshot.LastModified = DateTimeOffset.UtcNow;
+                snapshot.Media = updated;
             }
             catch
             {
@@ -69,10 +78,9 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
                 snapshot.LastModified = DateTimeOffset.UtcNow;
             }
 
-            return snapshot;
+            return snapshot.Media;
         }
 
-        // Stream snapshot content entries from persisted file starting at offset.
         public async IAsyncEnumerable<KeyValue> Get(
             Snapshot snapshot,
             long offset,
@@ -88,19 +96,24 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
                 yield break;
             }
 
-            string filePath = GetContentFilePath(snapshot.Id);
+            if (snapshot.Media == null || string.IsNullOrEmpty(snapshot.Media.Name))
+            {
+                yield break;
+            }
+
+            string filePath = Path.Combine(_contentDirectory, snapshot.Media.Name);
             if (!File.Exists(filePath))
             {
                 yield break;
             }
 
-            using var fs = new FileStream(
+            using FileStream fs = new FileStream(
                 filePath,
                 FileMode.Open,
                 FileAccess.Read,
                 FileShare.Read);
 
-            var reader = new NdJsonStreamReader<KeyValue>(
+            NdJsonStreamReader<KeyValue> reader = new NdJsonStreamReader<KeyValue>(
                 fs,
                 (ref Utf8JsonReader r, out KeyValue kv) => r.TryReadKeyValue(out kv),
                 _options.ReadBufferSizeHint,
@@ -110,7 +123,7 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
             cts.CancelAfter(_options.ReadTimeout);
 
             long index = 0;
-            await foreach (var kv in reader.ReadItems(cts.Token))
+            await foreach (KeyValue kv in reader.ReadItems(cts.Token))
             {
                 if (index++ < offset)
                 {
@@ -123,17 +136,20 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
 
         private async Task<IEnumerable<KeyValue>> GetContentAsync(Snapshot snapshot, CancellationToken cancellationToken)
         {
-            var result = new List<KeyValue>();
-            if (snapshot.Filters == null) return result;
-
-            foreach (var f in snapshot.Filters)
+            List<KeyValue> result = new List<KeyValue>();
+            if (snapshot.Filters == null)
             {
-                var keyFilter = new StringFilter { EqualsTo = f.Key, IsNull = f.Key == null };
-                var labelFilter = new StringFilter { EqualsTo = f.Label, IsNull = f.Label == null };
+                return result;
+            }
+
+            foreach (KeyValueFilter f in snapshot.Filters)
+            {
+                StringFilter keyFilter = new StringFilter { EqualsTo = f.Key, IsNull = f.Key == null };
+                StringFilter labelFilter = new StringFilter { EqualsTo = f.Label, IsNull = f.Label == null };
                 string continuation = null;
                 do
                 {
-                    var page = await _keyValueProvider.QueryKeyValues(
+                    ConfigurationSettings.Page<KeyValue> page = await _keyValueProvider.QueryKeyValues(
                         new KeyValueSearchOptions
                         {
                             KeyFilter = keyFilter,
@@ -151,19 +167,24 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
             return result.GroupBy(k => (k.Key, k.Label)).Select(g => g.First());
         }
 
-        private async Task WriteContentFileAsync(Snapshot snapshot, IEnumerable<KeyValue> items, CancellationToken cancellationToken)
+        private async Task<MediaInfo> WriteContentFileAsync(
+            Snapshot snapshot,
+            IEnumerable<KeyValue> items,
+            MediaInfo media,
+            CancellationToken cancellationToken)
         {
             if (items == null)
             {
                 throw new ArgumentNullException(nameof(items));
             }
 
-            string filePath = GetContentFilePath(snapshot.Id);
+            string name = snapshot.Id + ".ndjson";
+            string filePath = Path.Combine(_contentDirectory, name);
             string tempFilePath = filePath + ".tmp";
 
             try
             {
-                using var fs = new FileStream(
+                using FileStream fs = new FileStream(
                     tempFilePath,
                     FileMode.Create,
                     FileAccess.Write,
@@ -173,14 +194,14 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
                 using CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
                 cts.CancelAfter(_options.WriteTimeout);
 
-                foreach (var kv in items)
+                foreach (KeyValue kv in items)
                 {
                     if (fs.Position > 0)
                     {
                         fs.WriteDelimiter();
                     }
 
-                    using var json = new Utf8JsonWriter(fs);
+                    using Utf8JsonWriter json = new Utf8JsonWriter(fs);
                     json.WriteKeyValue(kv);
                     await json.FlushAsync(cts.Token);
                 }
@@ -194,25 +215,23 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
 
             ReplaceFile(tempFilePath, filePath);
 
-            snapshot.Media ??= new MediaInfo();
-            snapshot.Media.Category = "snapshots";
-            snapshot.Media.Name = Path.GetFileName(filePath);
-            snapshot.Media.ContentType = "application/x-ndjson";
-            var fi = new FileInfo(filePath);
+            FileInfo fi = new FileInfo(filePath);
             snapshot.Size = fi.Length;
             snapshot.ItemCount = await CountLines(filePath, cancellationToken);
-            snapshot.Media.Size = snapshot.ItemCount;
-            snapshot.Media.Etag = SnapshotHelper.GenerateEtag();
-            snapshot.Media.Sha256Hash = ComputeSha256(filePath);
-        }
 
-        private string GetContentFilePath(string snapshotId) => Path.Combine(_contentDirectory, snapshotId + ".ndjson");
+            media.Name = name;
+            media.Size = snapshot.ItemCount;
+            media.Etag = SnapshotHelper.GenerateEtag();
+            media.Sha256Hash = ComputeSha256(filePath);
+
+            return media;
+        }
 
         private static async Task<long> CountLines(string filePath, CancellationToken cancellationToken)
         {
             long count = 0;
-            using var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
-            using var reader = new StreamReader(fs);
+            using FileStream fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
+            using StreamReader reader = new StreamReader(fs);
             while (!reader.EndOfStream)
             {
                 await reader.ReadLineAsync();
@@ -225,8 +244,8 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
 
         private static byte[] ComputeSha256(string filePath)
         {
-            using var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
-            using var sha = SHA256.Create();
+            using FileStream fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
+            using SHA256 sha = SHA256.Create();
             return sha.ComputeHash(fs);
         }
 

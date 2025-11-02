@@ -11,7 +11,7 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
 {
     public interface ISnapshotContentsStorage
     {
-        Task<Snapshot> Provision(Snapshot snapshot, CancellationToken cancellationToken);
+        Task<MediaInfo> Provision(Snapshot snapshot, CancellationToken cancellationToken);
 
         IAsyncEnumerable<KeyValue> Get(Snapshot snapshot, long offset, CancellationToken cancellationToken);
     }

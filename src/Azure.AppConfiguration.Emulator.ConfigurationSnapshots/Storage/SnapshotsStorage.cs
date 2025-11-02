@@ -121,14 +121,6 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
         {
             ValidateSnapshot(snapshot);
 
-            // Ensure initial provisioning status
-            snapshot.Status = SnapshotStatus.Provisioning;
-            snapshot.StatusCode = 0;
-            snapshot.ItemCount = 0;
-            snapshot.Size = 0;
-            snapshot.LastModified = DateTimeOffset.UtcNow;
-            snapshot.Media = null; // will be populated after external content build
-
             using CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             cts.CancelAfter(_options.WriteTimeout);
 
