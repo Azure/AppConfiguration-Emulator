@@ -7,6 +7,7 @@ using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text.Json;
 using System.Threading;
@@ -121,10 +122,7 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
         /// <summary>
         /// Stream content items described by MediaInfo starting at a line offset.
         /// </summary>
-        public async IAsyncEnumerable<KeyValue> GetContent(
-            MediaInfo media,
-            long offset,
-            [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)
+        public async IAsyncEnumerable<KeyValue> GetContent(MediaInfo media, long offset, [EnumeratorCancellation] CancellationToken cancellationToken)
         {
             if (media == null)
             {
