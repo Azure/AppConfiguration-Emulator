@@ -37,9 +37,20 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
 
         public async Task Create(Snapshot snapshot, CancellationToken cancellationToken)
         {
-            if (snapshot == null) throw new ArgumentNullException(nameof(snapshot));
-            if (string.IsNullOrEmpty(snapshot.Name)) throw new ArgumentNullException(nameof(snapshot.Name));
-            if (snapshot.Filters == null) throw new ArgumentNullException(nameof(snapshot.Filters));
+            if (snapshot == null)
+            {
+                throw new ArgumentNullException(nameof(snapshot));
+            }
+
+            if (string.IsNullOrEmpty(snapshot.Name))
+            {
+                throw new ArgumentNullException(nameof(snapshot.Name));
+            }
+
+            if (snapshot.Filters == null)
+            {
+                throw new ArgumentNullException(nameof(snapshot.Filters));
+            }
 
             int filterCount = snapshot.Filters.Count();
             if (filterCount < _options.MinFilterCount || filterCount > _options.MaxFilterCount)
@@ -84,7 +95,11 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
 
         public Task<IEnumerable<Snapshot>> Get(SnapshotSearchOptions options, CancellationToken cancellationToken)
         {
-            if (options == null) throw new ArgumentNullException(nameof(options));
+            if (options == null)
+            {
+                throw new ArgumentNullException(nameof(options));
+            }
+
             if (options.Status == SnapshotStatusSearch.None)
             {
                 throw new ArgumentException("At least one status is required for search.", nameof(options.Status));
@@ -95,15 +110,26 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
 
         public async Task<IEnumerable<KeyValue>> GetContent(Snapshot snapshot, SnapshotContentSearchOptions options, CancellationToken cancellationToken)
         {
-            if (snapshot == null) throw new ArgumentNullException(nameof(snapshot));
-            if (options == null) throw new ArgumentNullException(nameof(options));
+            if (snapshot == null)
+            {
+                throw new ArgumentNullException(nameof(snapshot));
+            }
+
+            if (options == null)
+            {
+                throw new ArgumentNullException(nameof(options));
+            }
+
             if (snapshot.Status != SnapshotStatus.Ready && snapshot.Status != SnapshotStatus.Archived)
             {
                 throw new InvalidOperationException("Snapshot is not in a servable state");
             }
 
             MediaInfo media = snapshot.Media;
-            if (media == null) return Enumerable.Empty<KeyValue>();
+            if (media == null)
+            {
+                return Enumerable.Empty<KeyValue>();
+            }
 
             long offset;
             if (options.ContinuationToken == null)
@@ -122,7 +148,11 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
 
         public Task Archive(Snapshot snapshot, CancellationToken cancellationToken)
         {
-            if (snapshot == null) throw new ArgumentNullException(nameof(snapshot));
+            if (snapshot == null)
+            {
+                throw new ArgumentNullException(nameof(snapshot));
+            }
+
             if (snapshot.Status != SnapshotStatus.Ready)
             {
                 throw new InvalidOperationException("The snapshot is not in a state that is able to be archived.");
@@ -133,7 +163,11 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
 
         public Task Recover(Snapshot snapshot, CancellationToken cancellationToken)
         {
-            if (snapshot == null) throw new ArgumentNullException(nameof(snapshot));
+            if (snapshot == null)
+            {
+                throw new ArgumentNullException(nameof(snapshot));
+            }
+
             if (snapshot.Status != SnapshotStatus.Archived)
             {
                 throw new InvalidOperationException("The snapshot is in an unrecoverable state.");
@@ -157,7 +191,11 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
 
         private static void ValidateLabelForComposeByKey(string label)
         {
-            if (string.IsNullOrEmpty(label)) return;
+            if (string.IsNullOrEmpty(label))
+            {
+                return;
+            }
+
             ReadOnlySpan<char> span = label.AsSpan();
             if (SearchQuery.ContainsWildcard(span) || SearchQuery.IsListSearch(span))
             {
@@ -167,12 +205,35 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
 
         private void ValidateOptions(SnapshotProviderOptions options)
         {
-            if (options == null) throw new ArgumentNullException(nameof(options));
-            if (options.OutputPageSize <= 0) throw new ArgumentOutOfRangeException(nameof(options.OutputPageSize));
-            if (options.ReadTimeout <= TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(options.ReadTimeout));
-            if (options.WriteTimeout <= TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(options.WriteTimeout));
-            if (options.RetryTimeout <= TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(options.RetryTimeout));
-            if (options.ConflictRetryTimeout <= TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(options.ConflictRetryTimeout));
+            if (options == null)
+            {
+                throw new ArgumentNullException(nameof(options));
+            }
+
+            if (options.OutputPageSize <= 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(options.OutputPageSize));
+            }
+
+            if (options.ReadTimeout <= TimeSpan.Zero)
+            {
+                throw new ArgumentOutOfRangeException(nameof(options.ReadTimeout));
+            }
+
+            if (options.WriteTimeout <= TimeSpan.Zero)
+            {
+                throw new ArgumentOutOfRangeException(nameof(options.WriteTimeout));
+            }
+
+            if (options.RetryTimeout <= TimeSpan.Zero)
+            {
+                throw new ArgumentOutOfRangeException(nameof(options.RetryTimeout));
+            }
+
+            if (options.ConflictRetryTimeout <= TimeSpan.Zero)
+            {
+                throw new ArgumentOutOfRangeException(nameof(options.ConflictRetryTimeout));
+            }
         }
 
         private int MaxItemCount => _options.OutputPageSize;

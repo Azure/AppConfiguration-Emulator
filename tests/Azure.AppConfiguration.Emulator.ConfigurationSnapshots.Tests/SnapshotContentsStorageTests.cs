@@ -59,7 +59,7 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots.Tests
             Assert.Equal(Path.GetFileName(filePath), media.Name);
             Assert.True(File.Exists(filePath));
             long physicalSize = new FileInfo(filePath).Length;
-            Assert.Equal(physicalSize, media.Size); // media.Size now represents file bytes
+            Assert.Equal(physicalSize, media.Size);
             Assert.False(string.IsNullOrEmpty(media.Etag));
             Assert.NotNull(media.Sha256Hash);
         }
