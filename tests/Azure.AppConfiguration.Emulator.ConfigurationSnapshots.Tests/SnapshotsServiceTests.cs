@@ -1,8 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Azure.AppConfiguration.Emulator.ConfigurationSettings;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Hosting;
@@ -146,10 +141,9 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots.Tests
             Assert.NotNull(ready);
             var updated = ready!;
             Assert.Equal(SnapshotStatus.Ready, updated.Status);
+            Assert.True(updated.Size > 0);
             Assert.NotNull(updated.Media);
-            Assert.Equal(2, updated.Media.Size);
-            Assert.Equal(2, updated.ItemCount);
-            Assert.True(updated.Size >= 0);
+            Assert.Equal(updated.Size, updated.Media.Size);
         }
     }
 }

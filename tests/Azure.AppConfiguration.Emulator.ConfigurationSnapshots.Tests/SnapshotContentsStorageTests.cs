@@ -57,11 +57,11 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots.Tests
             Assert.Equal("snapshots", media.Category);
             Assert.Equal("application/x-ndjson", media.ContentType);
             Assert.Equal(Path.GetFileName(filePath), media.Name);
-            Assert.Equal(2, media.Size);
+            Assert.True(File.Exists(filePath));
+            long physicalSize = new FileInfo(filePath).Length;
+            Assert.Equal(physicalSize, media.Size); // media.Size now represents file bytes
             Assert.False(string.IsNullOrEmpty(media.Etag));
             Assert.NotNull(media.Sha256Hash);
-            Assert.True(File.Exists(filePath));
-            Assert.True(new FileInfo(filePath).Length > 0);
         }
 
         [Fact]
