@@ -10,7 +10,7 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
 {
     public interface ISnapshotContentsStorage
     {
-        Task<MediaInfo> CreateContent(string filePath, IEnumerable<KeyValue> items, CancellationToken cancellationToken);
+        Task<MediaInfo> CreateContent(string fileName, IEnumerable<KeyValue> items, CancellationToken cancellationToken);
 
         IAsyncEnumerable<KeyValue> GetContent(MediaInfo media, long offset, CancellationToken cancellationToken);
     }

@@ -51,15 +51,11 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
             EnsureDirectory(_contentDirectory);
         }
 
-        /// <summary>
-        /// Write snapshot content to the specified absolute file path.
-        /// Returns a populated MediaInfo describing the created file.
-        /// </summary>
-        public async Task<MediaInfo> CreateContent(string filePath, IEnumerable<KeyValue> items, CancellationToken cancellationToken)
+        public async Task<MediaInfo> CreateContent(string fileName, IEnumerable<KeyValue> items, CancellationToken cancellationToken)
         {
-            if (string.IsNullOrEmpty(filePath))
+            if (string.IsNullOrEmpty(fileName))
             {
-                throw new ArgumentNullException(nameof(filePath));
+                throw new ArgumentNullException(nameof(fileName));
             }
 
             if (items == null)
@@ -67,7 +63,9 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
                 throw new ArgumentNullException(nameof(items));
             }
 
-            string tempFilePath = filePath + ".tmp";
+            // Build full path inside content directory
+            string targetFilePath = Path.Combine(_contentDirectory, fileName);
+            string tempFilePath = targetFilePath + ".tmp";
 
             MediaInfo media = new MediaInfo
             {
@@ -106,15 +104,15 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
                 throw new TimeoutException("ProvisionSnapshotContent", ex);
             }
 
-            ReplaceFile(tempFilePath, filePath);
+            ReplaceFile(tempFilePath, targetFilePath);
 
-            FileInfo fi = new FileInfo(filePath);
-            long lineCount = await CountLines(filePath, cancellationToken);
+            long lineCount = await CountLines(targetFilePath, cancellationToken);
+            long fileSizeBytes = new FileInfo(targetFilePath).Length;
 
-            media.Name = Path.GetFileName(filePath);
-            media.Size = lineCount; // logical item count
+            media.Name = Path.GetFileName(targetFilePath);
+            media.Size = fileSizeBytes; // bytes of file content
             media.Etag = SnapshotHelper.GenerateEtag();
-            media.Sha256Hash = ComputeSha256(filePath);
+            media.Sha256Hash = ComputeSha256(targetFilePath);
 
             return media;
         }

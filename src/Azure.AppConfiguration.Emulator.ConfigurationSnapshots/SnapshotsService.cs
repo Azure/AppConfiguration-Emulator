@@ -4,6 +4,7 @@
 using Azure.AppConfiguration.Emulator.ConfigurationSettings;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -14,24 +15,24 @@ using System.Threading.Tasks;
 namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
 {
     /// <summary>
-    /// Background service that periodically inspects snapshot metadata.
+    /// Background service that periodically inspects snapshot metadata and provisions content for snapshots in Provisioning state.
     /// </summary>
     public class SnapshotsService : BackgroundService
     {
         private readonly ISnapshotsStorage _storage;
-        private readonly ISnapshotContentsStorage _contents;
+        private readonly ISnapshotContentsStorage _contentsStorage;
         private readonly IKeyValueProvider _kvProvider;
         private readonly ILogger<SnapshotsService> _logger;
-        private static readonly TimeSpan _pollInterval = TimeSpan.FromSeconds(10);
+        private static readonly TimeSpan _pollInterval = TimeSpan.FromSeconds(5);
 
         public SnapshotsService(
             ISnapshotsStorage storage,
-            ISnapshotContentsStorage contents,
+            ISnapshotContentsStorage contentsStorage,
             IKeyValueProvider kvProvider,
             ILogger<SnapshotsService> logger)
         {
             _storage = storage ?? throw new ArgumentNullException(nameof(storage));
-            _contents = contents ?? throw new ArgumentNullException(nameof(contents));
+            _contentsStorage = contentsStorage ?? throw new ArgumentNullException(nameof(contentsStorage));
             _kvProvider = kvProvider ?? throw new ArgumentNullException(nameof(kvProvider));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
@@ -71,6 +72,8 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
         {
             int provisioned = 0;
 
+            Console.WriteLine("Checking for snapshots to provision...");
+
             await foreach (Snapshot snapshot in _storage.QuerySnapshots().WithCancellation(cancellationToken))
             {
                 if (snapshot == null || snapshot.Status != SnapshotStatus.Provisioning)
@@ -80,13 +83,13 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
 
                 IEnumerable<KeyValue> items = await CollectItemsAsync(snapshot, cancellationToken);
 
-                string filePath = BuildContentFilePath(snapshot.Id);
+                string filePath = BuildSnapshotContentFileName(snapshot.Id);
 
-                MediaInfo media = await _contents.CreateContent(filePath, items, cancellationToken);
+                MediaInfo media = await _contentsStorage.CreateContent(filePath, items, cancellationToken);
 
                 snapshot.Media = media;
-                snapshot.ItemCount = media.Size; // item count
-                snapshot.Size = new FileInfo(filePath).Length; // bytes
+                snapshot.ItemCount = items.Count();
+                snapshot.Size = media.Size;
                 snapshot.Status = SnapshotStatus.Ready;
                 snapshot.StatusCode = 200;
                 snapshot.LastModified = DateTimeOffset.UtcNow;
@@ -131,15 +134,16 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
 
                     result.AddRange(page);
                     continuation = page.ContinuationToken;
-                } while (!string.IsNullOrEmpty(continuation));
+                }
+                while (!string.IsNullOrEmpty(continuation));
             }
 
             return result.GroupBy(k => (k.Key, k.Label)).Select(g => g.First());
         }
 
-        private string BuildContentFilePath(string snapshotId)
+        private string BuildSnapshotContentFileName(string snapshotId)
         {
-            return Path.Combine(AppContext.BaseDirectory, ".aace", "snapshots", snapshotId + ".ndjson");
+            return snapshotId + ".ndjson";
         }
     }
 }
