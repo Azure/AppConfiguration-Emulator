@@ -143,6 +143,9 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
 
             await EnsureInit();
 
+            // Always refresh cache from storage before serving results to reflect latest updates
+            await RefreshCacheAsync(cancellationToken);
+
             using IDisposable readLock = await _lock.ReadLock(cancellationToken);
 
             IEnumerable<Snapshot> items = _cache;
@@ -172,6 +175,24 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
             return items;
         }
 
+        private async Task RefreshCacheAsync(CancellationToken cancellationToken)
+        {
+            using IDisposable writeLock = await _lock.WriteLock(cancellationToken);
+
+            var entries = new List<Snapshot>();
+            await foreach (Snapshot s in _storage.QuerySnapshots().WithCancellation(cancellationToken))
+            {
+                if (s == null)
+                {
+                    continue;
+                }
+
+                AddSorted(entries, s);
+            }
+
+            _cache = entries;
+        }
+
         public async Task<IEnumerable<KeyValue>> GetContent(Snapshot snapshot, SnapshotContentSearchOptions options, CancellationToken cancellationToken)
         {
             if (snapshot == null)
@@ -192,7 +213,13 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
             MediaInfo media = snapshot.Media;
             if (media == null)
             {
-                return Enumerable.Empty<KeyValue>();
+                var emptyPage = new Azure.AppConfiguration.Emulator.ConfigurationSettings.Page<Azure.AppConfiguration.Emulator.ConfigurationSettings.KeyValue>(Enumerable.Empty<Azure.AppConfiguration.Emulator.ConfigurationSettings.KeyValue>())
+                {
+                    Offset = 0,
+                    TotalItemsCount = 0,
+                    Etag = KvHelper.GenerateEtag()
+                };
+                return emptyPage;
             }
 
             long offset;
@@ -202,15 +229,48 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
             }
             else if (!long.TryParse(options.ContinuationToken, out offset) || offset < 0 || offset >= snapshot.ItemCount)
             {
-                return Enumerable.Empty<KeyValue>();
+                var emptyPage = new ConfigurationSettings.Page<KeyValue>(Enumerable.Empty<KeyValue>())
+                {
+                    Offset = snapshot.ItemCount,
+                    TotalItemsCount = snapshot.ItemCount,
+                    Etag = KvHelper.GenerateEtag()
+                };
+                return emptyPage;
             }
+
+            long remaining = snapshot.ItemCount - offset;
+            if (remaining <= 0)
+            {
+                var emptyPage = new ConfigurationSettings.Page<KeyValue>(Enumerable.Empty<KeyValue>())
+                {
+                    Offset = snapshot.ItemCount,
+                    TotalItemsCount = snapshot.ItemCount,
+                    Etag = KvHelper.GenerateEtag()
+                };
+                return emptyPage;
+            }
+
+            int pageSize = (int)Math.Min(_options.OutputPageSize, remaining);
 
             var list = await _contents
                 .GetContent(media, offset, cancellationToken)
-                .Take(_options.OutputPageSize)
+                .Take(pageSize)
                 .ToListAsync(cancellationToken);
 
-            return list;
+            var page = new ConfigurationSettings.Page<KeyValue>(list)
+            {
+                Offset = offset,
+                TotalItemsCount = snapshot.ItemCount
+            };
+
+            if (offset + list.Count < snapshot.ItemCount)
+            {
+                page.ContinuationToken = (offset + list.Count).ToString();
+            }
+
+            page.Etag = KvHelper.ComputeEtag(page);
+
+            return page;
         }
 
         public async Task Archive(Snapshot snapshot, CancellationToken cancellationToken)

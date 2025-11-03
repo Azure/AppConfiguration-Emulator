@@ -74,32 +74,48 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
 
             Console.WriteLine("Checking for snapshots to provision...");
 
+            // Find first provisioning snapshot and break enumeration to avoid holding file open while updating
+            Snapshot target = null;
             await foreach (Snapshot snapshot in _storage.QuerySnapshots().WithCancellation(cancellationToken))
             {
-                if (snapshot == null || snapshot.Status != SnapshotStatus.Provisioning)
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    break;
+                }
+
+                if (snapshot == null)
                 {
                     continue;
                 }
 
-                IEnumerable<KeyValue> items = await CollectItemsAsync(snapshot, cancellationToken);
+                if (snapshot.Status == SnapshotStatus.Provisioning)
+                {
+                    target = snapshot;
+                    break; // stop after first provisioning snapshot
+                }
+            }
 
-                string filePath = BuildSnapshotContentFileName(snapshot.Id);
+            if (target != null)
+            {
+                IEnumerable<KeyValue> items = await CollectItemsAsync(target, cancellationToken);
+
+                string filePath = BuildSnapshotContentFileName(target.Id);
 
                 MediaInfo media = await _contentsStorage.CreateContent(filePath, items, cancellationToken);
 
-                snapshot.Media = media;
-                snapshot.ItemCount = items.Count();
-                snapshot.Size = media.Size;
-                snapshot.Status = SnapshotStatus.Ready;
-                snapshot.StatusCode = 200;
-                snapshot.LastModified = DateTimeOffset.UtcNow;
+                target.Media = media;
+                target.ItemCount = items.Count();
+                target.Size = media.Size;
+                target.Status = SnapshotStatus.Ready;
+                target.StatusCode = 200;
+                target.LastModified = DateTimeOffset.UtcNow;
 
-                await _storage.UpdateSnapshot(snapshot, cancellationToken);
+                await _storage.UpdateSnapshot(target, cancellationToken);
 
-                if (snapshot.Status == SnapshotStatus.Ready)
+                if (target.Status == SnapshotStatus.Ready)
                 {
                     provisioned++;
-                    _logger.LogInformation("Provisioned snapshot {SnapshotId}.", snapshot.Id);
+                    _logger.LogInformation("Provisioned snapshot {SnapshotId}.", target.Id);
                 }
             }
 
@@ -119,8 +135,9 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
             var result = new List<KeyValue>();
             foreach (KeyValueFilter f in snapshot.Filters)
             {
-                var keyFilter = new StringFilter { EqualsTo = f.Key, IsNull = f.Key == null };
-                var labelFilter = new StringFilter { EqualsTo = f.Label, IsNull = f.Label == null };
+                // Support wildcard / prefix / list patterns consistent with KeyValueProvider
+                var keyFilter = SearchQuery.CreateStringFilter(f.Key);
+                var labelFilter = f.Label == null ? new StringFilter { IsNull = true } : SearchQuery.CreateStringFilter(f.Label);
                 string continuation = null;
                 do
                 {
