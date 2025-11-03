@@ -205,15 +205,21 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
                 throw new ArgumentNullException(nameof(options));
             }
 
-            if (snapshot.Status != SnapshotStatus.Ready && snapshot.Status != SnapshotStatus.Archived)
+            // Only Ready snapshots expose content. Any other state returns an empty page.
+            if (snapshot.Status != SnapshotStatus.Ready)
             {
-                throw new InvalidOperationException("Snapshot is not in a servable state");
+                return new ConfigurationSettings.Page<KeyValue>(Enumerable.Empty<KeyValue>())
+                {
+                    Offset = 0,
+                    TotalItemsCount = 0,
+                    Etag = KvHelper.GenerateEtag()
+                };
             }
 
             MediaInfo media = snapshot.Media;
             if (media == null)
             {
-                var emptyPage = new Azure.AppConfiguration.Emulator.ConfigurationSettings.Page<Azure.AppConfiguration.Emulator.ConfigurationSettings.KeyValue>(Enumerable.Empty<Azure.AppConfiguration.Emulator.ConfigurationSettings.KeyValue>())
+                var emptyPage = new ConfigurationSettings.Page<KeyValue>(Enumerable.Empty<KeyValue>())
                 {
                     Offset = 0,
                     TotalItemsCount = 0,
@@ -229,7 +235,7 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
             }
             else if (!long.TryParse(options.ContinuationToken, out offset) || offset < 0 || offset >= snapshot.ItemCount)
             {
-                var emptyPage = new ConfigurationSettings.Page<KeyValue>(Enumerable.Empty<KeyValue>())
+                var emptyPage = new Azure.AppConfiguration.Emulator.ConfigurationSettings.Page<Azure.AppConfiguration.Emulator.ConfigurationSettings.KeyValue>(Enumerable.Empty<Azure.AppConfiguration.Emulator.ConfigurationSettings.KeyValue>())
                 {
                     Offset = snapshot.ItemCount,
                     TotalItemsCount = snapshot.ItemCount,
@@ -241,7 +247,7 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
             long remaining = snapshot.ItemCount - offset;
             if (remaining <= 0)
             {
-                var emptyPage = new ConfigurationSettings.Page<KeyValue>(Enumerable.Empty<KeyValue>())
+                var emptyPage = new Azure.AppConfiguration.Emulator.ConfigurationSettings.Page<Azure.AppConfiguration.Emulator.ConfigurationSettings.KeyValue>(Enumerable.Empty<Azure.AppConfiguration.Emulator.ConfigurationSettings.KeyValue>())
                 {
                     Offset = snapshot.ItemCount,
                     TotalItemsCount = snapshot.ItemCount,
@@ -257,7 +263,7 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
                 .Take(pageSize)
                 .ToListAsync(cancellationToken);
 
-            var page = new ConfigurationSettings.Page<KeyValue>(list)
+            var page = new Azure.AppConfiguration.Emulator.ConfigurationSettings.Page<KeyValue>(list)
             {
                 Offset = offset,
                 TotalItemsCount = snapshot.ItemCount
