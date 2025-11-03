@@ -54,7 +54,7 @@
     --button-secondary: #8b8b8b;
     --tag-bg: #3d3d3d;
     --tag-text: #c0c0c0;
-    --tag-bg-alt: #3d3d3d;
+    --tag-bg-alt: #353535;
     --tag-bg-more: #1f4d5c;
     --tag-text-more: #7ec8d3;
     --error-bg: #3d2426;
@@ -232,6 +232,11 @@ input, textarea {
   font-size: 14px;
   background-color: var(--bg-secondary);
   color: var(--text-primary);
+}
+
+input:focus, textarea:focus {
+  outline: 2px solid var(--button-primary);
+  outline-offset: 1px;
 }
 
 .key-value-form {
