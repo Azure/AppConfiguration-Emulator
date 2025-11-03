@@ -2,8 +2,63 @@
   font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
-  color: #213547;
-  background-color: #f8f8f8;
+  
+  /* Light theme colors */
+  --text-primary: #213547;
+  --text-secondary: #6c757d;
+  --text-tertiary: #495057;
+  --bg-primary: #f8f8f8;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #f0f0f0;
+  --bg-quaternary: #f8f9fa;
+  --border-color: #e0e0e0;
+  --border-color-secondary: #e9ecef;
+  --button-primary: #0078d4;
+  --button-primary-hover: #106ebe;
+  --button-danger: #d13438;
+  --button-danger-hover: #b92e32;
+  --button-secondary: #6e6e6e;
+  --tag-bg: #e9ecef;
+  --tag-text: #495057;
+  --tag-bg-alt: #f0f0f0;
+  --tag-bg-more: #d1ecf1;
+  --tag-text-more: #0c5460;
+  --error-bg: #fde7e9;
+  --error-text: #d13438;
+  --input-border: #ccc;
+  --heading-color: #333;
+  
+  color: var(--text-primary);
+  background-color: var(--bg-primary);
+}
+
+/* Dark theme */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --text-primary: #e0e0e0;
+    --text-secondary: #a0a0a0;
+    --text-tertiary: #b0b0b0;
+    --bg-primary: #1e1e1e;
+    --bg-secondary: #252525;
+    --bg-tertiary: #2d2d2d;
+    --bg-quaternary: #2a2a2a;
+    --border-color: #3d3d3d;
+    --border-color-secondary: #343434;
+    --button-primary: #3d9af8;
+    --button-primary-hover: #5aaef9;
+    --button-danger: #f85149;
+    --button-danger-hover: #ff6e64;
+    --button-secondary: #8b8b8b;
+    --tag-bg: #3d3d3d;
+    --tag-text: #c0c0c0;
+    --tag-bg-alt: #3d3d3d;
+    --tag-bg-more: #1f4d5c;
+    --tag-text-more: #7ec8d3;
+    --error-bg: #3d2426;
+    --error-text: #ff6e64;
+    --input-border: #555;
+    --heading-color: #e0e0e0;
+  }
 }
 
 body {
@@ -23,7 +78,7 @@ header {
   align-items: center;
   margin-bottom: 30px;
   padding-bottom: 15px;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid var(--border-color);
 }
 
 header nav {
@@ -31,8 +86,18 @@ header nav {
   gap: 15px;
 }
 
+header nav a {
+  color: var(--button-primary);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+header nav a:hover {
+  text-decoration: underline;
+}
+
 button {
-  background-color: #0078d4;
+  background-color: var(--button-primary);
   color: white;
   border: none;
   padding: 8px 16px;
@@ -53,19 +118,19 @@ button {
 }
 
 button:hover {
-  background-color: #106ebe;
+  background-color: var(--button-primary-hover);
 }
 
 .delete-button {
-  background-color: #d13438;
+  background-color: var(--button-danger);
 }
 
 .delete-button:hover {
-  background-color: #b92e32;
+  background-color: var(--button-danger-hover);
 }
 
 .cancel-button {
-  background-color: #6e6e6e;
+  background-color: var(--button-secondary);
 }
 
 .key-value-table {
@@ -78,11 +143,11 @@ button:hover {
 .key-value-table td {
   padding: 12px 15px;
   text-align: left;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .key-value-table th {
-  background-color: #f0f0f0;
+  background-color: var(--bg-tertiary);
   font-weight: 600;
 }
 
@@ -116,8 +181,8 @@ button:hover {
 }
 
 .key-value-table .tag-display {
-  background: #e9ecef;
-  color: #495057;
+  background: var(--tag-bg);
+  color: var(--tag-text);
   padding: 2px 6px;
   border-radius: 12px;
   font-size: 11px;
@@ -125,14 +190,14 @@ button:hover {
 }
 
 .key-value-table .no-tags {
-  color: #6c757d;
+  color: var(--text-secondary);
   font-style: italic;
   font-size: 12px;
 }
 
 .key-value-table .more-tags {
-  background: #d1ecf1 !important;
-  color: #0c5460 !important;
+  background: var(--tag-bg-more) !important;
+  color: var(--tag-text-more) !important;
   font-weight: 500;
 }
 
@@ -156,9 +221,11 @@ button:hover {
 
 input, textarea {
   padding: 8px 12px;
-  border: 1px solid #ccc;
+  border: 1px solid var(--input-border);
   border-radius: 4px;
   font-size: 14px;
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
 }
 
 .key-value-form {
@@ -190,7 +257,7 @@ input, textarea {
 }
 
 .tag {
-  background-color: #f0f0f0;
+  background-color: var(--tag-bg-alt);
   padding: 5px 10px;
   border-radius: 4px;
   display: flex;
@@ -200,7 +267,7 @@ input, textarea {
 .remove-tag {
   background: none;
   border: none;
-  color: #666;
+  color: var(--text-secondary);
   margin-left: 8px;
   cursor: pointer;
   font-size: 16px;
@@ -212,8 +279,8 @@ input, textarea {
 }
 
 .error-message {
-  background-color: #fde7e9;
-  color: #d13438;
+  background-color: var(--error-bg);
+  color: var(--error-text);
   padding: 10px;
   border-radius: 4px;
   margin-bottom: 20px;
@@ -227,8 +294,8 @@ input, textarea {
 
 .load-more-button {
   background-color: transparent;
-  color: #0078d4;
-  border: 1px solid #0078d4;
+  color: var(--button-primary);
+  border: 1px solid var(--button-primary);
   padding: 12px 24px;
   border-radius: 4px;
   cursor: pointer;
@@ -237,11 +304,11 @@ input, textarea {
 }
 
 .load-more-button:hover:not(:disabled) {
-  background-color: rgba(0, 120, 212, 0.1);
+  background-color: rgba(61, 154, 248, 0.1);
 }
 
 .load-more-button:disabled {
-  background-color: #6e6e6e;
+  background-color: var(--button-secondary);
   cursor: not-allowed;
 }
 
@@ -257,15 +324,15 @@ input, textarea {
 }
 
 .revisions-header h2 {
-  color: #333;
+  color: var(--heading-color);
   margin-bottom: 15px;
   font-size: 1.8em;
   font-weight: 600;
 }
 
 .key-info {
-  background: #f8f9fa;
-  border: 1px solid #e9ecef;
+  background: var(--bg-quaternary);
+  border: 1px solid var(--border-color-secondary);
   border-radius: 4px;
   padding: 15px;
   margin-bottom: 20px;
@@ -273,8 +340,8 @@ input, textarea {
 }
 
 .key-info-large {
-  background: #f8f9fa;
-  border: 1px solid #e9ecef;
+  background: var(--bg-quaternary);
+  border: 1px solid var(--border-color-secondary);
   border-radius: 4px;
   padding: 20px;
   margin-bottom: 25px;
@@ -294,7 +361,7 @@ input, textarea {
 .no-revisions {
   text-align: center;
   padding: 40px;
-  color: #6c757d;
+  color: var(--text-secondary);
   font-size: 16px;
 }
 
@@ -305,8 +372,8 @@ input, textarea {
 }
 
 .tag-display {
-  background: #e9ecef;
-  color: #495057;
+  background: var(--tag-bg);
+  color: var(--tag-text);
   padding: 2px 6px;
   border-radius: 12px;
   font-size: 11px;
