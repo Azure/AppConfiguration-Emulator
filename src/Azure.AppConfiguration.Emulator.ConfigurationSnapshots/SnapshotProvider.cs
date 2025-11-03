@@ -166,7 +166,7 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
             // Pagination
             items = items
                 .OrderBy(s => s.Name, StringComparer.Ordinal)
-                .Take(_options.OutputPageSize)
+                .Take(_tenant.OutputPageSize)
                 .ToList();
 
             return items;
@@ -207,7 +207,7 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
 
             var list = await _contents
                 .GetContent(media, offset, cancellationToken)
-                .Take(_tenant.OutputPageSize)
+                .Take(_options.OutputPageSize)
                 .ToListAsync(cancellationToken);
 
             return list;
