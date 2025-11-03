@@ -27,6 +27,9 @@
   --error-text: #d13438;
   --input-border: #ccc;
   --heading-color: #333;
+  --button-success: #107c10;
+  --button-success-hover: #0e6e0e;
+  --button-primary-hover-bg: rgba(0, 120, 212, 0.1);
   
   color: var(--text-primary);
   background-color: var(--bg-primary);
@@ -58,6 +61,9 @@
     --error-text: #ff6e64;
     --input-border: #555;
     --heading-color: #e0e0e0;
+    --button-success: #4ec44e;
+    --button-success-hover: #6fd96f;
+    --button-primary-hover-bg: rgba(61, 154, 248, 0.1);
   }
 }
 
@@ -304,7 +310,7 @@ input, textarea {
 }
 
 .load-more-button:hover:not(:disabled) {
-  background-color: rgba(61, 154, 248, 0.1);
+  background-color: var(--button-primary-hover-bg);
 }
 
 .load-more-button:disabled {
@@ -350,12 +356,12 @@ input, textarea {
 }
 
 .view-revisions-button {
-  background-color: #107c10;
+  background-color: var(--button-success);
   margin-left: 5px;
 }
 
 .view-revisions-button:hover {
-  background-color: #0e6e0e;
+  background-color: var(--button-success-hover);
 }
 
 .no-revisions {
