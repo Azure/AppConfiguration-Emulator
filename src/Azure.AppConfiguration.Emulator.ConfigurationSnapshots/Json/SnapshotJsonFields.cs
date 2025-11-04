@@ -5,10 +5,6 @@ using System.Text.Json;
 
 namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
 {
-    /// <summary>
-    /// Persisted snapshot metadata field names.
-    /// Keep stable for on-disk compatibility.
-    /// </summary>
     internal static class SnapshotJsonFields
     {
         public static readonly JsonEncodedText Id = JsonEncodedText.Encode("id");
