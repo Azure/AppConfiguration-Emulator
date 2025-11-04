@@ -19,7 +19,7 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
         private readonly TenantOptions _tenant;
         private readonly SnapshotProviderOptions _options;
         private readonly ISnapshotsStorage _storage;
-        private readonly ISnapshotContentsStorage _contents;
+        private readonly ISnapshotContentsStorage _contentsStorage;
 
         private readonly CancellationTokenSource _cts = new CancellationTokenSource();
         private ReaderWriterLockAsync _lock = new();
@@ -29,14 +29,14 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
 
         public SnapshotProvider(
             ISnapshotsStorage appConfigurationStorage,
-            ISnapshotContentsStorage contents,
+            ISnapshotContentsStorage contentsStorage,
             IOptions<TenantOptions> tenant,
             IOptions<SnapshotProviderOptions> options)
         {
             ValidateOptions(options?.Value);
 
             _storage = appConfigurationStorage ?? throw new ArgumentNullException(nameof(appConfigurationStorage));
-            _contents = contents ?? throw new ArgumentNullException(nameof(contents));
+            _contentsStorage = contentsStorage ?? throw new ArgumentNullException(nameof(contentsStorage));
             _tenant = tenant?.Value ?? throw new ArgumentNullException(nameof(tenant));
             _options = options?.Value ?? throw new ArgumentNullException(nameof(options));
         }
@@ -119,14 +119,6 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
             await _storage.AddSnapshot(entry, cancellationToken);
 
             AddSorted(_cache, entry);
-
-            // Reflect values back
-            snapshot.Id = entry.Id;
-            snapshot.Etag = entry.Etag;
-            snapshot.Created = entry.Created;
-            snapshot.LastModified = entry.LastModified;
-            snapshot.Status = entry.Status;
-            snapshot.StatusCode = entry.StatusCode;
         }
 
         public async Task<IEnumerable<Snapshot>> Get(SnapshotSearchOptions options, CancellationToken cancellationToken)
@@ -150,13 +142,11 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
 
             IEnumerable<Snapshot> items = _cache;
 
-            // Name filter (exact match)
             if (!string.IsNullOrEmpty(options.Name))
             {
                 items = items.Where(s => s.Name == options.Name);
             }
 
-            // Status filter (flag combination)
             items = items.Where(s => MatchStatus(options.Status, s.Status));
 
             // Continuation token (snapshot name)
@@ -235,7 +225,7 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
             }
             else if (!long.TryParse(options.ContinuationToken, out offset) || offset < 0 || offset >= snapshot.ItemCount)
             {
-                var emptyPage = new Azure.AppConfiguration.Emulator.ConfigurationSettings.Page<Azure.AppConfiguration.Emulator.ConfigurationSettings.KeyValue>(Enumerable.Empty<Azure.AppConfiguration.Emulator.ConfigurationSettings.KeyValue>())
+                var emptyPage = new ConfigurationSettings.Page<KeyValue>(Enumerable.Empty<KeyValue>())
                 {
                     Offset = snapshot.ItemCount,
                     TotalItemsCount = snapshot.ItemCount,
@@ -244,34 +234,20 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
                 return emptyPage;
             }
 
-            long remaining = snapshot.ItemCount - offset;
-            if (remaining <= 0)
-            {
-                var emptyPage = new Azure.AppConfiguration.Emulator.ConfigurationSettings.Page<Azure.AppConfiguration.Emulator.ConfigurationSettings.KeyValue>(Enumerable.Empty<Azure.AppConfiguration.Emulator.ConfigurationSettings.KeyValue>())
-                {
-                    Offset = snapshot.ItemCount,
-                    TotalItemsCount = snapshot.ItemCount,
-                    Etag = KvHelper.GenerateEtag()
-                };
-                return emptyPage;
-            }
-
-            int pageSize = (int)Math.Min(_options.OutputPageSize, remaining);
-
-            var list = await _contents
+            List<KeyValue> kvs = await _contentsStorage
                 .GetContent(media, offset, cancellationToken)
-                .Take(pageSize)
+                .Take(_options.OutputPageSize)
                 .ToListAsync(cancellationToken);
 
-            var page = new Azure.AppConfiguration.Emulator.ConfigurationSettings.Page<KeyValue>(list)
+            var page = new ConfigurationSettings.Page<KeyValue>(kvs)
             {
                 Offset = offset,
                 TotalItemsCount = snapshot.ItemCount
             };
 
-            if (offset + list.Count < snapshot.ItemCount)
+            if (offset + kvs.Count < snapshot.ItemCount)
             {
-                page.ContinuationToken = (offset + list.Count).ToString();
+                page.ContinuationToken = (offset + kvs.Count).ToString();
             }
 
             page.Etag = KvHelper.ComputeEtag(page);
@@ -327,19 +303,28 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
             }
 
             existing.Status = status;
+
+            if (status == SnapshotStatus.Archived)
+            {
+                //
+                // Archive
+
+                existing.Expires = DateTimeOffset.UtcNow + existing.RetentionPeriod;
+            }
+            else
+            {
+                Debug.Assert(status == SnapshotStatus.Ready);
+
+                //
+                // Recover
+
+                existing.Expires = null;
+            }
+
             existing.LastModified = DateTimeOffset.UtcNow;
             existing.Etag = SnapshotHelper.GenerateEtag();
-            existing.StatusCode = (status == SnapshotStatus.Archived) ? (int)HttpStatusCode.OK : existing.StatusCode;
-            existing.Expires = (status == SnapshotStatus.Archived) ? DateTimeOffset.UtcNow + existing.RetentionPeriod : null;
 
             await _storage.UpdateSnapshot(existing, cancellationToken);
-
-            // Reflect back to caller object
-            snapshot.Status = existing.Status;
-            snapshot.LastModified = existing.LastModified;
-            snapshot.Etag = existing.Etag;
-            snapshot.StatusCode = existing.StatusCode;
-            snapshot.Expires = existing.Expires;
         }
 
         private Snapshot FindByName(string name)

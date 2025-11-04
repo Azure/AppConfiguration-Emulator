@@ -191,28 +191,35 @@ namespace Azure.AppConfiguration.Emulator.Service
                     });
             }
 
-            await _provider.Create(
+            try
+            {
+                await _provider.Create(
                 snapshot,
                 cancellationToken);
 
-            var uri = new UriBuilder
-            {
-                Scheme = Request.Scheme,
-                Host = Request.Host.Host,
-                Path = $"operations?snapshot={Uri.EscapeDataString(snapshot.Name)}&api-version={HttpContext.GetRequestedApiVersion()}"
-            };
+                var uri = new UriBuilder
+                {
+                    Scheme = Request.Scheme,
+                    Host = Request.Host.Host,
+                    Path = $"operations?snapshot={Uri.EscapeDataString(snapshot.Name)}&api-version={HttpContext.GetRequestedApiVersion()}"
+                };
 
-            if (Request.Host.Port.HasValue)
-            {
-                uri.Port = Request.Host.Port.Value;
+                if (Request.Host.Port.HasValue)
+                {
+                    uri.Port = Request.Host.Port.Value;
+                }
+
+                Response.Headers[HeaderNames.OperationLocation] = uri.ToString();
+
+                return new ObjectResult(snapshot)
+                {
+                    StatusCode = StatusCodes.Status201Created
+                };
             }
-
-            Response.Headers[HeaderNames.OperationLocation] = uri.ToString();
-
-            return new ObjectResult(snapshot)
+            catch (ConflictException)
             {
-                StatusCode = StatusCodes.Status201Created
-            };
+                return new ObjectResult(Problems.AlreadyExists);
+            }
         }
 
         [Authorize(Policies.SnapshotArchive)]
