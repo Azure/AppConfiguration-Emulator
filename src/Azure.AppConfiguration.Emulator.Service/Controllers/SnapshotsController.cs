@@ -197,21 +197,13 @@ namespace Azure.AppConfiguration.Emulator.Service
                 snapshot,
                 cancellationToken);
 
-                var uri = new UriBuilder
+                Snapshot created = (await _provider.Get(new SnapshotSearchOptions
                 {
-                    Scheme = Request.Scheme,
-                    Host = Request.Host.Host,
-                    Path = $"operations?snapshot={Uri.EscapeDataString(snapshot.Name)}&api-version={HttpContext.GetRequestedApiVersion()}"
-                };
+                    Name = SearchQuery.Escape(name),
+                    Status = SnapshotStatusSearch.All
+                }, cancellationToken)).FirstOrDefault();
 
-                if (Request.Host.Port.HasValue)
-                {
-                    uri.Port = Request.Host.Port.Value;
-                }
-
-                Response.Headers[HeaderNames.OperationLocation] = uri.ToString();
-
-                return new ObjectResult(snapshot)
+                return new ObjectResult(created ?? snapshot)
                 {
                     StatusCode = StatusCodes.Status201Created
                 };

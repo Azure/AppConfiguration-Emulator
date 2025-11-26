@@ -20,6 +20,7 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
         private readonly SnapshotProviderOptions _options;
         private readonly ISnapshotsStorage _storage;
         private readonly ISnapshotContentsStorage _contentsStorage;
+        private readonly IKeyValueProvider _kvProvider;
 
         private readonly CancellationTokenSource _cts = new CancellationTokenSource();
         private ReaderWriterLockAsync _lock = new();
@@ -30,6 +31,7 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
         public SnapshotProvider(
             ISnapshotsStorage appConfigurationStorage,
             ISnapshotContentsStorage contentsStorage,
+            IKeyValueProvider kvProvider,
             IOptions<TenantOptions> tenant,
             IOptions<SnapshotProviderOptions> options)
         {
@@ -37,6 +39,7 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
 
             _storage = appConfigurationStorage ?? throw new ArgumentNullException(nameof(appConfigurationStorage));
             _contentsStorage = contentsStorage ?? throw new ArgumentNullException(nameof(contentsStorage));
+            _kvProvider = kvProvider ?? throw new ArgumentNullException(nameof(kvProvider));
             _tenant = tenant?.Value ?? throw new ArgumentNullException(nameof(tenant));
             _options = options?.Value ?? throw new ArgumentNullException(nameof(options));
         }
@@ -110,15 +113,42 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
                 Tags = snapshot.Tags,
                 CompositionType = snapshot.CompositionType,
                 RetentionPeriod = snapshot.RetentionPeriod,
-                Status = SnapshotStatus.Provisioning,
-                StatusCode = (int)HttpStatusCode.Accepted,
+                Status = SnapshotStatus.None,
+                StatusCode = (int)HttpStatusCode.OK,
                 Created = DateTimeOffset.UtcNow,
                 LastModified = DateTimeOffset.UtcNow
             };
 
-            await _storage.AddSnapshot(entry, cancellationToken);
+            IEnumerable<KeyValue> items = await GetItemsAsync(entry, cancellationToken);
 
-            AddSorted(_cache, entry);
+            try
+            {
+                string filePath = BuildSnapshotContentFileName(entry.Id);
+                MediaInfo media = await _contentsStorage.CreateContent(filePath, items, cancellationToken);
+
+                entry.Media = media;
+                entry.ItemCount = items.Count();
+                entry.Size = media.Size;
+                entry.Status = SnapshotStatus.Ready;
+                entry.StatusCode = (int)HttpStatusCode.OK;
+                entry.LastModified = DateTimeOffset.UtcNow;
+
+                await _storage.AddSnapshot(entry, cancellationToken);
+
+                AddSorted(_cache, entry);
+            }
+            catch (Exception)
+            {
+                entry.Status = SnapshotStatus.Failed;
+                entry.StatusCode = (int)HttpStatusCode.InternalServerError;
+                entry.LastModified = DateTimeOffset.UtcNow;
+
+                await _storage.AddSnapshot(entry, cancellationToken);
+
+                AddSorted(_cache, entry);
+
+                throw;
+            }
         }
 
         public async Task<IEnumerable<Snapshot>> Get(SnapshotSearchOptions options, CancellationToken cancellationToken)
@@ -215,6 +245,7 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
                     TotalItemsCount = 0,
                     Etag = KvHelper.GenerateEtag()
                 };
+
                 return emptyPage;
             }
 
@@ -231,6 +262,7 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
                     TotalItemsCount = snapshot.ItemCount,
                     Etag = KvHelper.GenerateEtag()
                 };
+
                 return emptyPage;
             }
 
@@ -327,6 +359,43 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
             await _storage.UpdateSnapshot(existing, cancellationToken);
         }
 
+        private async Task<IEnumerable<KeyValue>> GetItemsAsync(Snapshot snapshot, CancellationToken cancellationToken)
+        {
+            if (snapshot.Filters == null)
+            {
+                return Enumerable.Empty<KeyValue>();
+            }
+
+            var result = new List<KeyValue>();
+            foreach (KeyValueFilter f in snapshot.Filters)
+            {
+                var keyFilter = SearchQuery.CreateStringFilter(f.Key);
+                var labelFilter = f.Label == null ? new StringFilter { IsNull = true } : SearchQuery.CreateStringFilter(f.Label);
+                string continuation = null;
+                do
+                {
+                    var page = await _kvProvider.QueryKeyValues(new KeyValueSearchOptions
+                    {
+                        KeyFilter = keyFilter,
+                        LabelFilter = labelFilter,
+                        ContinuationToken = continuation,
+                        Tags = f.Tags
+                    }, cancellationToken);
+
+                    result.AddRange(page);
+                    continuation = page.ContinuationToken;
+                }
+                while (!string.IsNullOrEmpty(continuation));
+            }
+
+            return result.GroupBy(k => (k.Key, k.Label)).Select(g => g.First());
+        }
+
+        private static string BuildSnapshotContentFileName(string snapshotId)
+        {
+            return snapshotId + ".ndjson";
+        }
+
         private Snapshot FindByName(string name)
         {
             if (string.IsNullOrEmpty(name))
@@ -346,11 +415,6 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
         private static bool MatchStatus(SnapshotStatusSearch searchFlags, SnapshotStatus status)
         {
             if (searchFlags == SnapshotStatusSearch.All)
-            {
-                return true;
-            }
-
-            if (status == SnapshotStatus.Provisioning && (searchFlags & SnapshotStatusSearch.Provisioning) != 0)
             {
                 return true;
             }

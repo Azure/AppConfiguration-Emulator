@@ -9,17 +9,19 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
+using System.Security.Cryptography;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
 {
-    public class SnapshotsStorage : ISnapshotsStorage
+    public class SnapshotsStorage : ISnapshotsStorage, ISnapshotContentsStorage
     {
         private readonly SnapshotProviderOptions _providerOptions;
         private readonly SnapshotsStorageOptions _options;
         private readonly string _metadataFilePath;
+        private readonly string _contentDirectory;
 
         public SnapshotsStorage(
             IOptions<SnapshotProviderOptions> providerOptions,
@@ -40,6 +42,17 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
             _metadataFilePath = Path.GetFullPath(_metadataFilePath);
 
             InsureFileExist(_metadataFilePath);
+
+            string directory = _options.ContentDirectory;
+            if (!Path.IsPathRooted(directory))
+            {
+                directory = Path.Combine(host.ContentRootPath, directory);
+            }
+
+            directory = Path.GetFullPath(directory);
+            _contentDirectory = directory;
+
+            EnsureDirectory(_contentDirectory);
         }
 
         public async IAsyncEnumerable<Snapshot> QuerySnapshots(
@@ -70,6 +83,7 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
             while (true)
             {
                 Snapshot current = null;
+
                 try
                 {
                     if (!await e.MoveNextAsync(cts.Token))
@@ -150,6 +164,7 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
         public async Task UpdateSnapshot(Snapshot snapshot, CancellationToken cancellationToken)
         {
             ValidateSnapshot(snapshot);
+
             if (string.IsNullOrEmpty(snapshot.Etag))
             {
                 throw new ArgumentNullException(nameof(snapshot.Etag));
@@ -189,6 +204,117 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
             }
 
             ReplaceFile(tempFilePath, _metadataFilePath);
+        }
+
+        public async Task<MediaInfo> CreateContent(string fileName, IEnumerable<KeyValue> items, CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrEmpty(fileName))
+            {
+                throw new ArgumentNullException(nameof(fileName));
+            }
+
+            if (items == null)
+            {
+                throw new ArgumentNullException(nameof(items));
+            }
+
+            string targetFilePath = Path.Combine(_contentDirectory, fileName);
+            string tempFilePath = targetFilePath + ".tmp";
+
+            MediaInfo media = new MediaInfo
+            {
+                Category = "snapshots",
+                ContentType = "application/x-ndjson"
+            };
+
+            try
+            {
+                using FileStream fs = new FileStream(
+                    tempFilePath,
+                    FileMode.Create,
+                    FileAccess.Write,
+                    FileShare.None,
+                    _options.WriteBufferSize);
+
+                using CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+                cts.CancelAfter(_options.WriteTimeout);
+
+                foreach (KeyValue kv in items)
+                {
+                    if (fs.Position > 0)
+                    {
+                        fs.WriteDelimiter();
+                    }
+
+                    using Utf8JsonWriter json = new Utf8JsonWriter(fs);
+                    json.WriteKeyValue(kv);
+                    await json.FlushAsync(cts.Token);
+                }
+
+                await fs.FlushAsync(cts.Token);
+            }
+            catch (OperationCanceledException ex) when (!cancellationToken.IsCancellationRequested)
+            {
+                throw new TimeoutException("ProvisionSnapshotContent", ex);
+            }
+
+            ReplaceFile(tempFilePath, targetFilePath);
+
+            long fileSizeBytes = new FileInfo(targetFilePath).Length;
+
+            media.Name = Path.GetFileName(targetFilePath);
+            media.Size = fileSizeBytes;
+            media.Etag = SnapshotHelper.GenerateEtag();
+            media.Sha256Hash = ComputeSha256(targetFilePath);
+
+            return media;
+        }
+
+        public async IAsyncEnumerable<KeyValue> GetContent(MediaInfo media, long offset, [EnumeratorCancellation] CancellationToken cancellationToken)
+        {
+            if (media == null)
+            {
+                throw new ArgumentNullException(nameof(media));
+            }
+
+            if (string.IsNullOrEmpty(media.Name))
+            {
+                yield break;
+            }
+
+            string filePath = Path.Combine(_contentDirectory, media.Name);
+
+            if (!File.Exists(filePath))
+            {
+                yield break;
+            }
+
+            using FileStream fs = new FileStream(
+                filePath,
+                FileMode.Open,
+                FileAccess.Read,
+                FileShare.Read);
+
+            NdJsonStreamReader<KeyValue> reader = new NdJsonStreamReader<KeyValue>(
+                fs,
+                (ref Utf8JsonReader r, out KeyValue kv) => r.TryReadKeyValue(out kv),
+                _options.ReadBufferSizeHint,
+                _options.MaxReadBufferSize);
+
+            using CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            cts.CancelAfter(_options.ReadTimeout);
+
+            long index = 0;
+
+            await foreach (KeyValue kv in reader.ReadItems(cts.Token))
+            {
+                if (index++ < offset)
+                {
+                    continue;
+                }
+
+                yield return kv;
+            }
         }
 
         private static void ValidateSnapshot(Snapshot snapshot)
@@ -278,7 +404,11 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
             {
                 string bakFilePath = targetFilePath + ".bac";
                 File.Replace(tempFilePath, targetFilePath, bakFilePath);
-                if (File.Exists(bakFilePath)) File.Delete(bakFilePath);
+
+                if (File.Exists(bakFilePath))
+                {
+                    File.Delete(bakFilePath);
+                }
             }
             else
             {
@@ -288,6 +418,21 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
             if (File.Exists(tempFilePath))
             {
                 File.Delete(tempFilePath);
+            }
+        }
+
+        private static byte[] ComputeSha256(string filePath)
+        {
+            using FileStream fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
+            using SHA256 sha = SHA256.Create();
+            return sha.ComputeHash(fs);
+        }
+
+        private static void EnsureDirectory(string path)
+        {
+            if (!Directory.Exists(path))
+            {
+                Directory.CreateDirectory(path);
             }
         }
     }

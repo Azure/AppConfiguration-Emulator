@@ -2,18 +2,13 @@ using Azure.AppConfiguration.Emulator.ConfigurationSettings;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Options;
 using Moq;
-using Xunit;
-using System;
-using System.IO;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots.Tests
 {
     public class SnapshotsStorageTests : IDisposable
     {
         private readonly string _metadataPath;
+        private readonly string _contentDir;
         private readonly Mock<IHostingEnvironment> _env;
         private readonly SnapshotsStorage _storage;
 
@@ -21,15 +16,31 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots.Tests
         {
             var testDir = Path.GetDirectoryName(typeof(SnapshotsStorageTests).Assembly.Location) ?? Directory.GetCurrentDirectory();
             _metadataPath = Path.Combine(Path.GetTempPath(), $"snap_meta_unit_{Guid.NewGuid()}.ndjson");
+            _contentDir = Path.Combine(Path.GetTempPath(), $"snap_content_unit_{Guid.NewGuid()}");
             _env = new Mock<IHostingEnvironment>();
             _env.Setup(e => e.ContentRootPath).Returns(testDir);
 
             var storageOptions = new SnapshotsStorageOptions
             {
                 MetadataFilePath = _metadataPath,
-                ContentDirectory = Path.Combine(Path.GetTempPath(), $"snap_content_unit_{Guid.NewGuid()}")
+                ContentDirectory = _contentDir,
+                WriteBufferSize = 8192,
+                AppendBufferSize = 4096,
+                ReadBufferSizeHint = 4096,
+                MaxReadBufferSize = 65536,
+                ReadTimeout = TimeSpan.FromSeconds(5),
+                WriteTimeout = TimeSpan.FromSeconds(5)
             };
-            var providerOptions = new SnapshotProviderOptions();
+            var providerOptions = new SnapshotProviderOptions
+            {
+                OutputPageSize = 100,
+                ReadTimeout = TimeSpan.FromSeconds(5),
+                WriteTimeout = TimeSpan.FromSeconds(5),
+                RetryTimeout = TimeSpan.FromSeconds(5),
+                ConflictRetryTimeout = TimeSpan.FromSeconds(5),
+                MinFilterCount = 1,
+                MaxFilterCount = 100
+            };
 
             _storage = new SnapshotsStorage(
                 Options.Create(providerOptions),
@@ -42,6 +53,11 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots.Tests
             if (File.Exists(_metadataPath))
             {
                 File.Delete(_metadataPath);
+            }
+
+            if (Directory.Exists(_contentDir))
+            {
+                Directory.Delete(_contentDir, true);
             }
 
             var tmp = _metadataPath + ".tmp";
@@ -60,33 +76,31 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots.Tests
         [Fact]
         public async Task AddSnapshot_PersistsEntry()
         {
-            var snapshot = NewProvisioning("snap-add-1");
+            var snapshot = NewSnapshot("snap-add-1");
             await _storage.AddSnapshot(snapshot, CancellationToken.None);
 
             var list = await _storage.QuerySnapshots().ToListAsync();
 
             Assert.Single(list);
             Assert.Equal("snap-add-1", list[0].Id);
-            Assert.Equal(SnapshotStatus.Provisioning, list[0].Status);
+            Assert.Equal(SnapshotStatus.Ready, list[0].Status);
         }
 
         [Fact]
         public async Task UpdateSnapshot_ReplacesExistingEntry()
         {
-            var snapshot = NewProvisioning("snap-upd-1");
+            var snapshot = NewSnapshot("snap-upd-1");
             await _storage.AddSnapshot(snapshot, CancellationToken.None);
 
-            snapshot.Status = SnapshotStatus.Ready;
-            snapshot.Etag = $"etag-{Guid.NewGuid():N}";
-            snapshot.LastModified = DateTimeOffset.UtcNow;
             snapshot.ItemCount = 5;
             snapshot.Size = 1234;
+            snapshot.Etag = $"etag-{Guid.NewGuid():N}";
+            snapshot.LastModified = DateTimeOffset.UtcNow;
             await _storage.UpdateSnapshot(snapshot, CancellationToken.None);
 
             var list = await _storage.QuerySnapshots().ToListAsync();
             var stored = list.Single(s => s.Id == snapshot.Id);
 
-            Assert.Equal(SnapshotStatus.Ready, stored.Status);
             Assert.Equal(5, stored.ItemCount);
             Assert.Equal(1234, stored.Size);
         }
@@ -94,8 +108,8 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots.Tests
         [Fact]
         public async Task QuerySnapshots_ReturnsAll()
         {
-            var a = NewProvisioning("snap-q-1");
-            var b = NewProvisioning("snap-q-2");
+            var a = NewSnapshot("snap-q-1");
+            var b = NewSnapshot("snap-q-2");
             await _storage.AddSnapshot(a, CancellationToken.None);
             await _storage.AddSnapshot(b, CancellationToken.None);
 
@@ -106,12 +120,74 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots.Tests
             Assert.Equal(2, ids.Count);
         }
 
-        private static Snapshot NewProvisioning(string id) => new Snapshot
+        [Fact]
+        public async Task CreateContent_WritesFile_AndReturnsMediaInfo()
+        {
+            Directory.CreateDirectory(_contentDir);
+            string fileName = "snapA.ndjson";
+            string filePath = Path.Combine(_contentDir, fileName);
+            var items = new List<KeyValue>
+            {
+                new KeyValue { Key = "k1", Label = "l1", Value = "v1" },
+                new KeyValue { Key = "k2", Label = "l2", Value = "v2" }
+            };
+
+            MediaInfo media = await _storage.CreateContent(fileName, items, CancellationToken.None);
+
+            Assert.NotNull(media);
+            Assert.Equal("snapshots", media.Category);
+            Assert.Equal("application/x-ndjson", media.ContentType);
+            Assert.Equal(fileName, media.Name);
+            Assert.True(File.Exists(filePath));
+            long physicalSize = new FileInfo(filePath).Length;
+            Assert.Equal(physicalSize, media.Size);
+            Assert.False(string.IsNullOrEmpty(media.Etag));
+            Assert.NotNull(media.Sha256Hash);
+        }
+
+        [Fact]
+        public async Task GetContent_ReturnsItems_FromOffset()
+        {
+            Directory.CreateDirectory(_contentDir);
+            string fileName = "snapB.ndjson";
+            var items = new List<KeyValue>
+            {
+                new KeyValue { Key = "k1", Label = "l1", Value = "v1" },
+                new KeyValue { Key = "k2", Label = "l2", Value = "v2" },
+                new KeyValue { Key = "k3", Label = "l3", Value = "v3" }
+            };
+
+            MediaInfo media = await _storage.CreateContent(fileName, items, CancellationToken.None);
+
+            var fromSecond = new List<KeyValue>();
+            await foreach (var kv in _storage.GetContent(media, 1, CancellationToken.None))
+            {
+                fromSecond.Add(kv);
+            }
+
+            Assert.Equal(2, fromSecond.Count);
+            Assert.Equal("k2", fromSecond[0].Key);
+            Assert.Equal("k3", fromSecond[1].Key);
+        }
+
+        [Fact]
+        public async Task GetContent_WithInvalidMedia_ReturnsEmpty()
+        {
+            var empty = new List<KeyValue>();
+            await foreach (var kv in _storage.GetContent(new MediaInfo { Name = null }, 0, CancellationToken.None))
+            {
+                empty.Add(kv);
+            }
+
+            Assert.Empty(empty);
+        }
+
+        private static Snapshot NewSnapshot(string id) => new Snapshot
         {
             Id = id,
             Name = id,
             Etag = $"etag-{Guid.NewGuid():N}",
-            Status = SnapshotStatus.Provisioning,
+            Status = SnapshotStatus.Ready,
             CompositionType = CompositionType.Key,
             RetentionPeriod = TimeSpan.FromMinutes(30),
             Created = DateTimeOffset.UtcNow,
