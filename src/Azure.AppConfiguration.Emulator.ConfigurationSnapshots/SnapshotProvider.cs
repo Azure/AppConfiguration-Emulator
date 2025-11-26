@@ -104,9 +104,11 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
                 throw new ConflictException();
             }
 
+            string resourceId = string.IsNullOrEmpty(_tenant.ResourceId) ? "test-resource" : _tenant.ResourceId;
+
             var entry = new Snapshot
             {
-                Id = SnapshotHelper.GenerateId(snapshot.Name, _tenant.ResourceId),
+                Id = SnapshotHelper.GenerateId(snapshot.Name, resourceId),
                 Etag = SnapshotHelper.GenerateEtag(),
                 Name = snapshot.Name,
                 Filters = snapshot.Filters,
@@ -119,6 +121,7 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
                 LastModified = DateTimeOffset.UtcNow
             };
 
+            // Collect items according to filters synchronously
             IEnumerable<KeyValue> items = await GetItemsAsync(entry, cancellationToken);
 
             try
