@@ -2,6 +2,13 @@ using Azure.AppConfiguration.Emulator.ConfigurationSettings;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Options;
 using Moq;
+using Xunit;
+using System;
+using System.IO;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Collections.Generic;
 
 namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots.Tests
 {
@@ -180,6 +187,37 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots.Tests
             }
 
             Assert.Empty(empty);
+        }
+
+        [Fact]
+        public async Task RemoveSnapshots_RemovesMetadataAndDeletesContent()
+        {
+            Directory.CreateDirectory(_contentDir);
+
+            var snapA = NewSnapshot("snapA");
+            snapA.Media = await _storage.CreateContent("snapA.ndjson", new[] { new KeyValue { Key = "k1", Label = "l1", Value = "v1" } }, CancellationToken.None);
+            snapA.ItemCount = 1;
+            snapA.Size = snapA.Media.Size;
+
+            var snapB = NewSnapshot("snapB");
+            snapB.Media = await _storage.CreateContent("snapB.ndjson", new[] { new KeyValue { Key = "k2", Label = "l2", Value = "v2" } }, CancellationToken.None);
+            snapB.ItemCount = 1;
+            snapB.Size = snapB.Media.Size;
+
+            await _storage.AddSnapshot(snapA, CancellationToken.None);
+            await _storage.AddSnapshot(snapB, CancellationToken.None);
+
+            Assert.True(File.Exists(Path.Combine(_contentDir, snapA.Media.Name)));
+            Assert.True(File.Exists(Path.Combine(_contentDir, snapB.Media.Name)));
+
+            await _storage.RemoveSnapshots(new[] { snapA }, CancellationToken.None);
+
+            var all = await _storage.QuerySnapshots().ToListAsync();
+            Assert.DoesNotContain(all, s => s.Id == "snapA");
+            Assert.Contains(all, s => s.Id == "snapB");
+
+            Assert.False(File.Exists(Path.Combine(_contentDir, snapA.Media.Name)));
+            Assert.True(File.Exists(Path.Combine(_contentDir, snapB.Media.Name)));
         }
 
         private static Snapshot NewSnapshot(string id) => new Snapshot

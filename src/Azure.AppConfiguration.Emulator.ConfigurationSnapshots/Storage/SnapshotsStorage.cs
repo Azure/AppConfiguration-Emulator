@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text.Json;
@@ -315,6 +316,79 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
 
                 yield return kv;
             }
+        }
+
+        public async Task RemoveSnapshots(IEnumerable<Snapshot> snapshots, CancellationToken cancellationToken)
+        {
+            if (snapshots == null)
+            {
+                throw new ArgumentNullException(nameof(snapshots));
+            }
+
+            var toRemove = snapshots.Select(s => s.Id).ToHashSet();
+
+            string tempFilePath = _metadataFilePath + ".tmp";
+
+            try
+            {
+                using var fs = new FileStream(
+                    tempFilePath,
+                    FileMode.Create,
+                    FileAccess.Write,
+                    FileShare.None,
+                    _options.WriteBufferSize);
+
+                using CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+                cts.CancelAfter(_options.WriteTimeout);
+
+                await foreach (var s in QuerySnapshots(cts.Token))
+                {
+                    if (s == null)
+                    {
+                        continue;
+                    }
+
+                    if (toRemove.Contains(s.Id))
+                    {
+                        // Delete content file if exists
+                        if (s.Media?.Name != null)
+                        {
+                            string path = Path.Combine(_contentDirectory, s.Media.Name);
+
+                            if (File.Exists(path))
+                            {
+                                try
+                                {
+                                    File.Delete(path);
+                                }
+                                catch
+                                {
+                                    // ignore file delete errors
+                                }
+                            }
+                        }
+
+                        continue;
+                    }
+
+                    if (fs.Position > 0)
+                    {
+                        fs.WriteDelimiter();
+                    }
+
+                    using var json = new Utf8JsonWriter(fs);
+                    json.WriteSnapshot(s);
+                    await json.FlushAsync(cts.Token);
+                }
+
+                await fs.FlushAsync(cts.Token);
+            }
+            catch (OperationCanceledException ex) when (!cancellationToken.IsCancellationRequested)
+            {
+                throw new TimeoutException("RemoveSnapshots", ex);
+            }
+
+            ReplaceFile(tempFilePath, _metadataFilePath);
         }
 
         private static void ValidateSnapshot(Snapshot snapshot)

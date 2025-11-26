@@ -3,6 +3,7 @@
 
 using Azure.AppConfiguration.Emulator.ConfigurationSettings;
 using Azure.AppConfiguration.Emulator.Tenant;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
@@ -14,7 +15,7 @@ using System.Threading.Tasks;
 
 namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
 {
-    public sealed class SnapshotProvider : ISnapshotProvider
+    public sealed class SnapshotProvider : ISnapshotProvider, IHostedService, IDisposable
     {
         private readonly TenantOptions _tenant;
         private readonly SnapshotProviderOptions _options;
@@ -24,7 +25,7 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
 
         private readonly CancellationTokenSource _cts = new CancellationTokenSource();
         private ReaderWriterLockAsync _lock = new();
-        private List<Snapshot> _cache = null; // Sorted by Name
+        private List<Snapshot> _cache = null;
         private int _init;
         private bool _disposed;
 
@@ -46,9 +47,6 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
 
         public void Dispose()
         {
-            //
-            // Dispose can be invoked multiple times
-            // Because it can be used as DI service, as well as HostedService
             if (_disposed)
             {
                 return;
@@ -61,6 +59,27 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
             _lock.Dispose();
 
             _disposed = true;
+        }
+
+        public async Task StartAsync(CancellationToken cancellationToken)
+        {
+            try
+            {
+                await EnsureInit();
+
+                await PurgeExpiredArchivedSnapshots(cancellationToken);
+            }
+            catch
+            {
+                // ignore startup purge errors
+            }
+        }
+
+        public Task StopAsync(CancellationToken cancellationToken)
+        {
+            _cts.Cancel();
+
+            return Task.CompletedTask;
         }
 
         public async Task Create(Snapshot snapshot, CancellationToken cancellationToken)
@@ -341,17 +360,11 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
 
             if (status == SnapshotStatus.Archived)
             {
-                //
-                // Archive
-
                 existing.Expires = DateTimeOffset.UtcNow + existing.RetentionPeriod;
             }
             else
             {
                 Debug.Assert(status == SnapshotStatus.Ready);
-
-                //
-                // Recover
 
                 existing.Expires = null;
             }
@@ -438,6 +451,52 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
             }
 
             return false;
+        }
+
+        private async Task PurgeExpiredArchivedSnapshots(CancellationToken cancellationToken)
+        {
+            await EnsureInit();
+
+            using IDisposable writeLock = await _lock.WriteLock(cancellationToken);
+
+            var expired = new List<Snapshot>();
+            DateTimeOffset now = DateTimeOffset.UtcNow;
+
+            foreach (var s in _cache)
+            {
+                if (s == null)
+                {
+                    continue;
+                }
+
+                if (s.Status == SnapshotStatus.Archived && s.Expires.HasValue && s.Expires.Value <= now)
+                {
+                    expired.Add(s);
+                }
+            }
+
+            if (expired.Count == 0)
+            {
+                return;
+            }
+
+            try
+            {
+                await _storage.RemoveSnapshots(expired, cancellationToken);
+            }
+            catch
+            {
+                // ignore purge failures
+            }
+
+            foreach (var s in expired)
+            {
+                int idx = _cache.BinarySearch(s, NameComparer.Instance);
+                if (idx >= 0)
+                {
+                    _cache.RemoveAt(idx);
+                }
+            }
         }
 
         private async ValueTask EnsureInit()

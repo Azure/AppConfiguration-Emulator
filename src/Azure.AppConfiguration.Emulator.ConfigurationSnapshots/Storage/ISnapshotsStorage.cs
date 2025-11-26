@@ -16,5 +16,7 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
         Task AddSnapshot(Snapshot snapshot, CancellationToken cancellationToken);
 
         Task UpdateSnapshot(Snapshot snapshot, CancellationToken cancellationToken);
+
+        Task RemoveSnapshots(IEnumerable<Snapshot> snapshots, CancellationToken cancellationToken);
     }
 }
