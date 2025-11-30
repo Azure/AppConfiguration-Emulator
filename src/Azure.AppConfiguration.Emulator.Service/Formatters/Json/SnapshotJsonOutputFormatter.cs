@@ -76,8 +76,11 @@ namespace Azure.AppConfiguration.Emulator.Service.Formatters.Json
 
             SnapshotFields fields = request.GetSnapshotFields();
 
-            using (var writer = ctx.WriterFactory(response.Body, selectedEncoding))
-            using (JsonWriter jw = CreateJsonWriter(writer))
+            // Avoid disposing HttpResponseStreamWriter as it performs synchronous writes on Dispose.
+            TextWriter writer = ctx.WriterFactory(response.Body, selectedEncoding);
+            JsonWriter jw = CreateJsonWriter(writer);
+
+            try
             {
                 await serializer.WriteContent(
                     jw,
@@ -86,6 +89,12 @@ namespace Azure.AppConfiguration.Emulator.Service.Formatters.Json
 
                 // Explicitly use AsyncFlush to do async write. Otherwise it will be sync
                 await writer.FlushAsync();
+            }
+            finally
+            {
+                // Do not dispose the writer to avoid sync IO in Dispose path.
+                // Close the JsonWriter to release buffers if needed.
+                jw.Close();
             }
         }
 

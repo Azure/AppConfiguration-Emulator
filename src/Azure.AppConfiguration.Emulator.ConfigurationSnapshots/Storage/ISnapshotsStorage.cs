@@ -18,6 +18,6 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
 
         Task UpdateSnapshot(Snapshot snapshot, CancellationToken cancellationToken);
 
-        IAsyncEnumerable<KeyValue> ReadSnapshotContent(Snapshot snapshot, long offset);
+        Task RemoveSnapshots(IEnumerable<Snapshot> snapshots, CancellationToken cancellationToken);
     }
 }

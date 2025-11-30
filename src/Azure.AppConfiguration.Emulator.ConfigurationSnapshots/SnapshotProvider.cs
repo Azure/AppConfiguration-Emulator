@@ -3,6 +3,7 @@
 
 using Azure.AppConfiguration.Emulator.ConfigurationSettings;
 using Azure.AppConfiguration.Emulator.Tenant;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
@@ -14,22 +15,74 @@ using System.Threading.Tasks;
 
 namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
 {
-    public sealed class SnapshotProvider : ISnapshotProvider
+    public sealed class SnapshotProvider : ISnapshotProvider, IHostedService, IDisposable
     {
         private readonly TenantOptions _tenant;
         private readonly SnapshotProviderOptions _options;
         private readonly ISnapshotsStorage _storage;
+        private readonly ISnapshotContentsStorage _contentsStorage;
+        private readonly IKeyValueProvider _kvProvider;
+
+        private readonly CancellationTokenSource _cts = new CancellationTokenSource();
+        private ReaderWriterLockAsync _lock = new();
+        private List<Snapshot> _cache = null;
+        private int _init;
+        private bool _disposed;
+
+        private static readonly IComparer<Snapshot> EqualComparer = Comparer<Snapshot>.Create(
+            (a, b) => string.Compare(a?.Name, b?.Name, StringComparison.Ordinal));
 
         public SnapshotProvider(
             ISnapshotsStorage appConfigurationStorage,
+            ISnapshotContentsStorage contentsStorage,
+            IKeyValueProvider kvProvider,
             IOptions<TenantOptions> tenant,
             IOptions<SnapshotProviderOptions> options)
         {
             ValidateOptions(options?.Value);
 
             _storage = appConfigurationStorage ?? throw new ArgumentNullException(nameof(appConfigurationStorage));
+            _contentsStorage = contentsStorage ?? throw new ArgumentNullException(nameof(contentsStorage));
+            _kvProvider = kvProvider ?? throw new ArgumentNullException(nameof(kvProvider));
             _tenant = tenant?.Value ?? throw new ArgumentNullException(nameof(tenant));
             _options = options?.Value ?? throw new ArgumentNullException(nameof(options));
+        }
+
+        public void Dispose()
+        {
+            if (_disposed)
+            {
+                return;
+            }
+
+            _cts.Cancel();
+
+            _cts.Dispose();
+
+            _lock.Dispose();
+
+            _disposed = true;
+        }
+
+        public async Task StartAsync(CancellationToken cancellationToken)
+        {
+            try
+            {
+                await EnsureInit();
+
+                await PurgeExpiredArchivedSnapshots(cancellationToken);
+            }
+            catch
+            {
+                // ignore startup purge errors
+            }
+        }
+
+        public Task StopAsync(CancellationToken cancellationToken)
+        {
+            _cts.Cancel();
+
+            return Task.CompletedTask;
         }
 
         public async Task Create(Snapshot snapshot, CancellationToken cancellationToken)
@@ -50,54 +103,80 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
             }
 
             int filterCount = snapshot.Filters.Count();
-
-            if (filterCount < _options.MinFilterCount ||
-                filterCount > _options.MaxFilterCount)
+            if (filterCount < _options.MinFilterCount || filterCount > _options.MaxFilterCount)
             {
                 throw new ArgumentOutOfRangeException(nameof(snapshot.Filters));
             }
 
-            //
-            // Verify filters create valid queries
             foreach (KeyValueFilter filter in snapshot.Filters)
             {
                 if (snapshot.CompositionType == CompositionType.Key)
                 {
-                    // SearchQueryException will be thrown if the label is invalid
                     ValidateLabelForComposeByKey(filter.Label);
                 }
             }
 
-            Debug.Assert(_tenant != null);
+            await EnsureInit();
+
+            using IDisposable writeLock = await _lock.WriteLock(cancellationToken);
+
+            // Enforce uniqueness by name
+            if (_cache.Any(s => s.Name == snapshot.Name))
+            {
+                throw new ConflictException();
+            }
+
+            string resourceId = string.IsNullOrEmpty(_tenant.ResourceId) ? "test-resource" : _tenant.ResourceId;
 
             var entry = new Snapshot
             {
-                Id = SnapshotHelper.GenerateId(snapshot.Name, _tenant.ResourceId),
+                Id = SnapshotHelper.GenerateId(snapshot.Name, resourceId),
                 Etag = SnapshotHelper.GenerateEtag(),
                 Name = snapshot.Name,
                 Filters = snapshot.Filters,
                 Tags = snapshot.Tags,
                 CompositionType = snapshot.CompositionType,
                 RetentionPeriod = snapshot.RetentionPeriod,
-                Status = SnapshotStatus.Provisioning,
-                StatusCode = (int)HttpStatusCode.Accepted,
+                Status = SnapshotStatus.None,
+                StatusCode = (int)HttpStatusCode.OK,
                 Created = DateTimeOffset.UtcNow,
                 LastModified = DateTimeOffset.UtcNow
             };
 
-            await _storage.AddSnapshot(entry, cancellationToken);
+            // Collect items according to filters synchronously
+            IEnumerable<KeyValue> items = await GetItemsAsync(entry, cancellationToken);
 
-            snapshot.Id = entry.Id;
-            snapshot.Etag = entry.Etag;
-            snapshot.Created = entry.Created;
-            snapshot.LastModified = entry.LastModified;
-            snapshot.Status = entry.Status;
-            snapshot.StatusCode = entry.StatusCode;
+            try
+            {
+                string filePath = BuildSnapshotContentFileName(entry.Id);
+                MediaInfo media = await _contentsStorage.CreateContent(filePath, items, cancellationToken);
+
+                entry.Media = media;
+                entry.ItemCount = items.Count();
+                entry.Size = media.Size;
+                entry.Status = SnapshotStatus.Ready;
+                entry.StatusCode = (int)HttpStatusCode.OK;
+                entry.LastModified = DateTimeOffset.UtcNow;
+
+                await _storage.AddSnapshot(entry, cancellationToken);
+
+                AddSorted(_cache, entry);
+            }
+            catch (Exception)
+            {
+                entry.Status = SnapshotStatus.Failed;
+                entry.StatusCode = (int)HttpStatusCode.InternalServerError;
+                entry.LastModified = DateTimeOffset.UtcNow;
+
+                await _storage.AddSnapshot(entry, cancellationToken);
+
+                AddSorted(_cache, entry);
+
+                throw;
+            }
         }
 
-        public Task<IEnumerable<Snapshot>> Get(
-            SnapshotSearchOptions options,
-            CancellationToken cancellationToken)
+        public async Task<IEnumerable<Snapshot>> Get(SnapshotSearchOptions options, CancellationToken cancellationToken)
         {
             if (options == null)
             {
@@ -106,21 +185,60 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
 
             if (options.Status == SnapshotStatusSearch.None)
             {
-                throw new ArgumentException(
-                    "At least one status is required for search.",
-                    nameof(options.Status));
+                throw new ArgumentException("At least one status is required for search.", nameof(options.Status));
             }
 
-            //
-            // TODO: Implement search
+            await EnsureInit();
 
-            throw new NotImplementedException();
+            // Always refresh cache from storage before serving results to reflect latest updates
+            await RefreshCacheAsync(cancellationToken);
+
+            using IDisposable readLock = await _lock.ReadLock(cancellationToken);
+
+            IEnumerable<Snapshot> items = _cache;
+
+            if (!string.IsNullOrEmpty(options.Name))
+            {
+                items = items.Where(s => s.Name == options.Name);
+            }
+
+            items = items.Where(s => MatchStatus(options.Status, s.Status));
+
+            // Continuation token (snapshot name)
+            if (!string.IsNullOrEmpty(options.ContinuationToken))
+            {
+                string token = options.ContinuationToken;
+                items = items.Where(s => string.Compare(s.Name, token, StringComparison.Ordinal) > 0);
+            }
+
+            // Pagination
+            items = items
+                .OrderBy(s => s.Name, StringComparer.Ordinal)
+                .Take(_tenant.OutputPageSize)
+                .ToList();
+
+            return items;
         }
 
-        public async Task<IEnumerable<KeyValue>> GetContent(
-            Snapshot snapshot,
-            SnapshotContentSearchOptions options,
-            CancellationToken cancellationToken)
+        private async Task RefreshCacheAsync(CancellationToken cancellationToken)
+        {
+            using IDisposable writeLock = await _lock.WriteLock(cancellationToken);
+
+            var entries = new List<Snapshot>();
+            await foreach (Snapshot s in _storage.QuerySnapshots().WithCancellation(cancellationToken))
+            {
+                if (s == null)
+                {
+                    continue;
+                }
+
+                AddSorted(entries, s);
+            }
+
+            _cache = entries;
+        }
+
+        public async Task<IEnumerable<KeyValue>> GetContent(Snapshot snapshot, SnapshotContentSearchOptions options, CancellationToken cancellationToken)
         {
             if (snapshot == null)
             {
@@ -132,39 +250,69 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
                 throw new ArgumentNullException(nameof(options));
             }
 
-            if (snapshot.Status != SnapshotStatus.Ready &&         // Snapshot isn't in servable state
-                snapshot.Status != SnapshotStatus.Archived)
+            // Only Ready snapshots expose content. Any other state returns an empty page.
+            if (snapshot.Status != SnapshotStatus.Ready)
             {
-                throw new InvalidOperationException("Snapshot is not in a servable state");
+                return new ConfigurationSettings.Page<KeyValue>(Enumerable.Empty<KeyValue>())
+                {
+                    Offset = 0,
+                    TotalItemsCount = 0,
+                    Etag = KvHelper.GenerateEtag()
+                };
             }
 
             MediaInfo media = snapshot.Media;
+            if (media == null)
+            {
+                var emptyPage = new ConfigurationSettings.Page<KeyValue>(Enumerable.Empty<KeyValue>())
+                {
+                    Offset = 0,
+                    TotalItemsCount = 0,
+                    Etag = KvHelper.GenerateEtag()
+                };
+
+                return emptyPage;
+            }
 
             long offset;
-
             if (options.ContinuationToken == null)
             {
                 offset = 0;
             }
-            else
+            else if (!long.TryParse(options.ContinuationToken, out offset) || offset < 0 || offset >= snapshot.ItemCount)
             {
-                if (!long.TryParse(options.ContinuationToken, out offset) ||
-                    offset < 0 ||
-                    offset >= media.Size)
+                var emptyPage = new ConfigurationSettings.Page<KeyValue>(Enumerable.Empty<KeyValue>())
                 {
-                    //
-                    // Empty result on invalid continuation
-                    return Enumerable.Empty<KeyValue>();
-                }
+                    Offset = snapshot.ItemCount,
+                    TotalItemsCount = snapshot.ItemCount,
+                    Etag = KvHelper.GenerateEtag()
+                };
+
+                return emptyPage;
             }
 
-            return await _storage
-                .ReadSnapshotContent(snapshot, offset)
-                .Take(MaxItemCount)
+            List<KeyValue> kvs = await _contentsStorage
+                .GetContent(media, offset, cancellationToken)
+                .Take(_options.OutputPageSize)
                 .ToListAsync(cancellationToken);
+
+            var page = new ConfigurationSettings.Page<KeyValue>(kvs)
+            {
+                Offset = offset,
+                TotalItemsCount = snapshot.ItemCount
+            };
+
+            if (offset + kvs.Count < snapshot.ItemCount)
+            {
+                page.ContinuationToken = (offset + kvs.Count).ToString();
+            }
+
+            page.Etag = KvHelper.ComputeEtag(page);
+
+            return page;
         }
 
-        public Task Archive(Snapshot snapshot, CancellationToken cancellationToken)
+        public async Task Archive(Snapshot snapshot, CancellationToken cancellationToken)
         {
             if (snapshot == null)
             {
@@ -176,13 +324,10 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
                 throw new InvalidOperationException("The snapshot is not in a state that is able to be archived.");
             }
 
-            return UpdateStatus(
-                snapshot,
-                SnapshotStatus.Archived,
-                cancellationToken);
+            await UpdateStatus(snapshot, SnapshotStatus.Archived, cancellationToken);
         }
 
-        public Task Recover(Snapshot snapshot, CancellationToken cancellationToken)
+        public async Task Recover(Snapshot snapshot, CancellationToken cancellationToken)
         {
             if (snapshot == null)
             {
@@ -194,61 +339,217 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
                 throw new InvalidOperationException("The snapshot is in an unrecoverable state.");
             }
 
-            return UpdateStatus(
-                snapshot,
-                SnapshotStatus.Ready,
-                cancellationToken);
+            await UpdateStatus(snapshot, SnapshotStatus.Ready, cancellationToken);
         }
 
-        private static bool IsExpired(Snapshot snapshot)
+        private async Task UpdateStatus(Snapshot snapshot, SnapshotStatus status, CancellationToken cancellationToken)
         {
-            Debug.Assert(snapshot != null);
+            await EnsureInit();
 
-            return DateTimeOffset.UtcNow >= snapshot.Expires;
-        }
+            using IDisposable writeLock = await _lock.WriteLock(cancellationToken);
 
-        private Task UpdateStatus(
-            Snapshot snapshot,
-            SnapshotStatus status,
-            CancellationToken cancellationToken)
-        {
-            Debug.Assert(
-                snapshot != null &&
-                snapshot.Status != status);
+            Snapshot existing = FindByName(snapshot.Name);
+            if (existing == null)
+            {
+                throw new SnapshotNotFoundException();
+            }
 
-            snapshot.Status = status;
+            if (existing.Etag != snapshot.Etag)
+            {
+                throw new ConflictException();
+            }
+
+            existing.Status = status;
 
             if (status == SnapshotStatus.Archived)
             {
-                //
-                // Archive
-
-                snapshot.Expires = DateTimeOffset.UtcNow + snapshot.RetentionPeriod;
+                existing.Expires = DateTimeOffset.UtcNow + existing.RetentionPeriod;
             }
             else
             {
                 Debug.Assert(status == SnapshotStatus.Ready);
 
-                //
-                // Recover
-
-                snapshot.Expires = null;
+                existing.Expires = null;
             }
 
-            //
-            // etag
-            snapshot.Etag = SnapshotHelper.GenerateEtag();
+            existing.LastModified = DateTimeOffset.UtcNow;
+            existing.Etag = SnapshotHelper.GenerateEtag();
 
-            return Update(snapshot, cancellationToken);
+            await _storage.UpdateSnapshot(existing, cancellationToken);
         }
 
-        private Task Update(Snapshot snapshot, CancellationToken cancellationToken)
+        private async Task<IEnumerable<KeyValue>> GetItemsAsync(Snapshot snapshot, CancellationToken cancellationToken)
         {
-            Debug.Assert(snapshot != null);
-            Debug.Assert(snapshot.Id != null);
-            Debug.Assert(!string.IsNullOrEmpty(snapshot.Etag));
+            if (snapshot.Filters == null)
+            {
+                return Enumerable.Empty<KeyValue>();
+            }
 
-            return _storage.UpdateSnapshot(snapshot, cancellationToken);
+            var result = new List<KeyValue>();
+            foreach (KeyValueFilter f in snapshot.Filters)
+            {
+                var keyFilter = SearchQuery.CreateStringFilter(f.Key);
+                var labelFilter = f.Label == null ? new StringFilter { IsNull = true } : SearchQuery.CreateStringFilter(f.Label);
+                string continuation = null;
+                do
+                {
+                    var page = await _kvProvider.QueryKeyValues(new KeyValueSearchOptions
+                    {
+                        KeyFilter = keyFilter,
+                        LabelFilter = labelFilter,
+                        ContinuationToken = continuation,
+                        Tags = f.Tags
+                    }, cancellationToken);
+
+                    result.AddRange(page);
+                    continuation = page.ContinuationToken;
+                }
+                while (!string.IsNullOrEmpty(continuation));
+            }
+
+            return result.GroupBy(k => (k.Key, k.Label)).Select(g => g.First());
+        }
+
+        private static string BuildSnapshotContentFileName(string snapshotId)
+        {
+            return snapshotId + ".ndjson";
+        }
+
+        private Snapshot FindByName(string name)
+        {
+            if (string.IsNullOrEmpty(name))
+            {
+                return null;
+            }
+
+            int i = _cache.BinarySearch(new Snapshot { Name = name }, EqualComparer);
+            if (i >= 0)
+            {
+                return _cache[i];
+            }
+
+            return null;
+        }
+
+        private static bool MatchStatus(SnapshotStatusSearch searchFlags, SnapshotStatus status)
+        {
+            if (searchFlags == SnapshotStatusSearch.All)
+            {
+                return true;
+            }
+
+            if (status == SnapshotStatus.Ready && (searchFlags & SnapshotStatusSearch.Ready) != 0)
+            {
+                return true;
+            }
+
+            if (status == SnapshotStatus.Archived && (searchFlags & SnapshotStatusSearch.Archived) != 0)
+            {
+                return true;
+            }
+
+            if (status == SnapshotStatus.Failed && (searchFlags & SnapshotStatusSearch.Failed) != 0)
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        private async Task PurgeExpiredArchivedSnapshots(CancellationToken cancellationToken)
+        {
+            await EnsureInit();
+
+            using IDisposable writeLock = await _lock.WriteLock(cancellationToken);
+
+            var expired = new List<Snapshot>();
+            DateTimeOffset now = DateTimeOffset.UtcNow;
+
+            foreach (var s in _cache)
+            {
+                if (s == null)
+                {
+                    continue;
+                }
+
+                if (s.Status == SnapshotStatus.Archived && s.Expires.HasValue && s.Expires.Value <= now)
+                {
+                    expired.Add(s);
+                }
+            }
+
+            if (expired.Count == 0)
+            {
+                return;
+            }
+
+            try
+            {
+                await _storage.RemoveSnapshots(expired, cancellationToken);
+            }
+            catch
+            {
+                // ignore purge failures
+            }
+
+            foreach (var s in expired)
+            {
+                int idx = _cache.BinarySearch(s, EqualComparer);
+                if (idx >= 0)
+                {
+                    _cache.RemoveAt(idx);
+                }
+            }
+        }
+
+        private async ValueTask EnsureInit()
+        {
+            while (Interlocked.CompareExchange(ref _init, 1, 0) == 1)
+            {
+                await Task.Delay(100, _cts.Token);
+            }
+
+            if (_init > 1)
+            {
+                return;
+            }
+
+            try
+            {
+                List<Snapshot> entries = new List<Snapshot>();
+
+                await foreach (Snapshot s in _storage.QuerySnapshots())
+                {
+                    AddSorted(entries, s);
+                }
+
+                _cache = entries;
+
+                Interlocked.Exchange(ref _init, 2);
+            }
+            catch
+            {
+                Interlocked.Exchange(ref _init, 0);
+                throw;
+            }
+        }
+
+        private static void AddSorted(List<Snapshot> list, Snapshot snapshot)
+        {
+            Debug.Assert(list != null);
+            Debug.Assert(snapshot != null);
+
+            int i = list.BinarySearch(snapshot, EqualComparer);
+            if (i >= 0)
+            {
+                // Replace existing (newer copy)
+                list[i] = snapshot;
+            }
+            else
+            {
+                i = ~i;
+                list.Insert(i, snapshot);
+            }
         }
 
         private static void ValidateLabelForComposeByKey(string label)
@@ -259,9 +560,7 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
             }
 
             ReadOnlySpan<char> span = label.AsSpan();
-
-            if (SearchQuery.ContainsWildcard(span) ||
-                SearchQuery.IsListSearch(span))
+            if (SearchQuery.ContainsWildcard(span) || SearchQuery.IsListSearch(span))
             {
                 throw new SearchQueryException(nameof(label), "Unexpected label which could match multiple values for a key");
             }
@@ -299,7 +598,5 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
                 throw new ArgumentOutOfRangeException(nameof(options.ConflictRetryTimeout));
             }
         }
-
-        private int MaxItemCount => _options.OutputPageSize;
     }
 }
