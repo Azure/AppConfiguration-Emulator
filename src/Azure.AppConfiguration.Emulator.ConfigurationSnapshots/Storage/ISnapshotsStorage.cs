@@ -10,7 +10,7 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
 {
     public interface ISnapshotsStorage
     {
-        IAsyncEnumerable<Snapshot> QuerySnapshots();
+        IAsyncEnumerable<Snapshot> QuerySnapshots(CancellationToken cancellationToken);
 
         Task<Snapshot> GetSnapshot(string snapshotId, CancellationToken cancellationToken);
 

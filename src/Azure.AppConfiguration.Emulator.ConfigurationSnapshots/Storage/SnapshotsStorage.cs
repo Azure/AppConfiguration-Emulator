@@ -17,7 +17,9 @@ using System.Threading.Tasks;
 
 namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
 {
-    public class SnapshotsStorage : ISnapshotsStorage, ISnapshotContentsStorage
+    public class SnapshotsStorage :
+        ISnapshotsStorage,
+        ISnapshotContentsStorage
     {
         private readonly SnapshotProviderOptions _providerOptions;
         private readonly SnapshotsStorageOptions _options;
@@ -106,12 +108,9 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
             }
         }
 
-        public IAsyncEnumerable<Snapshot> QuerySnapshots()
-        {
-            return QuerySnapshots(CancellationToken.None);
-        }
-
-        public async Task<Snapshot> GetSnapshot(string snapshotId, CancellationToken cancellationToken)
+        public async Task<Snapshot> GetSnapshot(
+            string snapshotId,
+            CancellationToken cancellationToken)
         {
             if (string.IsNullOrEmpty(snapshotId))
             {
@@ -129,7 +128,9 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
             return null;
         }
 
-        public async Task AddSnapshot(Snapshot snapshot, CancellationToken cancellationToken)
+        public async Task AddSnapshot(
+            Snapshot snapshot,
+            CancellationToken cancellationToken)
         {
             ValidateSnapshot(snapshot);
 
@@ -162,7 +163,9 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
             }
         }
 
-        public async Task UpdateSnapshot(Snapshot snapshot, CancellationToken cancellationToken)
+        public async Task UpdateSnapshot(
+            Snapshot snapshot,
+            CancellationToken cancellationToken)
         {
             ValidateSnapshot(snapshot);
 
@@ -207,7 +210,10 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
             ReplaceFile(tempFilePath, _metadataFilePath);
         }
 
-        public async Task<MediaInfo> CreateContent(string fileName, IEnumerable<KeyValue> items, CancellationToken cancellationToken)
+        public async Task<MediaInfo> CreateContent(
+            string fileName,
+            IEnumerable<KeyValue> items,
+            CancellationToken cancellationToken)
         {
             if (string.IsNullOrEmpty(fileName))
             {
@@ -271,7 +277,10 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
             return media;
         }
 
-        public async IAsyncEnumerable<KeyValue> GetContent(MediaInfo media, long offset, [EnumeratorCancellation] CancellationToken cancellationToken)
+        public async IAsyncEnumerable<KeyValue> GetContent(
+            MediaInfo media,
+            long offset,
+            [EnumeratorCancellation] CancellationToken cancellationToken)
         {
             if (media == null)
             {
@@ -318,7 +327,9 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
             }
         }
 
-        public async Task RemoveSnapshots(IEnumerable<Snapshot> snapshots, CancellationToken cancellationToken)
+        public async Task RemoveSnapshots(
+            IEnumerable<Snapshot> snapshots,
+            CancellationToken cancellationToken)
         {
             if (snapshots == null)
             {
@@ -479,6 +490,8 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
                 string bakFilePath = targetFilePath + ".bac";
                 File.Replace(tempFilePath, targetFilePath, bakFilePath);
 
+                //
+                // Clean up the bak file
                 if (File.Exists(bakFilePath))
                 {
                     File.Delete(bakFilePath);
@@ -486,9 +499,13 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
             }
             else
             {
+                //
+                // Rename the temporary file to the original file
                 File.Move(tempFilePath, targetFilePath);
             }
 
+            //
+            // Clean up the temporary file
             if (File.Exists(tempFilePath))
             {
                 File.Delete(tempFilePath);

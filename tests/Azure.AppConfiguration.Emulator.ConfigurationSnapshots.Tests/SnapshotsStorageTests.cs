@@ -79,7 +79,7 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots.Tests
             var snapshot = NewSnapshot("snap-add-1");
             await _storage.AddSnapshot(snapshot, CancellationToken.None);
 
-            var list = await _storage.QuerySnapshots().ToListAsync();
+            var list = await _storage.QuerySnapshots(CancellationToken.None).ToListAsync();
 
             Assert.Single(list);
             Assert.Equal("snap-add-1", list[0].Id);
@@ -98,7 +98,7 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots.Tests
             snapshot.LastModified = DateTimeOffset.UtcNow;
             await _storage.UpdateSnapshot(snapshot, CancellationToken.None);
 
-            var list = await _storage.QuerySnapshots().ToListAsync();
+            var list = await _storage.QuerySnapshots(CancellationToken.None).ToListAsync();
             var stored = list.Single(s => s.Id == snapshot.Id);
 
             Assert.Equal(5, stored.ItemCount);
@@ -113,7 +113,7 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots.Tests
             await _storage.AddSnapshot(a, CancellationToken.None);
             await _storage.AddSnapshot(b, CancellationToken.None);
 
-            var ids = await _storage.QuerySnapshots().Select(s => s.Id).ToListAsync();
+            var ids = await _storage.QuerySnapshots(CancellationToken.None).Select(s => s.Id).ToListAsync();
 
             Assert.Contains("snap-q-1", ids);
             Assert.Contains("snap-q-2", ids);
@@ -205,7 +205,7 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots.Tests
 
             await _storage.RemoveSnapshots(new[] { snapA }, CancellationToken.None);
 
-            var all = await _storage.QuerySnapshots().ToListAsync();
+            var all = await _storage.QuerySnapshots(CancellationToken.None).ToListAsync();
             Assert.DoesNotContain(all, s => s.Id == "snapA");
             Assert.Contains(all, s => s.Id == "snapB");
 
