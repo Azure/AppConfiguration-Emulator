@@ -64,18 +64,23 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
             _disposed = true;
         }
 
-        public async Task StartAsync(CancellationToken cancellationToken)
+        public Task StartAsync(CancellationToken cancellationToken)
         {
-            try
-            {
-                await EnsureInit();
+            // Fire-and-forget initialization similar to KeyValueProvider
+            _ = EnsureInit()
+                .AsTask()
+                .ContinueWith(t =>
+                {
+                    //
+                    // Ignore exceptions.
+                    // Initialization will repeat per request if necessary
+                    if (t.Exception != null)
+                    {
+                        t.Exception.Handle(e => true);
+                    }
+                }, TaskContinuationOptions.OnlyOnFaulted);
 
-                await PurgeExpiredArchivedSnapshots(cancellationToken);
-            }
-            catch
-            {
-                // ignore startup purge errors
-            }
+            return Task.CompletedTask;
         }
 
         public Task StopAsync(CancellationToken cancellationToken)
@@ -458,8 +463,7 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
 
         private async Task PurgeExpiredArchivedSnapshots(CancellationToken cancellationToken)
         {
-            await EnsureInit();
-
+            // Assume initialization already performed by caller
             using IDisposable writeLock = await _lock.WriteLock(cancellationToken);
 
             var expired = new List<Snapshot>();
@@ -525,11 +529,20 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
 
                 _cache = entries;
 
+                //
+                // Purge expired archived snapshots
+                await PurgeExpiredArchivedSnapshots(_cts.Token);
+
+                //
+                // Set completed
                 Interlocked.Exchange(ref _init, 2);
             }
             catch
             {
+                //
+                // Failed, unlock. Allowed to retry later.
                 Interlocked.Exchange(ref _init, 0);
+
                 throw;
             }
         }
