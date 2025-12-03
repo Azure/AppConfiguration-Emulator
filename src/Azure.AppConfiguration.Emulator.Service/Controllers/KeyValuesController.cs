@@ -79,6 +79,7 @@ namespace Azure.AppConfiguration.Emulator.Service
             string key,
 
             [FromQuery]
+            [Literal(NormalizeNull = true)]
             string label,
 
             [Tags]
@@ -90,19 +91,14 @@ namespace Azure.AppConfiguration.Emulator.Service
         {
             //
             // Escape the filters to ensure exact match criteria
-            //
+            var keyFilter = new StringFilter { EqualsTo = SearchQuery.Escape(key) };
+            var labelFilter = SearchQuery.IsNullOrZero(label) ? new StringFilter { IsNull = true } : new StringFilter { EqualsTo = SearchQuery.Escape(label) };
+
             return (await _provider.QueryKeyValues(
                 new KeyValueSearchOptions
                 {
-                    KeyFilter = new StringFilter
-                    {
-                        EqualsTo = SearchQuery.Escape(key)
-                    },
-
-                    LabelFilter = new StringFilter
-                    {
-                        EqualsTo = SearchQuery.Escape(label)
-                    },
+                    KeyFilter = keyFilter,
+                    LabelFilter = labelFilter,
                     Tags = tags,
                     TimeGate = timeGate
                 },
@@ -139,14 +135,13 @@ namespace Azure.AppConfiguration.Emulator.Service
 
             var kv = new KeyValue
             {
-                Label = label,
                 Key = key,
+                Label = SearchQuery.NormalizeNull(label),
                 ContentType = model.ContentType,
                 Value = model.Value,
                 Tags = model.Tags?.AsReadOnly()
             };
 
-            //
             // No-op if equivalent
             if (KvEquivalent(kv, existing))
             {
@@ -201,10 +196,8 @@ namespace Azure.AppConfiguration.Emulator.Service
 
         private void EnsurePrecondition(KeyValue kv)
         {
-            //
             // Check conditional etag
             EtagMatch etagMatch = Request.GetEtagMatch();
-
             string Etag = Request.GetEtag();
 
             if (!KvHelper.CheckPrecondition(kv, etagMatch, Etag))
@@ -212,7 +205,6 @@ namespace Azure.AppConfiguration.Emulator.Service
                 throw new MatchFailedException();
             }
 
-            //
             // Check if locked
             if (kv != null && kv.Locked)
             {
