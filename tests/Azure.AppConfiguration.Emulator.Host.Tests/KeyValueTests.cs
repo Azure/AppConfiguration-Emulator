@@ -32,6 +32,7 @@ namespace Azure.AppConfiguration.Emulator.Host.Tests
             Assert.NotNull(keyValue);
             Assert.Equal(key, keyValue.Key);
             Assert.Equal(value, keyValue.Value);
+            Assert.Null(keyValue.Label);
             Assert.NotNull(keyValue.Tags);
             Assert.Contains(keyValue.Tags, t => t.Key == "env" && t.Value == "test");
         }
@@ -172,6 +173,32 @@ namespace Azure.AppConfiguration.Emulator.Host.Tests
             Assert.NotNull(keyValues);
             Assert.NotNull(keyValues.Items);
             Assert.Empty(keyValues.Items); // Verify that items list is empty
+        }
+
+        [Fact]
+        public async Task Put_ByPathWithNullLabel_CreatesKeyWithNullLabel()
+        {
+            // Arrange
+            var client = _testServer.Client;
+            var key = "nullLabel";
+            var value = "value-with-null-label";
+
+            // Act - Create via helper with label=%00 (null label)
+            var createResponse = await TestHelpers.CreateKeyValue(client, key, value, label: "%00");
+            createResponse.EnsureSuccessStatusCode();
+
+            // Assert via path GET with label=%00
+            var keyValue = await TestHelpers.GetKeyValue(client, key, label: "%00");
+            Assert.NotNull(keyValue);
+            Assert.Equal(key, keyValue.Key);
+            Assert.Equal(value, keyValue.Value);
+            Assert.Null(keyValue.Label);
+
+            // Also assert via query list endpoint
+            var keyValues = await TestHelpers.QueryKeyValues(client, key: key, label: "%00");
+            Assert.NotNull(keyValues);
+            Assert.NotEmpty(keyValues.Items);
+            Assert.Contains(keyValues.Items, kv => kv.Key == key && kv.Value == value && kv.Label == null);
         }
     }
 }

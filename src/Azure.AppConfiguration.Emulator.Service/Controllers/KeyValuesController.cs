@@ -79,6 +79,7 @@ namespace Azure.AppConfiguration.Emulator.Service
             string key,
 
             [FromQuery]
+            [Literal(NormalizeNull = true)]
             string label,
 
             [Tags]
@@ -90,7 +91,6 @@ namespace Azure.AppConfiguration.Emulator.Service
         {
             //
             // Escape the filters to ensure exact match criteria
-            //
             return (await _provider.QueryKeyValues(
                 new KeyValueSearchOptions
                 {
@@ -98,11 +98,12 @@ namespace Azure.AppConfiguration.Emulator.Service
                     {
                         EqualsTo = SearchQuery.Escape(key)
                     },
-
-                    LabelFilter = new StringFilter
-                    {
-                        EqualsTo = SearchQuery.Escape(label)
-                    },
+                    LabelFilter = SearchQuery.IsNullOrZero(label) ?
+                        StringFilter.NullString :
+                        new StringFilter
+                        {
+                            EqualsTo = SearchQuery.Escape(label)
+                        },
                     Tags = tags,
                     TimeGate = timeGate
                 },
@@ -139,8 +140,8 @@ namespace Azure.AppConfiguration.Emulator.Service
 
             var kv = new KeyValue
             {
-                Label = label,
                 Key = key,
+                Label = SearchQuery.NormalizeNull(label),
                 ContentType = model.ContentType,
                 Value = model.Value,
                 Tags = model.Tags?.AsReadOnly()
