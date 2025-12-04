@@ -18,6 +18,6 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
 
         Task Recover(Snapshot snapshot, CancellationToken cancellationToken);
 
-        Task<IEnumerable<KeyValue>> GetContent(Snapshot snapshot, SnapshotContentSearchOptions options, CancellationToken cancellationToken);
+        Task<ConfigurationSettings.Page<KeyValue>> GetContent(Snapshot snapshot, SnapshotContentSearchOptions options, CancellationToken cancellationToken);
     }
 }

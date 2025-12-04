@@ -5,7 +5,7 @@ using System.IO;
 
 namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
 {
-    internal static class StreamExtensions
+    public static class StreamExtensions
     {
         private static readonly byte[] _delimiter = new byte[] { (byte)'\r', (byte)'\n' };
 
