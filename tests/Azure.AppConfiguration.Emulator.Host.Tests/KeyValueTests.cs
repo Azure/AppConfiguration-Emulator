@@ -1,5 +1,4 @@
 using Xunit;
-using System.Net.Http.Json;
 
 namespace Azure.AppConfiguration.Emulator.Host.Tests
 {
