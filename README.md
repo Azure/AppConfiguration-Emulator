@@ -19,6 +19,7 @@ The Azure App Configuration Emulator is a local development tool that provides a
 Before building and running the Azure App Configuration Emulator, ensure you have the following technologies installed:
 
 ### For Building and Running
+
 - **.NET 8.0 SDK** - Required for building and running the C# application
   - Download from: https://dotnet.microsoft.com/download/dotnet/8.0
   - Minimum version: 8.0.100
@@ -31,18 +32,21 @@ Before building and running the Azure App Configuration Emulator, ensure you hav
 Follow these steps to build the Azure App Configuration Emulator:
 
 ### 1. Clone the Repository
+
 ```bash
 git clone https://github.com/Azure/AppConfiguration-Emulator.git
 cd AppConfiguration-Emulator
 ```
 
 ### 2. Restore Dependencies
+
 Restore all .NET package dependencies:
 ```bash
 dotnet restore
 ```
 
 ### 3. Build the Solution
+
 Build the entire solution including the UI components:
 ```bash
 dotnet build
@@ -53,16 +57,19 @@ dotnet build
 To run the Azure App Configuration Emulator locally:
 
 ### Start the Emulator
+
 ```bash
 dotnet run --project src/Azure.AppConfiguration.Emulator.Host/Azure.AppConfiguration.Emulator.Host.csproj
 ```
 
 ### Access the Application
+
 Once started, the emulator will be available at:
 - **API Endpoint**: `http://127.0.0.1:8483`
 - **Web UI**: `http://127.0.0.1:8483` (serves both API and UI)
 
 ### Default Configuration
+
 The emulator runs with the following default settings in development mode:
 - **Port**: 8483
 - **Authentication**: Anonymous authentication enabled
@@ -70,20 +77,24 @@ The emulator runs with the following default settings in development mode:
 - **Logging Level**: Debug
 
 ### Stopping the Emulator
+
 Press `Ctrl+C` in the terminal to stop the emulator.
 
 ## Test
 
 ### Running Tests
+
 Currently, there are no automated tests included in this solution.
 
 ### Manual Testing
+
 You can manually test the emulator by:
 
 1. **Using the Web UI**: Navigate to `http://127.0.0.1:8483` in your browser
 2. **Using REST API**: Make HTTP requests directly to the emulator endpoints
 
 ### API Testing Example
+
 ```bash
 # Example: List configuration settings
 curl -X GET "http://127.0.0.1:8483/kv" \
@@ -93,7 +104,22 @@ curl -X GET "http://127.0.0.1:8483/kv" \
 ## Development
 
 ### Configuration
+
 The emulator can be configured through `appsettings.json` and `appsettings.Development.json` files in the Host project.
+
+```json
+"Tenant": {
+    "HmacSha256Enabled": true,
+    "AccessKeys": [
+      {
+        "Id": "ABCD",
+        "Secret": "1234"
+      }
+    ]
+  }
+```
+
+The above configuration demonstrates how to enable HMAC authentication. With the above configuration, you can use the connection string `"Endpoint=http://127.0.0.1:8483;Id=ABCD;Secret=1234"` in Azure App Configuration client SDKs to connect to the emulator.
 
 ## Contributing
 
