@@ -21,7 +21,6 @@ Before building and running the Azure App Configuration Emulator, ensure you hav
 ### For Building and Running
 - **.NET 8.0 SDK** - Required for building and running the C# application
   - Download from: https://dotnet.microsoft.com/download/dotnet/8.0
-  - Minimum version: 8.0.100
 - **Node.js and npm** - Required for building the React/TypeScript UI component
   - Download from: https://nodejs.org/
   - Minimum Node.js version: 16.x or later
