@@ -161,6 +161,7 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
                 reader.Read())
             {
                 snapshot.Expires = DateTimeOffset.FromUnixTimeSeconds(reader.GetInt64());
+
                 return;
             }
 
@@ -303,6 +304,7 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
                             reader.Read())
                         {
                             media.Etag = reader.GetString();
+
                             continue;
                         }
 
@@ -312,6 +314,7 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
                             reader.Read())
                         {
                             media.ContentType = reader.GetString();
+
                             continue;
                         }
 
@@ -321,6 +324,7 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
                             reader.Read())
                         {
                             media.Sha256Hash = DecodeBase64Url(reader.GetString());
+
                             continue;
                         }
                     }
