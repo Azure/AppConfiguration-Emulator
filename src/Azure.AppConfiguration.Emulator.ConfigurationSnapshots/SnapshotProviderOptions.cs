@@ -35,11 +35,11 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
         /// <summary>
         /// Minimum filter count
         /// </summary>
-        public int MinFilterCount { get; set; }
+        public int MinFilterCount { get; set; } = 1;
 
         /// <summary>
         /// Maximum filter count
         /// </summary>
-        public int MaxFilterCount { get; set; }
+        public int MaxFilterCount { get; set; } = 3;
     }
 }

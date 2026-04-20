@@ -24,8 +24,6 @@ using Page = Azure.AppConfiguration.Emulator.ConfigurationSettings.Page<Azure.Ap
 
 namespace Azure.AppConfiguration.Emulator.Service
 {
-#if SNAPSHOTS
-
     [ApiVersion(ApiVersions.V23_10)]
     [ApiVersion(ApiVersions.V23_11)]
     [ApiVersion(ApiVersions.V24_09)]
@@ -168,53 +166,52 @@ namespace Azure.AppConfiguration.Emulator.Service
             if (entity.Filters != null)
             {
                 snapshot.Filters = entity.Filters.Select(f =>
+                {
+                    List<KeyValuePair<string, string>> tagFilters = null;
+
+                    if (f.Tags != null && f.Tags.Any())
                     {
-                        List<KeyValuePair<string, string>> tagFilters = null;
+                        tagFilters = new List<KeyValuePair<string, string>>();
 
-                        if (f.Tags != null && f.Tags.Any())
+                        foreach (string tag in f.Tags)
                         {
-                            tagFilters = new List<KeyValuePair<string, string>>();
-
-                            foreach (string tag in f.Tags)
+                            if (!string.IsNullOrWhiteSpace(tag))
                             {
-                                if (!string.IsNullOrWhiteSpace(tag))
-                                {
-                                    tagFilters.Add(SearchQueryHelper.ParseTagFilter(tag.AsSpan()));
-                                }
+                                tagFilters.Add(SearchQueryHelper.ParseTagFilter(tag.AsSpan()));
                             }
                         }
+                    }
 
-                        return new KeyValueFilter
-                        {
-                            Key = f.Key,
-                            Label = f.Label,
-                            Tags = tagFilters
-                        };
-                    });
+                    return new KeyValueFilter
+                    {
+                        Key = f.Key,
+                        Label = f.Label,
+                        Tags = tagFilters
+                    };
+                });
             }
 
-            await _provider.Create(
+            try
+            {
+                await _provider.Create(
                 snapshot,
                 cancellationToken);
 
-            var uri = new UriBuilder
-            {
-                Scheme = Request.Scheme,
-                Host = Request.Host.Host,
-                Path = $"operations?snapshot={Uri.EscapeDataString(snapshot.Name)}&api-version={HttpContext.GetRequestedApiVersion()}"
-            };
+                Snapshot created = (await _provider.Get(new SnapshotSearchOptions
+                {
+                    Name = SearchQuery.Escape(name),
+                    Status = SnapshotStatusSearch.All
+                }, cancellationToken)).FirstOrDefault();
 
-            if (Request.Host.Port.HasValue)
-            {
-                uri.Port = Request.Host.Port.Value;
+                return new ObjectResult(created ?? snapshot)
+                {
+                    StatusCode = StatusCodes.Status201Created
+                };
             }
-
-            Response.Headers[HeaderNames.OperationLocation] = uri.ToString();
-
-            return new ObjectResult(snapshot)
+            catch (ConflictException)
             {
-                StatusCode = StatusCodes.Status201Created
-            };
+                return new ObjectResult(Problems.AlreadyExists);
+            }
         }
 
         [Authorize(Policies.SnapshotArchive)]
@@ -330,5 +327,4 @@ namespace Azure.AppConfiguration.Emulator.Service
             return new ObjectResult(snapshot.ToOperationStatus());
         }
     }
-#endif
 }

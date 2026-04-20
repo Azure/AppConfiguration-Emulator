@@ -16,7 +16,7 @@ namespace Azure.AppConfiguration.Emulator.Tenant
 
         public string ResourceGroup { get; init; }
 
-        public string ResourceId { get; init; }
+        public string ResourceId { get; init; } = "emulator";
 
         public IEnumerable<AccessKey> AccessKeys { get; init; }
 
