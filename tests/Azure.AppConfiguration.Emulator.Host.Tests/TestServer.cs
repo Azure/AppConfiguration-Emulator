@@ -32,12 +32,26 @@ namespace Azure.AppConfiguration.Emulator.Host.Tests
             string baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
 
             string storageDirectory = Path.Combine(baseDirectory, ".aace");
-            string storageFilePath = Path.Combine(storageDirectory, "kv.ndjson");
+            string kvFilePath = Path.Combine(storageDirectory, "kv.ndjson");
+            string snapshotFilePath = Path.Combine(storageDirectory, "snapshot.ndjson");
+            string snapshotFolderPath = Path.Combine(storageDirectory, "snapshots");
 
-            if (File.Exists(storageFilePath))
+            if (File.Exists(kvFilePath))
             {
-                File.Delete(storageFilePath);
-                Console.WriteLine($"Deleted storage file: {storageFilePath}");
+                File.Delete(kvFilePath);
+                Console.WriteLine($"Deleted storage file: {kvFilePath}");
+            }
+
+            if (File.Exists(snapshotFilePath))
+            {
+                File.Delete(snapshotFilePath);
+                Console.WriteLine($"Deleted storage file: {snapshotFilePath}");
+            }
+
+            if (Directory.Exists(snapshotFolderPath))
+            {
+                Directory.Delete(snapshotFolderPath, true);
+                Console.WriteLine($"Deleted storage directory: {snapshotFolderPath}");
             }
         }
 
@@ -73,6 +87,8 @@ namespace Azure.AppConfiguration.Emulator.Host.Tests
 
         public void Dispose()
         {
+            DeleteStorageFile();
+
             _httpClient?.Dispose();
             _server?.Dispose();
         }
