@@ -204,9 +204,6 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
 
             await EnsureInit();
 
-            // Always refresh cache from storage before serving results to reflect latest updates
-            await RefreshCacheAsync(cancellationToken);
-
             using IDisposable readLock = await _lock.ReadLock(cancellationToken);
 
             IEnumerable<Snapshot> items = _cache;
@@ -226,15 +223,24 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
             }
 
             // Pagination
-            items = items
+            List<Snapshot> result = items
                 .OrderBy(s => s.Name, StringComparer.Ordinal)
                 .Take(MaxItemCount)
                 .ToList();
 
-            return items;
+            var page = new ConfigurationSettings.Page<Snapshot>(result);
+
+            //
+            // Full page reached, may have more
+            if (result.Count >= MaxItemCount)
+            {
+                page.ContinuationToken = result[result.Count - 1].Name;
+            }
+
+            return page;
         }
 
-        public async Task<ConfigurationSettings.Page<KeyValue>> GetContent(
+        public async Task<IEnumerable<KeyValue>> GetContent(
             Snapshot snapshot,
             SnapshotContentSearchOptions options,
             CancellationToken cancellationToken)
@@ -255,17 +261,6 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
                 throw new InvalidOperationException("Snapshot is not in a servable state");
             }
 
-            // Only Ready snapshots expose content. Any other state returns an empty page.
-            if (snapshot.Status != SnapshotStatus.Ready)
-            {
-                return new ConfigurationSettings.Page<KeyValue>(Enumerable.Empty<KeyValue>())
-                {
-                    Offset = 0,
-                    TotalItemsCount = 0,
-                    Etag = KvHelper.GenerateEtag()
-                };
-            }
-
             MediaInfo media = snapshot.Media;
             Debug.Assert(media != null);
 
@@ -278,7 +273,7 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
             {
                 if (!long.TryParse(options.ContinuationToken, out offset) ||
                     offset < 0 ||
-                    offset >= media.Size)
+                    offset >= snapshot.ItemCount)
                 {
                     //
                     // Empty result on invalid continuation
@@ -340,24 +335,6 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
             }
 
             await UpdateStatus(snapshot, SnapshotStatus.Ready, cancellationToken);
-        }
-
-        private async Task RefreshCacheAsync(CancellationToken cancellationToken)
-        {
-            using IDisposable writeLock = await _lock.WriteLock(cancellationToken);
-
-            var entries = new List<Snapshot>();
-            await foreach (Snapshot s in _storage.QuerySnapshots(cancellationToken))
-            {
-                if (s == null)
-                {
-                    continue;
-                }
-
-                AddSorted(entries, s);
-            }
-
-            _cache = entries;
         }
 
         private async Task UpdateStatus(
