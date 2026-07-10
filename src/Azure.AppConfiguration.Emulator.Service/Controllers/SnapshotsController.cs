@@ -203,6 +203,21 @@ namespace Azure.AppConfiguration.Emulator.Service
                     Status = SnapshotStatusSearch.All
                 }, cancellationToken)).FirstOrDefault();
 
+                var operationLocation = new UriBuilder
+                {
+                    Scheme = Request.Scheme,
+                    Host = Request.Host.Host,
+                    Path = "operations",
+                    Query = $"snapshot={Uri.EscapeDataString(snapshot.Name)}&api-version={HttpContext.GetRequestedApiVersion()}"
+                };
+
+                if (Request.Host.Port.HasValue)
+                {
+                    operationLocation.Port = Request.Host.Port.Value;
+                }
+
+                Response.Headers[HeaderNames.OperationLocation] = operationLocation.ToString();
+
                 return new ObjectResult(created ?? snapshot)
                 {
                     StatusCode = StatusCodes.Status201Created
