@@ -193,10 +193,14 @@ namespace Azure.AppConfiguration.Emulator.Service
 
             try
             {
-                await _provider.Create(
-                snapshot,
-                cancellationToken);
+                await _provider.Create(snapshot, cancellationToken);
 
+                //
+                // Unlike the real service (which returns a Provisioning snapshot and finishes
+                // provisioning asynchronously), the emulator provisions synchronously and returns a
+                // Ready snapshot. Create() gathers the key-values, writes the content file, and
+                // computes Id/Etag/Media/ItemCount/Size internally, so those aren't known here up
+                // front. Re-query to get the fully-provisioned snapshot to return.
                 Snapshot created = (await _provider.Get(new SnapshotSearchOptions
                 {
                     Name = SearchQuery.Escape(name),
