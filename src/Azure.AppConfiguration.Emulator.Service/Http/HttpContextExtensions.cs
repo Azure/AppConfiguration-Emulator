@@ -99,6 +99,13 @@ namespace Azure.AppConfiguration.Emulator.Service.Http
             }
 
             //
+            // description
+            if (fields.Exists("description"))
+            {
+                kvf |= KeyValueFields.Description;
+            }
+
+            //
             // Cache
             request.HttpContext.Items[KvFieldsKey] = kvf;
 

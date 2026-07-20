@@ -25,8 +25,9 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
         RevisionTTL = 0x800,
         Revision = 0x1000,
         Name = 0x2000,
+        Description = 0x4000,
 
-        Default = Key | Label | ContentType | Value | LastModified | Tags | Etag | Locked,
+        Default = Key | Label | ContentType | Value | LastModified | Tags | Etag | Locked | Description,
         All = Default | Id | Deleted | Ttl | Revision | RevisionTTL | Name
     }
 }

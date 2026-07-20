@@ -98,7 +98,8 @@ namespace Azure.AppConfiguration.Emulator.Service.Formatters.Json
                     _jsonOptions.SerializerSettings,
                     _charPool,
                     o,
-                    new KvJsonOutputSerializer()));
+                    new KvJsonOutputSerializer(),
+                    new KvJsonOutputSerializer2()));
 
             o.OutputFormatters.Insert(
                 1,
@@ -107,7 +108,8 @@ namespace Azure.AppConfiguration.Emulator.Service.Formatters.Json
                     _charPool,
                     o,
                     new KvsJsonOutputSerializer(),
-                    new KvsJsonOutputSerializer2()));
+                    new KvsJsonOutputSerializer2(),
+                    new KvsJsonOutputSerializer3()));
 
             o.OutputFormatters.Insert(
                 2,

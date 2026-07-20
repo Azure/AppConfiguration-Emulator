@@ -125,6 +125,16 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
             }
 
             //
+            // description
+            if (propertyName.IsEqual(JsonFields.Description) &&
+                reader.Read())
+            {
+                kv.Description = reader.GetString();
+
+                return;
+            }
+
+            //
             // tags
             if (propertyName.IsEqual(JsonFields.Tags) &&
                 reader.Read())

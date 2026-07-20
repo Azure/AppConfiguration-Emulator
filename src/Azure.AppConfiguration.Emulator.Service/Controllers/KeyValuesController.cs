@@ -24,6 +24,7 @@ namespace Azure.AppConfiguration.Emulator.Service
     [ApiVersion(ApiVersions.V23_10)]
     [ApiVersion(ApiVersions.V23_11)]
     [ApiVersion(ApiVersions.V24_09)]
+    [ApiVersion(ApiVersions.V26_04)]
     [ApiController]
     [Route("kv")]
     [Authorize]
@@ -144,6 +145,7 @@ namespace Azure.AppConfiguration.Emulator.Service
                 Label = SearchQuery.NormalizeNull(label),
                 ContentType = model.ContentType,
                 Value = model.Value,
+                Description = model.Description,
                 Tags = model.Tags?.AsReadOnly()
             };
 
@@ -238,6 +240,7 @@ namespace Azure.AppConfiguration.Emulator.Service
             return x.Key == y.Key &&
                    x.ContentType == y.ContentType &&
                    x.Value == y.Value &&
+                   x.Description == y.Description &&
                    Enumerable.SequenceEqual(
                        x.Tags ?? EmptyTags,
                        y.Tags ?? EmptyTags);
