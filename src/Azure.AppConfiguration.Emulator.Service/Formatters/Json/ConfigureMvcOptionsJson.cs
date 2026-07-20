@@ -141,7 +141,8 @@ namespace Azure.AppConfiguration.Emulator.Service.Formatters.Json
                     _charPool,
                     o,
                     new SnapshotJsonOutputSerializer(),
-                    new SnapshotJsonOutputSerializer2()));
+                    new SnapshotJsonOutputSerializer2(),
+                    new SnapshotJsonOutputSerializer3()));
 
             o.OutputFormatters.Insert(
                 6,
@@ -150,7 +151,8 @@ namespace Azure.AppConfiguration.Emulator.Service.Formatters.Json
                     _charPool,
                     o,
                     new SnapshotsJsonOutputSerializer(),
-                    new SnapshotsJsonOutputSerializer2()));
+                    new SnapshotsJsonOutputSerializer2(),
+                    new SnapshotsJsonOutputSerializer3()));
 
             o.OutputFormatters.Insert(
                 7,

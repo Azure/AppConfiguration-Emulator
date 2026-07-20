@@ -33,6 +33,13 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
             }
 
             //
+            // description
+            if (snapshot.Description != null)
+            {
+                writer.WriteString(SnapshotJsonFields.Description, snapshot.Description);
+            }
+
+            //
             // etag
             if (snapshot.Etag != null)
             {

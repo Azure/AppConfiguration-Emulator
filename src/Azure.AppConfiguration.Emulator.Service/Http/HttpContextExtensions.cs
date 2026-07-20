@@ -281,6 +281,13 @@ namespace Azure.AppConfiguration.Emulator.Service.Http
             }
 
             //
+            // description
+            if (fields.Exists("description"))
+            {
+                snapshotFields |= SnapshotFields.Description;
+            }
+
+            //
             // Cache
             request.HttpContext.Items[SnapshotFieldsKey] = snapshotFields;
 

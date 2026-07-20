@@ -14,6 +14,8 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
 
         public string Name { get; set; }
 
+        public string Description { get; set; }
+
         public IEnumerable<KeyValueFilter> Filters { get; set; }
 
         public CompositionType CompositionType { get; set; }

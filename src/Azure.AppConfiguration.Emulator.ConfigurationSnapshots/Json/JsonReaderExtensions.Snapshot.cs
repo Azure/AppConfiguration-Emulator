@@ -85,6 +85,16 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
             }
 
             //
+            // description
+            if (propertyName.IsEqual(SnapshotJsonFields.Description) &&
+                reader.Read())
+            {
+                snapshot.Description = reader.GetString();
+
+                return;
+            }
+
+            //
             // etag
             if (propertyName.IsEqual(SnapshotJsonFields.Etag) &&
                 reader.Read())

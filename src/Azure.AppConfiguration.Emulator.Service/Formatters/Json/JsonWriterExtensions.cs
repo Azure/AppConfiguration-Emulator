@@ -518,6 +518,180 @@ namespace Azure.AppConfiguration.Emulator.Service.Formatters.Json
             await writer.WriteEndObjectAsync();
         }
 
+        public static async Task WriteV3Async(
+            this JsonWriter writer,
+            Snapshot snapshot,
+            long fields)
+        {
+            if (writer == null)
+            {
+                throw new ArgumentNullException(nameof(writer));
+            }
+
+            if (snapshot == null)
+            {
+                throw new ArgumentNullException(nameof(snapshot));
+            }
+
+            await writer.WriteStartObjectAsync();
+
+            //
+            // etag
+            if ((fields & (long)SnapshotFields.Etag) == (long)SnapshotFields.Etag)
+            {
+                await writer.WritePropertyNameAsync("etag");
+                await writer.WriteValueAsync(snapshot.Etag);
+            }
+
+            //
+            // name
+            if ((fields & (long)SnapshotFields.Name) == (long)SnapshotFields.Name)
+            {
+                await writer.WritePropertyNameAsync("name");
+                await writer.WriteValueAsync(snapshot.Name);
+            }
+
+            //
+            // description
+            if ((fields & (long)SnapshotFields.Description) == (long)SnapshotFields.Description)
+            {
+                await writer.WritePropertyNameAsync("description");
+                await writer.WriteValueAsync(snapshot.Description);
+            }
+
+            // status
+            if ((fields & (long)SnapshotFields.Status) == (long)SnapshotFields.Status)
+            {
+                await writer.WritePropertyNameAsync("status");
+                await writer.WriteValueAsync(GetSnapshotStatus(snapshot.Status));
+            }
+
+            //
+            // filters
+            if ((fields & (long)SnapshotFields.Filters) == (long)SnapshotFields.Filters)
+            {
+                await writer.WritePropertyNameAsync("filters");
+
+                await writer.WriteStartArrayAsync();
+
+                if (snapshot.Filters != null)
+                {
+                    foreach (var filter in snapshot.Filters)
+                    {
+                        await writer.WriteStartObjectAsync();
+
+                        //
+                        // key
+                        await writer.WritePropertyNameAsync("key");
+                        await writer.WriteValueAsync(filter.Key);
+
+                        //
+                        // label
+                        await writer.WritePropertyNameAsync("label");
+                        await writer.WriteValueAsync(filter.Label);
+
+                        //
+                        // tags
+                        await writer.WritePropertyNameAsync("tags");
+                        await writer.WriteStartArrayAsync();
+
+                        if (filter.Tags != null)
+                        {
+                            const char tagFilterSeparator = '=';
+
+                            foreach (KeyValuePair<string, string> tagFilter in filter.Tags)
+                            {
+                                // escape all reserved characters and '=' character
+                                string escapedKey = SearchQuery.Escape(tagFilter.Key, tagFilterSeparator);
+                                string escapedValue = SearchQuery.Escape(tagFilter.Value, tagFilterSeparator);
+
+                                await writer.WriteValueAsync($"{escapedKey}{tagFilterSeparator}{escapedValue}");
+                            }
+                        }
+
+                        await writer.WriteEndArrayAsync();
+
+                        await writer.WriteEndObjectAsync();
+                    }
+                }
+
+                await writer.WriteEndArrayAsync();
+            }
+
+            //
+            // composition_type
+            if ((fields & (long)SnapshotFields.CompositionType) == (long)SnapshotFields.CompositionType)
+            {
+                await writer.WritePropertyNameAsync("composition_type");
+                await writer.WriteValueAsync(GetCompositionType(snapshot.CompositionType));
+            }
+
+            //
+            // created
+            if ((fields & (long)SnapshotFields.Created) == (long)SnapshotFields.Created)
+            {
+                await writer.WritePropertyNameAsync("created");
+                await writer.WriteValueAsync(snapshot.Created);
+            }
+
+            //
+            // expires
+            if ((fields & (long)SnapshotFields.Expires) == (long)SnapshotFields.Expires)
+            {
+                if (snapshot.Expires.HasValue)
+                {
+                    await writer.WritePropertyNameAsync("expires");
+                    await writer.WriteValueAsync(snapshot.Expires.Value);
+                }
+            }
+
+            //
+            // size
+            if ((fields & (long)SnapshotFields.Size) == (long)SnapshotFields.Size)
+            {
+                await writer.WritePropertyNameAsync("size");
+                await writer.WriteValueAsync(snapshot.Size);
+            }
+
+            //
+            // items_count
+            if ((fields & (long)SnapshotFields.ItemsCount) == (long)SnapshotFields.ItemsCount)
+            {
+                await writer.WritePropertyNameAsync("items_count");
+                await writer.WriteValueAsync(snapshot.ItemCount);
+            }
+
+            //
+            // tags
+            if ((fields & (long)SnapshotFields.Tags) == (long)SnapshotFields.Tags)
+            {
+                await writer.WritePropertyNameAsync("tags");
+
+                await writer.WriteStartObjectAsync();
+
+                if (snapshot.Tags != null)
+                {
+                    foreach (var t in snapshot.Tags)
+                    {
+                        await writer.WritePropertyNameAsync(t.Key);
+                        await writer.WriteValueAsync(t.Value);
+                    }
+                }
+
+                await writer.WriteEndObjectAsync();
+            }
+
+            //
+            // retention_period
+            if ((fields & (long)SnapshotFields.RetentionPeriod) == (long)SnapshotFields.RetentionPeriod)
+            {
+                await writer.WritePropertyNameAsync("retention_period");
+                await writer.WriteValueAsync((int)snapshot.RetentionPeriod.TotalSeconds);
+            }
+
+            await writer.WriteEndObjectAsync();
+        }
+
         public static async Task WriteAsync(
            this JsonWriter writer,
            OperationStatus operationStatus)

@@ -143,6 +143,7 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
                 Id = SnapshotHelper.GenerateId(snapshot.Name, _tenant.ResourceId),
                 Etag = SnapshotHelper.GenerateEtag(),
                 Name = snapshot.Name,
+                Description = snapshot.Description,
                 Filters = snapshot.Filters,
                 Tags = snapshot.Tags,
                 CompositionType = snapshot.CompositionType,
