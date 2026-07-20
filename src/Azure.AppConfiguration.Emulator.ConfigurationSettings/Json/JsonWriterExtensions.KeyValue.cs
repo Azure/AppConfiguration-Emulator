@@ -58,6 +58,13 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
             }
 
             //
+            // description
+            if (kv.Description != null)
+            {
+                writer.WriteString(JsonFields.Description, kv.Description);
+            }
+
+            //
             // tags
             if (kv.Tags != null)
             {

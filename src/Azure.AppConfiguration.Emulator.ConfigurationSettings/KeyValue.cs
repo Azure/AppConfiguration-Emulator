@@ -39,6 +39,11 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
         public string Value { get; set; }
 
         /// <summary>
+        /// Description of key value.
+        /// </summary>
+        public string Description { get; set; }
+
+        /// <summary>
         /// Created time of key value.
         /// </summary>
         public DateTimeOffset Timestamp { get; set; }
