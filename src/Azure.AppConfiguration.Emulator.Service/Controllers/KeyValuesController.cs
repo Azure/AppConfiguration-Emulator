@@ -24,6 +24,7 @@ namespace Azure.AppConfiguration.Emulator.Service
     [ApiVersion(ApiVersions.V23_10)]
     [ApiVersion(ApiVersions.V23_11)]
     [ApiVersion(ApiVersions.V24_09)]
+    [ApiVersion(ApiVersions.V26_04)]
     [ApiController]
     [Route("kv")]
     [Authorize]
@@ -79,6 +80,7 @@ namespace Azure.AppConfiguration.Emulator.Service
             string key,
 
             [FromQuery]
+            [Literal(NormalizeNull = true)]
             string label,
 
             [Tags]
@@ -90,7 +92,6 @@ namespace Azure.AppConfiguration.Emulator.Service
         {
             //
             // Escape the filters to ensure exact match criteria
-            //
             return (await _provider.QueryKeyValues(
                 new KeyValueSearchOptions
                 {
@@ -98,11 +99,12 @@ namespace Azure.AppConfiguration.Emulator.Service
                     {
                         EqualsTo = SearchQuery.Escape(key)
                     },
-
-                    LabelFilter = new StringFilter
-                    {
-                        EqualsTo = SearchQuery.Escape(label)
-                    },
+                    LabelFilter = SearchQuery.IsNullOrZero(label) ?
+                        StringFilter.NullString :
+                        new StringFilter
+                        {
+                            EqualsTo = SearchQuery.Escape(label)
+                        },
                     Tags = tags,
                     TimeGate = timeGate
                 },
@@ -139,10 +141,11 @@ namespace Azure.AppConfiguration.Emulator.Service
 
             var kv = new KeyValue
             {
-                Label = label,
                 Key = key,
+                Label = SearchQuery.NormalizeNull(label),
                 ContentType = model.ContentType,
                 Value = model.Value,
+                Description = model.Description,
                 Tags = model.Tags?.AsReadOnly()
             };
 
@@ -237,6 +240,7 @@ namespace Azure.AppConfiguration.Emulator.Service
             return x.Key == y.Key &&
                    x.ContentType == y.ContentType &&
                    x.Value == y.Value &&
+                   x.Description == y.Description &&
                    Enumerable.SequenceEqual(
                        x.Tags ?? EmptyTags,
                        y.Tags ?? EmptyTags);

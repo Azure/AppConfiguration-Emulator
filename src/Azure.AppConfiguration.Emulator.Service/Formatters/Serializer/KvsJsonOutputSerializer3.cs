@@ -6,22 +6,18 @@ using Azure.AppConfiguration.Emulator.Service.Formatters.Json;
 using Azure.AppConfiguration.Emulator.Versioning;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Net.Http.Headers;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Threading.Tasks;
 
 namespace Azure.AppConfiguration.Emulator.Service.Formatters.Serializer
 {
-    [ApiVersion(ApiVersions.V1)]
-    [ApiVersion(ApiVersions.V23_10)]
-    [ApiVersion(ApiVersions.V23_11)]
-    [ApiVersion(ApiVersions.V24_09)]
     [ApiVersion(ApiVersions.V26_04)]
-    class KeysJsonOutputSerializer : IOuputSerializer<IEnumerable<Key>>
+    class KvsJsonOutputSerializer3 : IOuputSerializer<IEnumerable<KeyValue>>
     {
-        public async Task WriteContent(JsonWriter jw, IEnumerable<Key> items, long fields)
+        public async Task WriteContent(JsonWriter jw, IEnumerable<KeyValue> items, long fields)
         {
             if (jw == null)
             {
@@ -35,23 +31,30 @@ namespace Azure.AppConfiguration.Emulator.Service.Formatters.Serializer
 
             await jw.WriteStartObjectAsync();
 
+            IPage page = items as IPage;
+
+            //
+            // etag
+            if (page != null)
+            {
+                await jw.WriteEtagAsync(page.Etag);
+            }
+
             //
             // items
             await jw.WritePropertyNameAsync("items");
 
             await jw.WriteStartArrayAsync();
 
-            foreach (Key k in items)
+            foreach (KeyValue kv in items)
             {
-                await jw.WriteAsync(k, fields);
+                await jw.WriteV2Async(kv, fields);
             }
 
             await jw.WriteEndArrayAsync();
 
             //
             // Pagination
-            var page = items as IPage;
-
             if (page != null)
             {
                 await jw.WritePaginationAsync(page);
@@ -60,6 +63,28 @@ namespace Azure.AppConfiguration.Emulator.Service.Formatters.Serializer
             await jw.WriteEndObjectAsync();
         }
 
-        public void WriteResponseHeaders(HttpResponse response, IEnumerable<Key> obj) { }
+        public void WriteResponseHeaders(HttpResponse response, IEnumerable<KeyValue> obj)
+        {
+            if (response == null)
+            {
+                throw new ArgumentNullException(nameof(response));
+            }
+
+            if (obj == null)
+            {
+                throw new ArgumentNullException(nameof(obj));
+            }
+
+            //
+            // Etag
+            var etag = (IPage)obj;
+
+            if (string.IsNullOrEmpty(etag.Etag))
+            {
+                return;
+            }
+
+            response.Headers.ETag = new EntityTagHeaderValue($"\"{etag.Etag}\"").ToString();
+        }
     }
 }

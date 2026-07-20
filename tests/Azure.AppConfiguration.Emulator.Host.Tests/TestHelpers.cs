@@ -14,12 +14,15 @@ namespace Azure.AppConfiguration.Emulator.Host.Tests
             string value,
             string label = null,
             Dictionary<string, string> tags = null,
-            string contentType = null)
+            string contentType = null,
+            string description = null,
+            string apiVersion = null)
         {
             var keyValueObject = new
             {
                 value,
                 content_type = contentType,
+                description,
                 tags
             };
 
@@ -29,10 +32,21 @@ namespace Azure.AppConfiguration.Emulator.Host.Tests
                 Encoding.UTF8,
                 "application/vnd.microsoft.appconfig.kv+json");
 
-            string url = $"/kv/{key}";
+            var query = new List<string>();
             if (!string.IsNullOrEmpty(label))
             {
-                url += $"?label={label}";
+                query.Add($"label={label}");
+            }
+
+            if (!string.IsNullOrEmpty(apiVersion))
+            {
+                query.Add($"api-version={apiVersion}");
+            }
+
+            string url = $"/kv/{key}";
+            if (query.Any())
+            {
+                url += $"?{string.Join("&", query)}";
             }
 
             return await client.PutAsync(url, keyValueContent);
@@ -76,12 +90,23 @@ namespace Azure.AppConfiguration.Emulator.Host.Tests
             return JsonSerializer.Deserialize<LabelsResponse>(content, options);
         }
 
-        public static async Task<KeyValue> GetKeyValue(HttpClient client, string key, string label = null)
+        public static async Task<KeyValue> GetKeyValue(HttpClient client, string key, string label = null, string apiVersion = null)
         {
-            string url = $"/kv/{key}";
+            var query = new List<string>();
             if (!string.IsNullOrEmpty(label))
             {
-                url += $"?label={label}";
+                query.Add($"label={label}");
+            }
+
+            if (!string.IsNullOrEmpty(apiVersion))
+            {
+                query.Add($"api-version={apiVersion}");
+            }
+
+            string url = $"/kv/{key}";
+            if (query.Any())
+            {
+                url += $"?{string.Join("&", query)}";
             }
 
             var response = await client.GetAsync(url);
@@ -100,7 +125,7 @@ namespace Azure.AppConfiguration.Emulator.Host.Tests
             return JsonSerializer.Deserialize<KeyValue>(content, options);
         }
 
-        public static async Task<KeyValuesResponse> QueryKeyValues(HttpClient client, string key = null, string label = null)
+        public static async Task<KeyValuesResponse> QueryKeyValues(HttpClient client, string key = null, string label = null, string apiVersion = null)
         {
             var queryParams = new List<string>();
 
@@ -112,6 +137,11 @@ namespace Azure.AppConfiguration.Emulator.Host.Tests
             if (!string.IsNullOrEmpty(label))
             {
                 queryParams.Add($"label={label}");
+            }
+
+            if (!string.IsNullOrEmpty(apiVersion))
+            {
+                queryParams.Add($"api-version={apiVersion}");
             }
 
             string url = "/kv";
@@ -200,6 +230,7 @@ namespace Azure.AppConfiguration.Emulator.Host.Tests
         public string Label { get; set; }
         public string Value { get; set; }
         public string ContentType { get; set; }
+        public string Description { get; set; }
         public string ETag { get; set; }
         public Dictionary<string, string> Tags { get; set; }
     }

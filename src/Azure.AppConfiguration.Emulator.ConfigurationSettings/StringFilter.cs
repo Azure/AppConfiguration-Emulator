@@ -5,6 +5,8 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
 {
     public struct StringFilter
     {
+        private static readonly StringFilter _nullString = new StringFilter { IsNull = true };
+
         public bool IsNull { get; set; }
 
         public string EqualsTo { get; set; }
@@ -41,5 +43,7 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
         }
 
         public bool IsEmpty => !IsNull && Match(null);
+
+        public static StringFilter NullString => _nullString;
     }
 }

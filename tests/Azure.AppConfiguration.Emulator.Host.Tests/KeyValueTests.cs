@@ -7,6 +7,9 @@ namespace Azure.AppConfiguration.Emulator.Host.Tests
     {
         private readonly ITestServer _testServer;
 
+        private const string ApiVersionV26_04 = "2026-04-01";
+        private const string ApiVersionV24_09 = "2024-09-01";
+
         public KeyValueTests(TestServerFixture fixture)
         {
             _testServer = fixture.TestServer;
@@ -32,6 +35,7 @@ namespace Azure.AppConfiguration.Emulator.Host.Tests
             Assert.NotNull(keyValue);
             Assert.Equal(key, keyValue.Key);
             Assert.Equal(value, keyValue.Value);
+            Assert.Null(keyValue.Label);
             Assert.NotNull(keyValue.Tags);
             Assert.Contains(keyValue.Tags, t => t.Key == "env" && t.Value == "test");
         }
@@ -172,6 +176,158 @@ namespace Azure.AppConfiguration.Emulator.Host.Tests
             Assert.NotNull(keyValues);
             Assert.NotNull(keyValues.Items);
             Assert.Empty(keyValues.Items); // Verify that items list is empty
+        }
+
+        [Fact]
+        public async Task Put_ByPathWithNullLabel_CreatesKeyWithNullLabel()
+        {
+            // Arrange
+            var client = _testServer.Client;
+            var key = "nullLabel";
+            var value = "value-with-null-label";
+
+            // Act - Create via helper with label=%00 (null label)
+            var createResponse = await TestHelpers.CreateKeyValue(client, key, value, label: "%00");
+            createResponse.EnsureSuccessStatusCode();
+
+            // Assert via path GET with label=%00
+            var keyValue = await TestHelpers.GetKeyValue(client, key, label: "%00");
+            Assert.NotNull(keyValue);
+            Assert.Equal(key, keyValue.Key);
+            Assert.Equal(value, keyValue.Value);
+            Assert.Null(keyValue.Label);
+
+            // Also assert via query list endpoint
+            var keyValues = await TestHelpers.QueryKeyValues(client, key: key, label: "%00");
+            Assert.NotNull(keyValues);
+            Assert.NotEmpty(keyValues.Items);
+            Assert.Contains(keyValues.Items, kv => kv.Key == key && kv.Value == value && kv.Label == null);
+        }
+
+        [Fact]
+        public async Task SetAndGetKeyValue_WithDescription_ReturnsDescription()
+        {
+            // Arrange
+            var client = _testServer.Client;
+            var key = "description-key";
+            var value = "description-value";
+            var description = "This is a test description for the key-value";
+
+            // Act - Create with description using the 2026-04-01 API
+            var createResponse = await TestHelpers.CreateKeyValue(
+                client, key, value, description: description, apiVersion: ApiVersionV26_04);
+            createResponse.EnsureSuccessStatusCode();
+
+            var createdKv = await TestHelpers.GetKeyValue(client, key, apiVersion: ApiVersionV26_04);
+
+            // Assert - description round-trips
+            Assert.NotNull(createdKv);
+            Assert.Equal(key, createdKv.Key);
+            Assert.Equal(value, createdKv.Value);
+            Assert.Equal(description, createdKv.Description);
+        }
+
+        [Fact]
+        public async Task SetKeyValue_WithNullDescription_ReturnsNull()
+        {
+            // Arrange
+            var client = _testServer.Client;
+            var key = "null-description-key";
+
+            // Act - Create without a description
+            var createResponse = await TestHelpers.CreateKeyValue(
+                client, key, "value", description: null, apiVersion: ApiVersionV26_04);
+            createResponse.EnsureSuccessStatusCode();
+
+            var kv = await TestHelpers.GetKeyValue(client, key, apiVersion: ApiVersionV26_04);
+
+            // Assert
+            Assert.NotNull(kv);
+            Assert.Null(kv.Description);
+        }
+
+        [Fact]
+        public async Task SetKeyValue_WithEmptyDescription_ReturnsEmpty()
+        {
+            // Arrange
+            var client = _testServer.Client;
+            var key = "empty-description-key";
+
+            // Act - Create with an empty description (distinct from null)
+            var createResponse = await TestHelpers.CreateKeyValue(
+                client, key, "value", description: string.Empty, apiVersion: ApiVersionV26_04);
+            createResponse.EnsureSuccessStatusCode();
+
+            var kv = await TestHelpers.GetKeyValue(client, key, apiVersion: ApiVersionV26_04);
+
+            // Assert
+            Assert.NotNull(kv);
+            Assert.Equal(string.Empty, kv.Description);
+        }
+
+        [Fact]
+        public async Task QueryKeyValues_WithDescription_ReturnsDescription()
+        {
+            // Arrange
+            var client = _testServer.Client;
+            var key = "list-description-key";
+            var description = "description in list";
+
+            var createResponse = await TestHelpers.CreateKeyValue(
+                client, key, "value", description: description, apiVersion: ApiVersionV26_04);
+            createResponse.EnsureSuccessStatusCode();
+
+            // Act - List KVs (uses the collection serializer)
+            var keyValues = await TestHelpers.QueryKeyValues(client, key: key, apiVersion: ApiVersionV26_04);
+
+            // Assert
+            Assert.NotNull(keyValues);
+            Assert.NotNull(keyValues.Items);
+            var item = keyValues.Items.FirstOrDefault(kv => kv.Key == key);
+            Assert.NotNull(item);
+            Assert.Equal(description, item.Description);
+        }
+
+        [Fact]
+        public async Task GetKeyValue_OldApiVersion_OmitsDescription()
+        {
+            // Arrange - store a description using the new API
+            var client = _testServer.Client;
+            var key = "filter-description-key";
+            var description = "stored description";
+
+            var createResponse = await TestHelpers.CreateKeyValue(
+                client, key, "value", description: description, apiVersion: ApiVersionV26_04);
+            createResponse.EnsureSuccessStatusCode();
+
+            // Act - Read the same KV using an older API version
+            var oldVersionKv = await TestHelpers.GetKeyValue(client, key, apiVersion: ApiVersionV24_09);
+            var newVersionKv = await TestHelpers.GetKeyValue(client, key, apiVersion: ApiVersionV26_04);
+
+            // Assert - description is filtered out for the old version but preserved for the new one
+            Assert.NotNull(oldVersionKv);
+            Assert.Null(oldVersionKv.Description);
+            Assert.NotNull(newVersionKv);
+            Assert.Equal(description, newVersionKv.Description);
+        }
+
+        [Fact]
+        public async Task SetKeyValue_OldApiVersion_IgnoresDescription()
+        {
+            // Arrange
+            var client = _testServer.Client;
+            var key = "ignore-description-key";
+            var description = "should be ignored";
+
+            // Act - Try to set a description using an older API version
+            var createResponse = await TestHelpers.CreateKeyValue(
+                client, key, "value", description: description, apiVersion: ApiVersionV24_09);
+            createResponse.EnsureSuccessStatusCode();
+
+            // Assert - description was not stored (read back with the new API version)
+            var kv = await TestHelpers.GetKeyValue(client, key, apiVersion: ApiVersionV26_04);
+            Assert.NotNull(kv);
+            Assert.Null(kv.Description);
         }
     }
 }

@@ -106,6 +106,107 @@ namespace Azure.AppConfiguration.Emulator.Service.Formatters.Json
             await writer.WriteEndObjectAsync();
         }
 
+        public static async Task WriteV2Async(this JsonWriter writer, KeyValue kv, long fields)
+        {
+            if (writer == null)
+            {
+                throw new ArgumentNullException(nameof(writer));
+            }
+
+            if (kv == null)
+            {
+                throw new ArgumentNullException(nameof(kv));
+            }
+
+            await writer.WriteStartObjectAsync();
+
+            //
+            // etag
+            if ((fields & (long)KeyValueFields.Etag) == (long)KeyValueFields.Etag)
+            {
+                await writer.WritePropertyNameAsync("etag");
+                await writer.WriteValueAsync(kv.Etag);
+            }
+
+            //
+            // key
+            if ((fields & (long)KeyValueFields.Key) == (long)KeyValueFields.Key)
+            {
+                await writer.WritePropertyNameAsync("key");
+                await writer.WriteValueAsync(kv.Key);
+            }
+
+            //
+            // label
+            if ((fields & (long)KeyValueFields.Label) == (long)KeyValueFields.Label)
+            {
+                await writer.WritePropertyNameAsync("label");
+                await writer.WriteValueAsync(kv.Label);
+            }
+
+            //
+            // content_type
+            if ((fields & (long)KeyValueFields.ContentType) == (long)KeyValueFields.ContentType)
+            {
+                await writer.WritePropertyNameAsync("content_type");
+                await writer.WriteValueAsync(kv.ContentType);
+            }
+
+            //
+            // value
+            if ((fields & (long)KeyValueFields.Value) == (long)KeyValueFields.Value)
+            {
+                await writer.WritePropertyNameAsync("value");
+                await writer.WriteValueAsync(kv.Value);
+            }
+
+            //
+            // description
+            if ((fields & (long)KeyValueFields.Description) == (long)KeyValueFields.Description)
+            {
+                await writer.WritePropertyNameAsync("description");
+                await writer.WriteValueAsync(kv.Description);
+            }
+
+            //
+            // tags
+            if ((fields & (long)KeyValueFields.Tags) == (long)KeyValueFields.Tags)
+            {
+                await writer.WritePropertyNameAsync("tags");
+
+                await writer.WriteStartObjectAsync();
+
+                if (kv.Tags != null)
+                {
+                    foreach (var t in kv.Tags)
+                    {
+                        await writer.WritePropertyNameAsync(t.Key);
+                        await writer.WriteValueAsync(t.Value);
+                    }
+                }
+
+                await writer.WriteEndObjectAsync();
+            }
+
+            //
+            // locked
+            if ((fields & (long)KeyValueFields.Locked) == (long)KeyValueFields.Locked)
+            {
+                await writer.WritePropertyNameAsync("locked");
+                await writer.WriteValueAsync(kv.Locked);
+            }
+
+            //
+            // last_modified
+            if ((fields & (long)KeyValueFields.LastModified) == (long)KeyValueFields.LastModified)
+            {
+                await writer.WritePropertyNameAsync("last_modified");
+                await writer.WriteValueAsync(kv.Timestamp);
+            }
+
+            await writer.WriteEndObjectAsync();
+        }
+
         public static async Task WriteAsync(
             this JsonWriter writer,
             Snapshot snapshot,
