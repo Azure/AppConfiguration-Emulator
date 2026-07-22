@@ -91,19 +91,19 @@ namespace Azure.AppConfiguration.Emulator.Service
             CancellationToken cancellationToken)
         {
             //
-            // Escape the filters to ensure exact match criteria
+            // Match the key/label literally
             return (await _provider.QueryKeyValues(
                 new KeyValueSearchOptions
                 {
                     KeyFilter = new StringFilter
                     {
-                        EqualsTo = SearchQuery.Escape(key)
+                        EqualsTo = key
                     },
                     LabelFilter = SearchQuery.IsNullOrZero(label) ?
                         StringFilter.NullString :
                         new StringFilter
                         {
-                            EqualsTo = SearchQuery.Escape(label)
+                            EqualsTo = label
                         },
                     Tags = tags,
                     TimeGate = timeGate
