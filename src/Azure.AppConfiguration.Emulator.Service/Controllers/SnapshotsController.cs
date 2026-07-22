@@ -80,7 +80,7 @@ namespace Azure.AppConfiguration.Emulator.Service
             return (await _provider.Get(
                 new SnapshotSearchOptions
                 {
-                    Name = SearchQuery.Escape(name),
+                    Name = name,
                     Status = SnapshotStatusSearch.All
                 },
                 cancellationToken)).FirstOrDefault();
@@ -101,7 +101,7 @@ namespace Azure.AppConfiguration.Emulator.Service
             Snapshot target = (await _provider.Get(
                 new SnapshotSearchOptions
                 {
-                    Name = SearchQuery.Escape(snapshotName),
+                    Name = snapshotName,
                     Status = SnapshotStatusSearch.Ready |
                         SnapshotStatusSearch.Archived
                 },
@@ -142,7 +142,7 @@ namespace Azure.AppConfiguration.Emulator.Service
             Snapshot existing = (await _provider.Get(
                 new SnapshotSearchOptions
                 {
-                    Name = SearchQuery.Escape(name),
+                    Name = name,
                     Status = SnapshotStatusSearch.All
                 },
                 cancellationToken)).FirstOrDefault();
@@ -203,7 +203,7 @@ namespace Azure.AppConfiguration.Emulator.Service
                 // front. Re-query to get the fully-provisioned snapshot to return.
                 Snapshot created = (await _provider.Get(new SnapshotSearchOptions
                 {
-                    Name = SearchQuery.Escape(name),
+                    Name = name,
                     Status = SnapshotStatusSearch.All
                 }, cancellationToken)).FirstOrDefault();
 
@@ -254,7 +254,7 @@ namespace Azure.AppConfiguration.Emulator.Service
             Snapshot snapshot = (await _provider.Get(
                 new SnapshotSearchOptions
                 {
-                    Name = SearchQuery.Escape(name),
+                    Name = name,
                     Status = SnapshotStatusSearch.All
                 },
                 cancellationToken)).FirstOrDefault();
@@ -333,7 +333,7 @@ namespace Azure.AppConfiguration.Emulator.Service
             Snapshot snapshot = (await _provider.Get(
                 new SnapshotSearchOptions
                 {
-                    Name = SearchQuery.Escape(snapshotName),
+                    Name = snapshotName,
                     Status = SnapshotStatusSearch.All
                 },
                 cancellationToken)).FirstOrDefault();

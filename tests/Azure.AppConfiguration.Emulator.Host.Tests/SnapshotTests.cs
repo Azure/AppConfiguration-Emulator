@@ -81,5 +81,44 @@ namespace Azure.AppConfiguration.Emulator.Host.Tests
             var err = await second.Content.ReadAsStringAsync();
             Assert.Contains("already-exists", err);
         }
+
+        [Theory]
+        [InlineData("snap*name")]
+        [InlineData("snap,name")]
+        public async Task Snapshot_WithReservedCharactersInName_IsRetrievable(string snapshotName)
+        {
+            var client = _testServer.Client;
+
+            var key = "snap-reserved-key";
+            await TestHelpers.CreateKeyValue(client, key, "v1");
+
+            var body = new
+            {
+                composition_type = "key",
+                filters = new[]
+                {
+                    new { key = key, label = (string)null }
+                }
+            };
+            var json = JsonSerializer.Serialize(body);
+            var content = new StringContent(json, Encoding.UTF8, "application/vnd.microsoft.appconfig.snapshot+json");
+
+            // Create - the re-query must find the just-created snapshot and return a Ready body
+            var putResponse = await client.PutAsync($"/snapshots/{snapshotName}?api-version={ApiVersion}", content);
+            Assert.Equal(System.Net.HttpStatusCode.Created, putResponse.StatusCode);
+            var putBody = await putResponse.Content.ReadAsStringAsync();
+            Assert.Contains("\"status\":\"ready\"", putBody);
+
+            var getResponse = await client.GetAsync($"/snapshots/{snapshotName}?api-version={ApiVersion}");
+            Assert.Equal(System.Net.HttpStatusCode.OK, getResponse.StatusCode);
+            Assert.Contains("\"status\":\"ready\"", await getResponse.Content.ReadAsStringAsync());
+
+            var kvPage = await client.GetAsync($"/kv?snapshot={snapshotName}&api-version={ApiVersion}");
+            kvPage.EnsureSuccessStatusCode();
+            Assert.Contains(key, await kvPage.Content.ReadAsStringAsync());
+
+            var opResponse = await client.GetAsync($"/operations?snapshot={snapshotName}&api-version={ApiVersion}");
+            Assert.Equal(System.Net.HttpStatusCode.OK, opResponse.StatusCode);
+        }
     }
 }
