@@ -69,6 +69,52 @@ namespace Azure.AppConfiguration.Emulator.Host.Tests
             Assert.Equal(prodLabel, keyValue.Label);
         }
 
+        [Theory]
+        [InlineData("my*key")]
+        [InlineData("my,key")]
+        [InlineData("app*,dev")]
+        public async Task GetKeyValue_ByPathWithReservedCharactersInKey_ReturnsCorrectKeyValue(string key)
+        {
+            // Arrange - Create a key containing search-query reserved characters (*, ',').
+            // The key is stored literally, so an exact-match GET must not escape it.
+            // Regression: escaping the path key produced a false 404.
+            var client = _testServer.Client;
+            var value = "reserved-char-value";
+
+            var createResponse = await TestHelpers.CreateKeyValue(client, key, value);
+            createResponse.EnsureSuccessStatusCode();
+
+            // Act - Get the key-value by path
+            var keyValue = await TestHelpers.GetKeyValue(client, key);
+
+            // Assert
+            Assert.NotNull(keyValue);
+            Assert.Equal(key, keyValue.Key);
+            Assert.Equal(value, keyValue.Value);
+        }
+
+        [Fact]
+        public async Task GetKeyValue_ByPathWithReservedCharactersInLabel_ReturnsCorrectKeyValue()
+        {
+            // Arrange - Create a key-value whose label contains reserved characters
+            var client = _testServer.Client;
+            var key = "reserved-label-key";
+            var value = "reserved-label-value";
+            var label = "a,b*c";
+
+            var createResponse = await TestHelpers.CreateKeyValue(client, key, value, label: label);
+            createResponse.EnsureSuccessStatusCode();
+
+            // Act - Get the key-value by path with the reserved-character label
+            var keyValue = await TestHelpers.GetKeyValue(client, key, label);
+
+            // Assert
+            Assert.NotNull(keyValue);
+            Assert.Equal(key, keyValue.Key);
+            Assert.Equal(value, keyValue.Value);
+            Assert.Equal(label, keyValue.Label);
+        }
+
         [Fact]
         public async Task GetKeyValue_ByQuery_ReturnsCorrectKeyValue()
         {

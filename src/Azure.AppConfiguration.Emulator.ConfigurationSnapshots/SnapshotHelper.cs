@@ -28,7 +28,7 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
             using (IncrementalHash alg = IncrementalHash.CreateHash(HashAlgorithmName.SHA256))
             {
                 //
-                // AppId
+                // ResourceId
                 alg.AppendData(encoding.GetBytes(resourceId));
                 alg.AppendData(Delimiter);
 

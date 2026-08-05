@@ -44,7 +44,7 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
 
             _metadataFilePath = Path.GetFullPath(_metadataFilePath);
 
-            InsureFileExist(_metadataFilePath);
+            EnsureFileExists(_metadataFilePath);
 
             string directory = _options.ContentDirectory;
             if (!Path.IsPathRooted(directory))
@@ -463,7 +463,7 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
             }
         }
 
-        private static void InsureFileExist(string filePath)
+        private static void EnsureFileExists(string filePath)
         {
             Debug.Assert(!string.IsNullOrEmpty(filePath));
 
