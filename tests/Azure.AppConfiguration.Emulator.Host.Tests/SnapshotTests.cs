@@ -9,6 +9,7 @@ namespace Azure.AppConfiguration.Emulator.Host.Tests
     {
         private readonly ITestServer _testServer;
         private const string ApiVersion = "2024-09-01";
+        private const string ApiVersionV26_04 = "2026-04-01";
 
         public SnapshotTests(TestServerFixture fixture)
         {
@@ -80,6 +81,46 @@ namespace Azure.AppConfiguration.Emulator.Host.Tests
 
             var err = await second.Content.ReadAsStringAsync();
             Assert.Contains("already-exists", err);
+        }
+
+        [Fact]
+        public async Task CreateSnapshot_WithDescription_ReturnsDescription()
+        {
+            var client = _testServer.Client;
+
+            var key = "snap-desc-key";
+            await TestHelpers.CreateKeyValue(client, key, "v1", label: "dev");
+
+            var snapshotName = "snapshot-with-description";
+            var description = "This is a test description for the snapshot";
+            var snapshotBody = new
+            {
+                description,
+                composition_type = "key",
+                filters = new[]
+                {
+                    new { key, label = "dev" }
+                }
+            };
+
+            var json = JsonSerializer.Serialize(snapshotBody);
+            var content = new StringContent(json, Encoding.UTF8, "application/vnd.microsoft.appconfig.snapshot+json");
+
+            // Create using the 2026-04-01 API
+            var putResponse = await client.PutAsync($"/snapshots/{snapshotName}?api-version={ApiVersionV26_04}", content);
+            Assert.Equal(System.Net.HttpStatusCode.Created, putResponse.StatusCode);
+
+            // Description round-trips on the 2026-04-01 API
+            var getResponse = await client.GetAsync($"/snapshots/{snapshotName}?api-version={ApiVersionV26_04}");
+            getResponse.EnsureSuccessStatusCode();
+            var getContent = await getResponse.Content.ReadAsStringAsync();
+            Assert.Contains($"\"description\":\"{description}\"", getContent);
+
+            // Description is not emitted on the older API version
+            var oldResponse = await client.GetAsync($"/snapshots/{snapshotName}?api-version={ApiVersion}");
+            oldResponse.EnsureSuccessStatusCode();
+            var oldContent = await oldResponse.Content.ReadAsStringAsync();
+            Assert.DoesNotContain("\"description\"", oldContent);
         }
 
         [Fact]

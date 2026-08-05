@@ -28,6 +28,7 @@ namespace Azure.AppConfiguration.Emulator.Service
     [ApiVersion(ApiVersions.V23_10)]
     [ApiVersion(ApiVersions.V23_11)]
     [ApiVersion(ApiVersions.V24_09)]
+    [ApiVersion(ApiVersions.V26_04)]
     [ApiController]
     [Authorize]
     [ValidateActionParameters]
@@ -156,6 +157,7 @@ namespace Azure.AppConfiguration.Emulator.Service
             var snapshot = new Snapshot
             {
                 Name = name,
+                Description = entity.Description,
                 Tags = entity.Tags,
                 CompositionType = entity.CompositionType.HasValue ? entity.CompositionType.Value : CompositionType.Key,
                 RetentionPeriod = entity.RetentionPeriod.HasValue

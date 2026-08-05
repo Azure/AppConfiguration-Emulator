@@ -9,6 +9,7 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
     {
         public static readonly JsonEncodedText Id = JsonEncodedText.Encode("id");
         public static readonly JsonEncodedText Name = JsonEncodedText.Encode("name");
+        public static readonly JsonEncodedText Description = JsonEncodedText.Encode("description");
         public static readonly JsonEncodedText Etag = JsonEncodedText.Encode("etag");
         public static readonly JsonEncodedText Status = JsonEncodedText.Encode("status");
         public static readonly JsonEncodedText StatusCode = JsonEncodedText.Encode("status_code");

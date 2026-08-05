@@ -21,7 +21,8 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
         ItemsCount = 0x100,
         Tags = 0x200,
         RetentionPeriod = 0x400,
+        Description = 0x800,
 
-        All = Etag | Name | Status | Filters | CompositionType | Created | Expires | Size | ItemsCount | Tags | RetentionPeriod
+        All = Etag | Name | Status | Filters | CompositionType | Created | Expires | Size | ItemsCount | Tags | RetentionPeriod | Description
     }
 }

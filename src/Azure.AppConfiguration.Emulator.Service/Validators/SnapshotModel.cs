@@ -5,6 +5,7 @@ using Azure.AppConfiguration.Emulator.ConfigurationSettings;
 using Azure.AppConfiguration.Emulator.ConfigurationSnapshots;
 using Azure.AppConfiguration.Emulator.Search;
 using Azure.AppConfiguration.Emulator.Tenant;
+using Azure.AppConfiguration.Emulator.Versioning;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using System;
@@ -25,6 +26,9 @@ namespace Azure.AppConfiguration.Emulator.Service.Validators
         private const int MaximumFilterCount = 3;
 
         private static readonly int MinimumRetentionPeriod = (int)TimeSpan.FromHours(1).TotalSeconds;
+
+        [RequireApiVersion(minApiVersion: ApiVersions.V26_04)]
+        public string Description { get; set; }
 
         public CompositionType? CompositionType { get; set; }
 
