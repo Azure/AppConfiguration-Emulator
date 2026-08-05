@@ -43,7 +43,7 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
 
             _filePath = Path.GetFullPath(_filePath);
 
-            InsureFileExist(_filePath);
+            EnsureFileExists(_filePath);
         }
 
         public async IAsyncEnumerable<KeyValue> QueryKeyValues(
@@ -222,7 +222,7 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
             }
         }
 
-        private static void InsureFileExist(string filePath)
+        private static void EnsureFileExists(string filePath)
         {
             Debug.Assert(!string.IsNullOrEmpty(filePath));
 
