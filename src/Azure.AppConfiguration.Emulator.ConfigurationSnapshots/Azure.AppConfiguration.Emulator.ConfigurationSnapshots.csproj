@@ -8,6 +8,7 @@
 
   <ItemGroup>
 	  <ProjectReference Include="..\Azure.AppConfiguration.Emulator.ConfigurationSettings\Azure.AppConfiguration.Emulator.ConfigurationSettings.csproj" />
+	  <ProjectReference Include="..\Azure.AppConfiguration.Emulator.Search\Azure.AppConfiguration.Emulator.Search.csproj" />
   </ItemGroup>
 
 </Project>

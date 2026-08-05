@@ -82,6 +82,45 @@ namespace Azure.AppConfiguration.Emulator.Host.Tests
             Assert.Contains("already-exists", err);
         }
 
+        [Fact]
+        public async Task GetSnapshots_NamePrefixFilter_ReturnsMatchingSnapshots()
+        {
+            var client = _testServer.Client;
+            string testId = Guid.NewGuid().ToString("N");
+            string key = $"snapshot-filter-key-{testId}";
+            string namePrefix = $"snapshot-filter-{testId}-";
+            string firstMatchingName = $"{namePrefix}one";
+            string secondMatchingName = $"{namePrefix}two";
+            string nonMatchingName = $"other-snapshot-{testId}";
+
+            await TestHelpers.CreateKeyValue(client, key, "value");
+
+            var body = new
+            {
+                composition_type = "key",
+                filters = new[]
+                {
+                    new { key, label = (string)null }
+                }
+            };
+            string json = JsonSerializer.Serialize(body);
+
+            foreach (string snapshotName in new[] { firstMatchingName, secondMatchingName, nonMatchingName })
+            {
+                var content = new StringContent(json, Encoding.UTF8, "application/vnd.microsoft.appconfig.snapshot+json");
+                var response = await client.PutAsync($"/snapshots/{snapshotName}?api-version={ApiVersion}", content);
+                Assert.Equal(System.Net.HttpStatusCode.Created, response.StatusCode);
+            }
+
+            var listResponse = await client.GetAsync($"/snapshots?name={namePrefix}*&api-version={ApiVersion}");
+            listResponse.EnsureSuccessStatusCode();
+            string responseBody = await listResponse.Content.ReadAsStringAsync();
+
+            Assert.Contains(firstMatchingName, responseBody);
+            Assert.Contains(secondMatchingName, responseBody);
+            Assert.DoesNotContain(nonMatchingName, responseBody);
+        }
+
         [Theory]
         [InlineData("snap*name")]
         [InlineData("snap,name")]

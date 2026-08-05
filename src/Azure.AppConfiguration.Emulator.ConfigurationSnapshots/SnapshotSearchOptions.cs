@@ -1,11 +1,13 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+using Azure.AppConfiguration.Emulator.Search;
+
 namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
 {
     public class SnapshotSearchOptions
     {
-        public string Name { get; set; }
+        public StringFilter NameFilter { get; set; }
 
         public SnapshotStatusSearch Status { get; set; }
 

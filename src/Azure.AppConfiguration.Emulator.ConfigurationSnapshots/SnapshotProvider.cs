@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 using Azure.AppConfiguration.Emulator.ConfigurationSettings;
+using Azure.AppConfiguration.Emulator.Search;
 using Azure.AppConfiguration.Emulator.Tenant;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
@@ -206,12 +207,8 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots
 
             using IDisposable readLock = await _lock.ReadLock(cancellationToken);
 
-            IEnumerable<Snapshot> items = _cache;
-
-            if (!string.IsNullOrEmpty(options.Name))
-            {
-                items = items.Where(s => s.Name == options.Name);
-            }
+            IEnumerable<Snapshot> items = _cache
+                .Where(s => options.NameFilter.Match(s.Name));
 
             items = items.Where(s => MatchStatus(options.Status, s.Status));
 
