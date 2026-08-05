@@ -3,6 +3,7 @@
 
 using Azure.AppConfiguration.Emulator.ConfigurationSettings;
 using Azure.AppConfiguration.Emulator.ConfigurationSnapshots;
+using Azure.AppConfiguration.Emulator.Search;
 using Azure.AppConfiguration.Emulator.Service.LongRunningOperation;
 using Newtonsoft.Json;
 using System;

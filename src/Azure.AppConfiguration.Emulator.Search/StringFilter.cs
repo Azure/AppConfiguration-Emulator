@@ -1,7 +1,7 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 
-namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
+namespace Azure.AppConfiguration.Emulator.Search
 {
     public struct StringFilter
     {

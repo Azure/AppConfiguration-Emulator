@@ -1,4 +1,5 @@
 using Azure.AppConfiguration.Emulator.ConfigurationSettings;
+using Azure.AppConfiguration.Emulator.Search;
 using Azure.AppConfiguration.Emulator.Tenant;
 using Microsoft.Extensions.Options;
 using Moq;
@@ -61,11 +62,38 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots.Tests
             await provider.StartAsync(CancellationToken.None);
 
             IEnumerable<Snapshot> result = await provider.Get(
-                new SnapshotSearchOptions { Name = "snapshot2", Status = SnapshotStatusSearch.All },
+                new SnapshotSearchOptions
+                {
+                    NameFilter = new StringFilter { EqualsTo = "snapshot2" },
+                    Status = SnapshotStatusSearch.All
+                },
                 CancellationToken.None);
 
             Snapshot single = Assert.Single(result);
             Assert.Equal("snapshot2", single.Name);
+        }
+
+        [Fact]
+        public async Task Get_ReturnsSnapshotsMatchingNamePrefix()
+        {
+            Mock<ISnapshotsStorage> storage = StorageWith(
+                NewReadySnapshot("app-snapshot1"),
+                NewReadySnapshot("app-snapshot2"),
+                NewReadySnapshot("other-snapshot"));
+
+            SnapshotProvider provider = CreateProvider(storage);
+            await provider.StartAsync(CancellationToken.None);
+
+            IEnumerable<Snapshot> result = await provider.Get(
+                new SnapshotSearchOptions
+                {
+                    NameFilter = new StringFilter { Prefix = "app-" },
+                    Status = SnapshotStatusSearch.All
+                },
+                CancellationToken.None);
+
+            Assert.Equal(2, result.Count());
+            Assert.All(result, snapshot => Assert.StartsWith("app-", snapshot.Name));
         }
 
         [Fact]
@@ -105,7 +133,11 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots.Tests
             await provider.Create(snapshot, CancellationToken.None);
 
             Snapshot created = (await provider.Get(
-                new SnapshotSearchOptions { Name = "snapshot1", Status = SnapshotStatusSearch.All },
+                new SnapshotSearchOptions
+                {
+                    NameFilter = new StringFilter { EqualsTo = "snapshot1" },
+                    Status = SnapshotStatusSearch.All
+                },
                 CancellationToken.None)).Single();
 
             Assert.Equal(SnapshotStatus.Ready, created.Status);
@@ -145,7 +177,11 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots.Tests
             await provider.Archive(snapshot, CancellationToken.None);
 
             Snapshot updated = (await provider.Get(
-                new SnapshotSearchOptions { Name = "snapshot1", Status = SnapshotStatusSearch.All },
+                new SnapshotSearchOptions
+                {
+                    NameFilter = new StringFilter { EqualsTo = "snapshot1" },
+                    Status = SnapshotStatusSearch.All
+                },
                 CancellationToken.None)).Single();
 
             Assert.Equal(SnapshotStatus.Archived, updated.Status);
@@ -168,7 +204,11 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSnapshots.Tests
             await provider.Recover(snapshot, CancellationToken.None);
 
             Snapshot updated = (await provider.Get(
-                new SnapshotSearchOptions { Name = "snapshot1", Status = SnapshotStatusSearch.All },
+                new SnapshotSearchOptions
+                {
+                    NameFilter = new StringFilter { EqualsTo = "snapshot1" },
+                    Status = SnapshotStatusSearch.All
+                },
                 CancellationToken.None)).Single();
 
             Assert.Equal(SnapshotStatus.Ready, updated.Status);

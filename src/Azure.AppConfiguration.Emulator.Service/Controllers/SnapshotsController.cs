@@ -3,6 +3,7 @@
 
 using Azure.AppConfiguration.Emulator.ConfigurationSettings;
 using Azure.AppConfiguration.Emulator.ConfigurationSnapshots;
+using Azure.AppConfiguration.Emulator.Search;
 using Azure.AppConfiguration.Emulator.Service.Http;
 using Azure.AppConfiguration.Emulator.Service.LongRunningOperation;
 using Azure.AppConfiguration.Emulator.Service.Utils;
@@ -60,7 +61,7 @@ namespace Azure.AppConfiguration.Emulator.Service
             return _provider.Get(
                 new SnapshotSearchOptions
                 {
-                    Name = name,
+                    NameFilter = SearchQuery.CreateStringFilter(name),
                     Status = status,
                     ContinuationToken = after
                 },
@@ -81,7 +82,7 @@ namespace Azure.AppConfiguration.Emulator.Service
             return (await _provider.Get(
                 new SnapshotSearchOptions
                 {
-                    Name = name,
+                    NameFilter = new StringFilter { EqualsTo = name },
                     Status = SnapshotStatusSearch.All
                 },
                 cancellationToken)).FirstOrDefault();
@@ -102,7 +103,7 @@ namespace Azure.AppConfiguration.Emulator.Service
             Snapshot target = (await _provider.Get(
                 new SnapshotSearchOptions
                 {
-                    Name = snapshotName,
+                    NameFilter = new StringFilter { EqualsTo = snapshotName },
                     Status = SnapshotStatusSearch.Ready |
                         SnapshotStatusSearch.Archived
                 },
@@ -143,7 +144,7 @@ namespace Azure.AppConfiguration.Emulator.Service
             Snapshot existing = (await _provider.Get(
                 new SnapshotSearchOptions
                 {
-                    Name = name,
+                    NameFilter = new StringFilter { EqualsTo = name },
                     Status = SnapshotStatusSearch.All
                 },
                 cancellationToken)).FirstOrDefault();
@@ -205,7 +206,7 @@ namespace Azure.AppConfiguration.Emulator.Service
                 // front. Re-query to get the fully-provisioned snapshot to return.
                 Snapshot created = (await _provider.Get(new SnapshotSearchOptions
                 {
-                    Name = name,
+                    NameFilter = new StringFilter { EqualsTo = name },
                     Status = SnapshotStatusSearch.All
                 }, cancellationToken)).FirstOrDefault();
 
@@ -256,7 +257,7 @@ namespace Azure.AppConfiguration.Emulator.Service
             Snapshot snapshot = (await _provider.Get(
                 new SnapshotSearchOptions
                 {
-                    Name = name,
+                    NameFilter = new StringFilter { EqualsTo = name },
                     Status = SnapshotStatusSearch.All
                 },
                 cancellationToken)).FirstOrDefault();
@@ -335,7 +336,7 @@ namespace Azure.AppConfiguration.Emulator.Service
             Snapshot snapshot = (await _provider.Get(
                 new SnapshotSearchOptions
                 {
-                    Name = snapshotName,
+                    NameFilter = new StringFilter { EqualsTo = snapshotName },
                     Status = SnapshotStatusSearch.All
                 },
                 cancellationToken)).FirstOrDefault();

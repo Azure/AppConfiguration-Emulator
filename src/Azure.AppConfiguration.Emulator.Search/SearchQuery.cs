@@ -7,7 +7,7 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Text;
 
-namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
+namespace Azure.AppConfiguration.Emulator.Search
 {
     public static class SearchQuery
     {
