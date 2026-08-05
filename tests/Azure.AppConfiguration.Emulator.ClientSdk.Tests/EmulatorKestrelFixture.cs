@@ -35,6 +35,7 @@ namespace Azure.AppConfiguration.Emulator.ClientSdk.Tests
                 $"--Hosting:PFX={serverCertificate}",
                 "--Tenant:AnonymousAuthEnabled=true",
                 "--Tenant:OutputPageSize=100",
+                "--SnapshotProvider:OutputPageSize=100",
                 "--Authentication:Anonymous:AnonymousUserRole=Owner",
                 "--Logging:LogLevel:Default=Warning",
             };

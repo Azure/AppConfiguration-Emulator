@@ -161,6 +161,97 @@ namespace Azure.AppConfiguration.Emulator.ClientSdk.Tests
         }
 
         [Fact]
+        public async Task GetSnapshotsPagination()
+        {
+            const int snapshotCount = 205;
+            ConfigurationClient client = _fixture.Client;
+            string key = $"{_keyPrefix}pagination";
+            string snapshotNamePrefix = $"{_snapshotPrefix}pagination-";
+
+            await client.SetConfigurationSettingAsync(key, "snapshot-value");
+
+            var snapshot = new ConfigurationSnapshot(new[] { new ConfigurationSettingsFilter(key) })
+            {
+                SnapshotComposition = SnapshotComposition.Key
+            };
+
+            for (int index = 0; index < snapshotCount; index++)
+            {
+                await client.CreateSnapshotAsync(
+                    WaitUntil.Completed,
+                    $"{snapshotNamePrefix}{index:D3}",
+                    snapshot);
+            }
+
+            var selector = new SnapshotSelector
+            {
+                NameFilter = $"{snapshotNamePrefix}*"
+            };
+            selector.Status.Add(ConfigurationSnapshotStatus.Ready);
+
+            var pageSizes = new List<int>();
+            var returnedNames = new HashSet<string>();
+
+            await foreach (Page<ConfigurationSnapshot> page in client.GetSnapshotsAsync(selector).AsPages())
+            {
+                pageSizes.Add(page.Values.Count);
+
+                foreach (ConfigurationSnapshot returnedSnapshot in page.Values)
+                {
+                    returnedNames.Add(returnedSnapshot.Name);
+                }
+            }
+
+            Assert.Equal(new[] { 100, 100, 5 }, pageSizes);
+            Assert.Equal(snapshotCount, returnedNames.Count);
+        }
+
+        [Fact]
+        public async Task GetConfigurationSettingsForSnapshotPagination()
+        {
+            const int settingCount = 205;
+            ConfigurationClient client = _fixture.Client;
+            string keyPrefix = $"{_keyPrefix}content-pagination-";
+            string snapshotName = $"{_snapshotPrefix}content-pagination";
+
+            for (int index = 0; index < settingCount; index++)
+            {
+                await client.SetConfigurationSettingAsync($"{keyPrefix}{index:D3}", $"value-{index}");
+            }
+
+            var snapshot = new ConfigurationSnapshot(
+                new[] { new ConfigurationSettingsFilter($"{keyPrefix}*") })
+            {
+                SnapshotComposition = SnapshotComposition.Key
+            };
+
+            CreateSnapshotOperation operation = await client.CreateSnapshotAsync(
+                WaitUntil.Completed,
+                snapshotName,
+                snapshot);
+
+            Assert.Equal(settingCount, operation.Value.ItemCount);
+
+            var pageSizes = new List<int>();
+            var returnedKeys = new HashSet<string>();
+
+            await foreach (Page<ConfigurationSetting> page in client
+                .GetConfigurationSettingsForSnapshotAsync(snapshotName)
+                .AsPages())
+            {
+                pageSizes.Add(page.Values.Count);
+
+                foreach (ConfigurationSetting setting in page.Values)
+                {
+                    returnedKeys.Add(setting.Key);
+                }
+            }
+
+            Assert.Equal(new[] { 100, 100, 5 }, pageSizes);
+            Assert.Equal(settingCount, returnedKeys.Count);
+        }
+
+        [Fact]
         public async Task ArchiveSnapshot()
         {
             ConfigurationClient client = _fixture.Client;
