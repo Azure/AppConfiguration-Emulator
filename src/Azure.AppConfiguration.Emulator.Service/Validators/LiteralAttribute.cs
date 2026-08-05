@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 using Azure.AppConfiguration.Emulator.ConfigurationSettings;
+using Azure.AppConfiguration.Emulator.Search;
 using System;
 using System.ComponentModel.DataAnnotations;
 

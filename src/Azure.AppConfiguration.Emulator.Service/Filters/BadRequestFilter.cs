@@ -3,6 +3,7 @@
 
 using Azure.AppConfiguration.Emulator.ConfigurationSettings;
 using Azure.AppConfiguration.Emulator.Integration;
+using Azure.AppConfiguration.Emulator.Search;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;

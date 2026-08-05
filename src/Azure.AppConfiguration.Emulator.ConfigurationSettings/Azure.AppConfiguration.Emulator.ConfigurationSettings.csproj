@@ -13,6 +13,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Azure.AppConfiguration.Emulator.Search\Azure.AppConfiguration.Emulator.Search.csproj" />
     <ProjectReference Include="..\Azure.AppConfiguration.Emulator.Tenant\Azure.AppConfiguration.Emulator.Tenant.csproj" />
   </ItemGroup>
 

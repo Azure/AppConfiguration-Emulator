@@ -7,6 +7,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Azure.AppConfiguration.Emul
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Azure.AppConfiguration.Emulator.ConfigurationSettings", "src\Azure.AppConfiguration.Emulator.ConfigurationSettings\Azure.AppConfiguration.Emulator.ConfigurationSettings.csproj", "{40673768-2366-42F6-AB3C-29CC72C5B4D3}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Azure.AppConfiguration.Emulator.Search", "src\Azure.AppConfiguration.Emulator.Search\Azure.AppConfiguration.Emulator.Search.csproj", "{D4E9D5F8-7C63-4F4B-9D2D-7F8E5F3A1C20}"
+EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Azure.AppConfiguration.Emulator.Tenant", "src\Azure.AppConfiguration.Emulator.Tenant\Azure.AppConfiguration.Emulator.Tenant.csproj", "{F01938D6-FA05-409A-B3DF-499B29024E8F}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Azure.AppConfiguration.Emulator.Authentication", "src\Azure.AppConfiguration.Emulator.Authentication\Azure.AppConfiguration.Emulator.Authentication.csproj", "{E2A94B50-D55A-4BB5-A849-2A55DB7FD906}"
@@ -60,6 +62,10 @@ Global
 		{40673768-2366-42F6-AB3C-29CC72C5B4D3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{40673768-2366-42F6-AB3C-29CC72C5B4D3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{40673768-2366-42F6-AB3C-29CC72C5B4D3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D4E9D5F8-7C63-4F4B-9D2D-7F8E5F3A1C20}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D4E9D5F8-7C63-4F4B-9D2D-7F8E5F3A1C20}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D4E9D5F8-7C63-4F4B-9D2D-7F8E5F3A1C20}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D4E9D5F8-7C63-4F4B-9D2D-7F8E5F3A1C20}.Release|Any CPU.Build.0 = Release|Any CPU
 		{F01938D6-FA05-409A-B3DF-499B29024E8F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{F01938D6-FA05-409A-B3DF-499B29024E8F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F01938D6-FA05-409A-B3DF-499B29024E8F}.Release|Any CPU.ActiveCfg = Release|Any CPU
