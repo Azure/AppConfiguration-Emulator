@@ -28,14 +28,16 @@ namespace Azure.AppConfiguration.Emulator.ClientSdk.Tests
         public async Task DisposeAsync()
         {
             ConfigurationClient client = _fixture.Client;
-            var snapshotSelector = new SnapshotSelector();
+            var snapshotSelector = new SnapshotSelector
+            {
+                NameFilter = $"{_snapshotPrefix}*"
+            };
             snapshotSelector.Status.Add(ConfigurationSnapshotStatus.Ready);
             snapshotSelector.Status.Add(ConfigurationSnapshotStatus.Archived);
 
             await foreach (ConfigurationSnapshot snapshot in client.GetSnapshotsAsync(snapshotSelector))
             {
-                if (snapshot.Name.StartsWith(_snapshotPrefix, StringComparison.Ordinal) &&
-                    snapshot.Status == ConfigurationSnapshotStatus.Ready)
+                if (snapshot.Status == ConfigurationSnapshotStatus.Ready)
                 {
                     await client.ArchiveSnapshotAsync(snapshot.Name);
                 }
@@ -53,15 +55,15 @@ namespace Azure.AppConfiguration.Emulator.ClientSdk.Tests
                 await client.DeleteConfigurationSettingAsync(setting);
             }
 
-            var readySelector = new SnapshotSelector();
+            var readySelector = new SnapshotSelector
+            {
+                NameFilter = $"{_snapshotPrefix}*"
+            };
             readySelector.Status.Add(ConfigurationSnapshotStatus.Ready);
 
             await foreach (ConfigurationSnapshot snapshot in client.GetSnapshotsAsync(readySelector))
             {
-                if (snapshot.Name.StartsWith(_snapshotPrefix, StringComparison.Ordinal))
-                {
-                    throw new InvalidOperationException($"Failed to archive test snapshot '{snapshot.Name}'.");
-                }
+                throw new InvalidOperationException($"Failed to archive test snapshot '{snapshot.Name}'.");
             }
 
             await foreach (ConfigurationSetting setting in client.GetConfigurationSettingsAsync(
@@ -141,16 +143,16 @@ namespace Azure.AppConfiguration.Emulator.ClientSdk.Tests
             await CreateReadySnapshot(firstSnapshotName, "list-1");
             await CreateReadySnapshot(secondSnapshotName, "list-2");
 
-            var selector = new SnapshotSelector();
+            var selector = new SnapshotSelector
+            {
+                NameFilter = $"{_snapshotPrefix}list-*"
+            };
             selector.Status.Add(ConfigurationSnapshotStatus.Ready);
 
             var snapshots = new List<ConfigurationSnapshot>();
             await foreach (ConfigurationSnapshot snapshot in client.GetSnapshotsAsync(selector))
             {
-                if (snapshot.Name.StartsWith($"{_snapshotPrefix}list-", StringComparison.Ordinal))
-                {
-                    snapshots.Add(snapshot);
-                }
+                snapshots.Add(snapshot);
             }
 
             Assert.Equal(2, snapshots.Count);
