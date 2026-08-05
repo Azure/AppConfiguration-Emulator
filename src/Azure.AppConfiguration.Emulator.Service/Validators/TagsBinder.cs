@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 using Azure.AppConfiguration.Emulator.ConfigurationSettings;
+using Azure.AppConfiguration.Emulator.Search;
 using Azure.AppConfiguration.Emulator.Service.Utils;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.Extensions.Primitives;

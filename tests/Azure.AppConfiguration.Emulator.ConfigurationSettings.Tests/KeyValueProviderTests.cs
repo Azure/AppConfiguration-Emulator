@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Options;
 using Moq;
+using Azure.AppConfiguration.Emulator.Search;
 using Azure.AppConfiguration.Emulator.Tenant;
 
 namespace Azure.AppConfiguration.Emulator.ConfigurationSettings.Tests

@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+using Azure.AppConfiguration.Emulator.Search;
 using System;
 using System.Collections.Generic;
 

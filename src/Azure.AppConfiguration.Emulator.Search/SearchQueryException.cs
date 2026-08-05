@@ -3,7 +3,7 @@
 
 using System;
 
-namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
+namespace Azure.AppConfiguration.Emulator.Search
 {
     public class SearchQueryException : ArgumentException
     {
