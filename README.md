@@ -89,6 +89,41 @@ curl -X GET "http://127.0.0.1:8483/kv" \
   -H "Accept: application/json"
 ```
 
+### Import Key-Values with Azure CLI
+
+[Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli) 2.83.0 or later supports anonymous authentication for App Configuration data-plane commands. This allows the CLI to connect directly to the emulator without an Azure subscription, credentials, or access keys.
+
+Start the emulator, then confirm that your Azure CLI version is 2.83.0 or later:
+
+```bash
+az version
+```
+
+Create a local file named `appconfig.json` with the key-values to import:
+
+```json
+{
+  "Sample:BackgroundColor": "green",
+  "Sample:Message": "Hello from the emulator"
+}
+```
+
+Import the file into the emulator:
+
+```bash
+az appconfig kv import --endpoint http://127.0.0.1:8483 --auth-mode anonymous --source file --path ./appconfig.json --format json --yes
+```
+
+The import creates new settings and updates existing settings with matching keys and labels. Use `--dry-run` instead of `--yes` to preview the changes without modifying the emulator.
+
+The imported settings have a null label by default. Use `--label <label>` on the import command to apply the same label to every setting in the file.
+
+Verify the imported settings:
+
+```bash
+az appconfig kv list --endpoint http://127.0.0.1:8483 --auth-mode anonymous --key "Sample:*" --fields key value --output table
+```
+
 ## Development
 
 ### Configuration
