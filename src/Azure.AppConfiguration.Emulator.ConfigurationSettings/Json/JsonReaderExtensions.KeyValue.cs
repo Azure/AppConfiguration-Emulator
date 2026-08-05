@@ -8,7 +8,7 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
 {
     using JsonFields = KeyValueJsonFields;
 
-    internal static partial class Utf8JsonReaderExtensions
+    public static partial class Utf8JsonReaderExtensions
     {
         public static bool TryReadKeyValue(
             this ref Utf8JsonReader reader,

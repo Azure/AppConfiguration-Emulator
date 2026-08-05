@@ -86,6 +86,7 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
                     reader.TokenType == JsonTokenType.StartArray)
                 {
                     ++depth;
+
                     continue;
                 }
 
@@ -93,6 +94,7 @@ namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
                     reader.TokenType == JsonTokenType.EndArray)
                 {
                     --depth;
+
                     continue;
                 }
             }

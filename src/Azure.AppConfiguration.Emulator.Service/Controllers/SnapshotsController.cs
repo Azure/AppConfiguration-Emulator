@@ -24,8 +24,6 @@ using Page = Azure.AppConfiguration.Emulator.ConfigurationSettings.Page<Azure.Ap
 
 namespace Azure.AppConfiguration.Emulator.Service
 {
-#if SNAPSHOTS
-
     [ApiVersion(ApiVersions.V23_10)]
     [ApiVersion(ApiVersions.V23_11)]
     [ApiVersion(ApiVersions.V24_09)]
@@ -82,7 +80,7 @@ namespace Azure.AppConfiguration.Emulator.Service
             return (await _provider.Get(
                 new SnapshotSearchOptions
                 {
-                    Name = SearchQuery.Escape(name),
+                    Name = name,
                     Status = SnapshotStatusSearch.All
                 },
                 cancellationToken)).FirstOrDefault();
@@ -103,7 +101,7 @@ namespace Azure.AppConfiguration.Emulator.Service
             Snapshot target = (await _provider.Get(
                 new SnapshotSearchOptions
                 {
-                    Name = SearchQuery.Escape(snapshotName),
+                    Name = snapshotName,
                     Status = SnapshotStatusSearch.Ready |
                         SnapshotStatusSearch.Archived
                 },
@@ -144,7 +142,7 @@ namespace Azure.AppConfiguration.Emulator.Service
             Snapshot existing = (await _provider.Get(
                 new SnapshotSearchOptions
                 {
-                    Name = SearchQuery.Escape(name),
+                    Name = name,
                     Status = SnapshotStatusSearch.All
                 },
                 cancellationToken)).FirstOrDefault();
@@ -168,53 +166,71 @@ namespace Azure.AppConfiguration.Emulator.Service
             if (entity.Filters != null)
             {
                 snapshot.Filters = entity.Filters.Select(f =>
+                {
+                    List<KeyValuePair<string, string>> tagFilters = null;
+
+                    if (f.Tags != null && f.Tags.Any())
                     {
-                        List<KeyValuePair<string, string>> tagFilters = null;
+                        tagFilters = new List<KeyValuePair<string, string>>();
 
-                        if (f.Tags != null && f.Tags.Any())
+                        foreach (string tag in f.Tags)
                         {
-                            tagFilters = new List<KeyValuePair<string, string>>();
-
-                            foreach (string tag in f.Tags)
+                            if (!string.IsNullOrWhiteSpace(tag))
                             {
-                                if (!string.IsNullOrWhiteSpace(tag))
-                                {
-                                    tagFilters.Add(SearchQueryHelper.ParseTagFilter(tag.AsSpan()));
-                                }
+                                tagFilters.Add(SearchQueryHelper.ParseTagFilter(tag.AsSpan()));
                             }
                         }
+                    }
 
-                        return new KeyValueFilter
-                        {
-                            Key = f.Key,
-                            Label = f.Label,
-                            Tags = tagFilters
-                        };
-                    });
+                    return new KeyValueFilter
+                    {
+                        Key = f.Key,
+                        Label = f.Label,
+                        Tags = tagFilters
+                    };
+                });
             }
 
-            await _provider.Create(
-                snapshot,
-                cancellationToken);
-
-            var uri = new UriBuilder
+            try
             {
-                Scheme = Request.Scheme,
-                Host = Request.Host.Host,
-                Path = $"operations?snapshot={Uri.EscapeDataString(snapshot.Name)}&api-version={HttpContext.GetRequestedApiVersion()}"
-            };
+                await _provider.Create(snapshot, cancellationToken);
 
-            if (Request.Host.Port.HasValue)
-            {
-                uri.Port = Request.Host.Port.Value;
+                //
+                // Unlike the real service (which returns a Provisioning snapshot and finishes
+                // provisioning asynchronously), the emulator provisions synchronously and returns a
+                // Ready snapshot. Create() gathers the key-values, writes the content file, and
+                // computes Id/Etag/Media/ItemCount/Size internally, so those aren't known here up
+                // front. Re-query to get the fully-provisioned snapshot to return.
+                Snapshot created = (await _provider.Get(new SnapshotSearchOptions
+                {
+                    Name = name,
+                    Status = SnapshotStatusSearch.All
+                }, cancellationToken)).FirstOrDefault();
+
+                var operationLocation = new UriBuilder
+                {
+                    Scheme = Request.Scheme,
+                    Host = Request.Host.Host,
+                    Path = "operations",
+                    Query = $"snapshot={Uri.EscapeDataString(snapshot.Name)}&api-version={HttpContext.GetRequestedApiVersion()}"
+                };
+
+                if (Request.Host.Port.HasValue)
+                {
+                    operationLocation.Port = Request.Host.Port.Value;
+                }
+
+                Response.Headers[HeaderNames.OperationLocation] = operationLocation.ToString();
+
+                return new ObjectResult(created ?? snapshot)
+                {
+                    StatusCode = StatusCodes.Status201Created
+                };
             }
-
-            Response.Headers[HeaderNames.OperationLocation] = uri.ToString();
-
-            return new ObjectResult(snapshot)
+            catch (ConflictException)
             {
-                StatusCode = StatusCodes.Status201Created
-            };
+                return new ObjectResult(Problems.AlreadyExists);
+            }
         }
 
         [Authorize(Policies.SnapshotArchive)]
@@ -238,7 +254,7 @@ namespace Azure.AppConfiguration.Emulator.Service
             Snapshot snapshot = (await _provider.Get(
                 new SnapshotSearchOptions
                 {
-                    Name = SearchQuery.Escape(name),
+                    Name = name,
                     Status = SnapshotStatusSearch.All
                 },
                 cancellationToken)).FirstOrDefault();
@@ -317,7 +333,7 @@ namespace Azure.AppConfiguration.Emulator.Service
             Snapshot snapshot = (await _provider.Get(
                 new SnapshotSearchOptions
                 {
-                    Name = SearchQuery.Escape(snapshotName),
+                    Name = snapshotName,
                     Status = SnapshotStatusSearch.All
                 },
                 cancellationToken)).FirstOrDefault();
@@ -330,5 +346,4 @@ namespace Azure.AppConfiguration.Emulator.Service
             return new ObjectResult(snapshot.ToOperationStatus());
         }
     }
-#endif
 }

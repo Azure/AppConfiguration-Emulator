@@ -7,7 +7,7 @@ using JsonFields = Azure.AppConfiguration.Emulator.ConfigurationSettings.KeyValu
 
 namespace Azure.AppConfiguration.Emulator.ConfigurationSettings
 {
-    internal static partial class Utf8JsonWriterExtensions
+    public static partial class Utf8JsonWriterExtensions
     {
         public static void WriteKeyValue(this Utf8JsonWriter writer, KeyValue kv)
         {
