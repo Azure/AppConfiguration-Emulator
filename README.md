@@ -59,6 +59,7 @@ dotnet run --project src/Azure.AppConfiguration.Emulator.Host/Azure.AppConfigura
 ### Access the Application
 Once started, the emulator will be available at:
 - **API Endpoint**: `http://127.0.0.1:8483`
+- **Health Endpoint**: `http://127.0.0.1:8483/health`
 - **Web UI**: `http://127.0.0.1:8483` (serves both API and UI)
 
 ### Default Configuration

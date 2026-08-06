@@ -58,6 +58,10 @@ namespace Azure.AppConfiguration.Emulator.Host
             services.AddHttpClientFactory();
 
             //
+            // Health checks
+            services.AddHealthChecks();
+
+            //
             // MVC
             services.AddMvc(o =>
             {
@@ -108,6 +112,7 @@ namespace Azure.AppConfiguration.Emulator.Host
                .UsePathValidation()
                .UseEndpoints(endpoints =>
                {
+                   endpoints.MapHealthChecks("/health").AllowAnonymous();
                    endpoints.MapControllers();
                });
 

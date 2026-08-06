@@ -11,10 +11,15 @@ public static class IntegrationExtentions
 {
     public static IApplicationBuilder UseUI(this IApplicationBuilder app)
     {
-        app.UseSpa(
-            x =>
+        app.UseWhen(
+            context => context.Request.Path == "/" || context.Request.Path.StartsWithSegments("/ui"),
+            uiApp =>
             {
-                x.Options.SourcePath = "wwwroot";
+                uiApp.UseSpa(
+                    x =>
+                    {
+                        x.Options.SourcePath = "wwwroot";
+                    });
             });
 
         return app;
