@@ -30,7 +30,7 @@ namespace Azure.AppConfiguration.Emulator.Search
 
             //
             // No filter
-            if (string.IsNullOrEmpty(value) || value == Wildcard)
+            if (string.IsNullOrEmpty(value) || value == "*")
             {
                 return filter;
             }
