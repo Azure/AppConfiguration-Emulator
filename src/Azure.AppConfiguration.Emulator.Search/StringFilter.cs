@@ -42,7 +42,7 @@ namespace Azure.AppConfiguration.Emulator.Search
             return true;
         }
 
-        public bool IsEmpty => !IsNull && Match(null);
+        public bool IsEmpty => !IsNull && Match(null) && AnyOf == null;
 
         public static StringFilter NullString => _nullString;
     }
